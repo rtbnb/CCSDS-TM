@@ -12,13 +12,18 @@ entity header_encoder is
 end entity header_encoder;
 
 architecture behavioral of header_encoder is	
+    signal a: std_logic;
+
 begin
 
+    result <= a;
 
-    process(clk)
+    process(clk,In1,In2)
     begin
         if rising_edge(clk) then
-            result <= In1 and In2;
+            a <= In1 and In2; 
         end if;
+
+        
     end process;
 end architecture behavioral;

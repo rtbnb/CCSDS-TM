@@ -21,14 +21,16 @@ architecture behavioral of top_level is
             result: out std_logic
         );
     end component;
+
+    signal test: std_logic;
 begin
     encoder1: header_encoder port map(
         clk=>clk,
         In1=>In1,
         In2=>In2,
-        result=>Out2
+        result=>test
     );
 
-
-	Out1 <= In1 and In2;
+    Out2 <= test;
+	Out1 <= In1 and test;
 end architecture behavioral;
