@@ -41,15 +41,18 @@ component top_level is
 		clk: in std_logic;
 		In1: in std_logic;
         In2: in std_logic;
+        In3: in std_logic;
 		Out1: out std_logic;
-        Out2: out std_logic
+        Out2: out std_logic;
+        Out3: out std_logic
 	);
 end component top_level;
 
 signal clk_s: std_logic;
 signal In1_s: std_logic;
 signal In2_s: std_logic;
-signal Out1_s, Out2_s: std_logic;
+signal In3_s: std_logic;
+signal Out1_s, Out2_s, Out3_s: std_logic;
 
 begin
 
@@ -57,17 +60,18 @@ EUT: top_level port map (
     clk => clk_s,
     In1 => In1_s,
     In2 => In2_s,
+    In3 => In3_s,
     Out1 => Out1_s,
-    Out2 => Out2_s
+    Out2 => Out2_s,
+    Out3 => Out3_s
 );
 
 process is
 begin
-    wait for 105ns;
     clk_s <= '1';
-    wait for 10ns;
+    wait for 2ns;
     clk_s <= '0';
-    wait for 10ns;
+    wait for 2ns;
 end process;
 
 
@@ -75,15 +79,11 @@ process is
 begin
     In1_s <= '1';
     In2_s <= '0';
+    In3_s <= '0';
     wait for 50ns;
     In2_s <= '1';
-    wait for 55ns;
-
-    wait for 30ns;
-    In2_s <= '1';
-    wait for 7.5ns;
-    In1_s <= '0';
-    wait for 5ns;
+    In3_s <= '1';
+    wait;
 end process;
 
 
