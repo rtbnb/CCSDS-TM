@@ -1,3 +1,5 @@
 .vscode
 *.jou
 *.log
+
+build/example/
