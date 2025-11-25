@@ -1,3 +1,12 @@
+-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-- File : ReedSolomonEncoder.vhd
+-- Created : 18.11.2025
+-- Author : Matthias Fuchs
+-- Project Name : HW/SW Project TM
+-- Description : R/S Encoder (255,223)
+-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -31,9 +40,9 @@ architecture behavioral of reed_solomon_encoder is
                                                         x"61",x"EB",x"0D",x"1E",
                                                         x"10",x"56",x"7F",x"5B"); -- Coefs directly from the CCSDS Standard
     
-    constant MAX_ERROR_COUNT : INTEGER := 16;
-    constant ASM_BYTE_LENGHT : INTEGER := 4;
-    constant MESSAGE_LENGHT : INTEGER := 255;
+    constant MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
+    constant ASM_BYTE_LENGHT : INTEGER := 4; -- A ASM is 32-Bit in lenght 
+    constant MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
     constant CLOCK_DIVISION : INTEGER := 15; -- Number of Cycles to be waited after a R/S Symbol - 1 (e.g. 16-1 = 15) (To syncronize with lower layers);
     
     
@@ -67,6 +76,7 @@ begin
 
                     -- Normal encoder logic
                     else
+                        -- Send out 223 bytes of user data
                         if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
                             -- Encoder Message Logic
                             input_addition:= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
@@ -77,7 +87,7 @@ begin
                             
                             output_byte_o <= input_byte_i;
                         else
-                            -- Adding Parity sympols
+                            -- Adding Parity sympols and zeroing the input value
                             input_addition := "00000000";
                             
                             -- Output paritiy check sympols
