@@ -4,4 +4,6 @@
 
 # Build artifacts
 build/example/
+build/*
 .Xil/
+
