@@ -22,12 +22,12 @@ This will start a synthesis and implementation run, with checkpoints being writt
 
 ### Building example
 1. cd into repository root
-2. on Windows execute .\tools\tcl_scripts\build_example.bat
-3. on Linux execute .\tools\tcl_scripts\build_example.sh
+2. on Windows execute `.\tools\tcl_scripts\build_example.bat`
+3. on Linux execute `.\tools\tcl_scripts\build_example.sh`
 
 ### Getting Started with Vivado
 1. Create Post-Synthesis Project
-2. Add build/example/top_level_synth.dcp to Sources
-3. Add Simulation file from example/src/sim/top_sim.vhd
+2. Add `build/example/top_level_synth.dcp` to Sources
+3. Add Simulation file from `example/src/sim/top_sim.vhd`
 4. Run Simulation and select top_sim as sim file
 5. Verify, that in the first 10ns Out1 is 0 and after 10ns Out1 is 1

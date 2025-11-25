@@ -2,4 +2,6 @@
 *.jou
 *.log
 
+# Build artifacts
 build/example/
+.Xil/
