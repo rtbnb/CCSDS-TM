@@ -73,7 +73,7 @@ begin
                     if clock_devider_count_r >= MESSAGE_LENGHT then
                         -- Encoder Done Flag, wait for 32 Bit for ASM data    
                         encoder_done_flag_o <= '1';
-
+                        output_byte_o <= "00000000";
                     -- Normal encoder logic
                     else
                         -- Send out 223 bytes of user data

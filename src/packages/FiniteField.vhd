@@ -134,7 +134,7 @@ package body finite_field is
     )
     return finite_field_t is
     begin
-        return a; -- STUBBED
+        return std_logic_vector(a) xor std_logic_vector(b); -- STUBBED
     end;
  
  
@@ -143,8 +143,30 @@ package body finite_field is
         b : in finite_field_t
     )
     return finite_field_t is
+        variable result_value : finite_field_t := "00000000";
+        variable a_internal : finite_field_t := "00000000";
+        variable result_9_bit : std_logic_vector (8 downto 0) := "000000000";
+        variable b_internal : finite_field_t := "00000000";
     begin
-        return a; -- STUBBED
+        a_internal := a;
+        b_internal := b;
+
+        gf_mult_loop: for bit_index in 0 to 7 loop
+            if (b_internal(0) = '1') then 
+                result_value:= gf_add(result_value,a_internal); -- if polynominal b has a constant term, add a to result_value
+            end if;
+
+            if (a_internal(7) = '1') then
+                --a_internal := gf_add(std_logic_vector(shift_left(unsigned(a_internal), 1)), "00100001"); -- TOOD: fix width of vector
+                result_9_bit :=  std_logic_vector(a_internal & '0') xor FIELD_GEN_POLY;
+                a_internal := result_9_bit(7 downto 0);
+            else 
+                a_internal := std_logic_vector(shift_left(unsigned(a_internal), 1));
+            end if;
+            b_internal := std_logic_vector(shift_right(unsigned(b_internal), 1));
+        end loop gf_mult_loop;
+
+        return result_value;
     end;
 
     function gf_to_int(
