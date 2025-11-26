@@ -1,22 +1,10 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 25.11.2025 13:51:20
--- Design Name: 
--- Module Name: top_sim - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
+----------------------------------------------------------------
+-- File : header_encoder_sim.vhd
+-- Created : 26.11.2025
+-- Author : Robin Eilers
+-- Project Name : HW/SW Project TM
+-- Description : CCSDS-132.0-B-3 Primary Header Encoder Simulation File
+----------------------------------------------------------------
 
 
 library IEEE;
