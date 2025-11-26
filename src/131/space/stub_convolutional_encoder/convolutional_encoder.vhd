@@ -53,7 +53,12 @@ begin
                 data_in_buffered_r <= data_in_i;
             end if;
             
-            data_out_buffered_r <= data_in_buffered_r when counter_r = '0' else not data_in_buffered_r;
+            if counter_r = '0' then
+                data_out_buffered_r <= data_in_buffered_r;
+            elsif counter_r = '1' then
+                data_out_buffered_r <= not data_in_buffered_r;
+            end if;
+            
             data_in_ready_buffered_r <= data_in_ready_i;
             data_out_ready_buffered_r <= data_in_ready_buffered_r;
         end if;
