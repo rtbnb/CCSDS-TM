@@ -15,12 +15,15 @@ end entity secondary_header_sim;
 
 architecture behavioral of secondary_header_sim is
     component top_level is
+        --generic (
+        --    SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
+        --);
         port (
             clk_i : in std_logic;
             version_number_i : in std_logic_vector(1 downto 0);
             length_i : in std_logic_vector(5 downto 0);
-            data_field_i : in std_logic_vector( (SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS * 8) - 1 downto 0);
-            secondary_header_o : std_logic_vector(7 downto 0) := (others => '0');
+            data_field_i : in std_logic_vector( (63 * 8) - 1 downto 0);
+            secondary_header_o : out std_logic_vector(7 downto 0) := (others => '0');
             secondary_header_fully_read_o : out std_logic := '0' -- high in the clk cycle when the last byte is read
         );
     end component top_level;
@@ -28,23 +31,24 @@ architecture behavioral of secondary_header_sim is
     signal clk_s : std_logic := '0';
     signal version_number_s : std_logic_vector(1 downto 0) := (others => '0');
     signal length_s : std_logic_vector(5 downto 0) := (others => '0');
-    signal data_field_s : std_logic_vector( (SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS * 8) - 1 downto 0) := (others => '0');
+    signal data_field_s : std_logic_vector( (63 * 8) - 1 downto 0) := (others => '0');
     signal secondary_header_s : std_logic_vector(7 downto 0) := (others => '0');
     signal secondary_header_fully_read_s : std_logic := '0';
 
     constant CLK_PERIOD : time := 10 ns;
 
 begin
-    top_level_inst : top_level port map(
+    top_level_inst : top_level
+    --generic map(
+    --    SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
+    --)
+    port map(
         clk_i => clk_s,
         version_number_i => version_number_s,
         length_i => length_s,
         data_field_i => data_field_s,
         secondary_header_o => secondary_header_s,
         secondary_header_fully_read_o => secondary_header_fully_read_s
-    )
-    generic map(
-        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
     );
 
 end architecture behavioral;

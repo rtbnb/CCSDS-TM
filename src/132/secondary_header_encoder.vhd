@@ -20,7 +20,7 @@ entity secondary_header_encoder is
         version_number_i : in std_logic_vector(1 downto 0);
         length_i : in std_logic_vector(5 downto 0);
         data_field_i : in std_logic_vector( (SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS * 8) - 1 downto 0);
-        secondary_header_o : std_logic_vector(7 downto 0) := (others => '0');
+        secondary_header_o : out std_logic_vector(7 downto 0) := (others => '0');
         secondary_header_fully_read_o : out std_logic := '0' -- high in the clk cycle when the last byte is read
     );
 end entity secondary_header_encoder;
@@ -56,6 +56,6 @@ begin
     -- secondary header output process
     with octet_counter_s select secondary_header_o <=
         id_s when 0,
-        data_field_i(((octet_counter_s) * 8) - 1) downto ((octet_counter_s - 1) * 8) when others;
+        data_field_i((((octet_counter_s) * 8) - 1) downto ((octet_counter_s - 1) * 8)) when others;
 
 end architecture behavioral;
