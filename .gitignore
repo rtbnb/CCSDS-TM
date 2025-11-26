@@ -1,7 +1,11 @@
 .vscode
+.idea
 *.jou
 *.log
+*.pb
 
 # Build artifacts
 build/example/
+build/*
 .Xil/
+
