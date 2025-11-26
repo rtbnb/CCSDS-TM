@@ -14,7 +14,7 @@ entity secondary_header_sim is
 end entity secondary_header_sim;
 
 architecture behavioral of secondary_header_sim is
-    component top_level is
+    component secondary_header_encoder is
         generic (
             SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
         );
@@ -26,7 +26,7 @@ architecture behavioral of secondary_header_sim is
             secondary_header_o : out std_logic_vector(7 downto 0) := (others => '0');
             secondary_header_fully_read_o : out std_logic := '0' -- high in the clk cycle when the last byte is read
         );
-    end component top_level;
+    end component secondary_header_encoder;
 
     signal clk_s : std_logic := '0';
     signal version_number_s : std_logic_vector(1 downto 0) := (others => '0');
@@ -38,7 +38,7 @@ architecture behavioral of secondary_header_sim is
     constant CLK_PERIOD : time := 10 ns;
 
 begin
-    top_level_inst : top_level
+    secondary_header_encoder_inst : secondary_header_encoder
     generic map(
         SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
     )
