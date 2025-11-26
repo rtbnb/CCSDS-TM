@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : FiniteField_tb.vhd
+-- File : finite_field_tb.vhd
 -- Created : 17.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
