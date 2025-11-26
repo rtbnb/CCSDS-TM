@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : header_encoder_sim.vhd
+-- File : dummy_payload_data_generator_sim.vhd
 -- Created : 26.11.2025
 -- Author : Robin Eilers
 -- Project Name : HW/SW Project TM
@@ -10,11 +10,11 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity header_encoder_sim is
+entity dummy_payload_data_generator_sim is
 --  Port ( );
-end header_encoder_sim;
+end dummy_payload_data_generator_sim;
 
-architecture Behavioral of header_encoder_sim is
+architecture Behavioral of dummy_payload_data_generator_sim is
 component top_level is
 	Port(
         clk_i: in std_logic;
