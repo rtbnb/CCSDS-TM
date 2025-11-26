@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : ReedSolomonEncoder_tb.vhd
+-- File : reed_solomon_encoder_tb.vhd
 -- Created : 18.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
@@ -11,10 +11,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.finite_field.all;
 
-entity ReedSolomonEncoder_tb is
-end entity ReedSolomonEncoder_tb;
+entity reed_solomon_encoder_tb is
+end entity reed_solomon_encoder_tb;
 
-architecture bhv of ReedSolomonEncoder_tb is
+architecture bhv of reed_solomon_encoder_tb is
 
     component reed_solomon_encoder is
     port (

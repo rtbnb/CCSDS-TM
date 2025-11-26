@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : ReedSolomonEncoder.vhd
+-- File : reed_solomon_encoder.vhd
 -- Created : 18.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
