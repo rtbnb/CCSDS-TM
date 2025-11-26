@@ -26,10 +26,10 @@ entity secondary_header_encoder is
 end entity secondary_header_encoder;
 
 architecture behavioral of secondary_header_encoder is
-    signal octet_counter_s : integer range 0 to SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS + 1 := 0;
-    signal id_s : std_logic_vector(7 downto 0) := (others => '0');
     constant LAST_OCTET_COUNTER_VALUE : integer := SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS; -- last octet is at position 63 which represents the 64th octet (0 to 63)
-
+    signal octet_counter_s : integer range 0 to LAST_OCTET_COUNTER_VALUE + 1 := 0;
+    signal id_s : std_logic_vector(7 downto 0) := (others => '0');
+   
 begin
     -- generate secondary header ID
     id_s(1 downto 0) <= version_number_i;
@@ -37,18 +37,18 @@ begin
 
     -- encoder output control logic
     process (clk_i, octet_counter_s) begin
-        if rising_edge(clk_i) then
-            -- reset logic
-            if octet_counter_s = LAST_OCTET_COUNTER_VALUE + 1 then
+        if rising_edge(clk_i) then 
+            -- last octet read logic
+            if octet_counter_s = LAST_OCTET_COUNTER_VALUE then
                 octet_counter_s <= 0;
                 secondary_header_fully_read_o <= '0';
-            -- last octet read logic
-            elsif octet_counter_s = LAST_OCTET_COUNTER_VALUE then
+            elsif octet_counter_s = LAST_OCTET_COUNTER_VALUE - 1 then
                 octet_counter_s <= octet_counter_s + 1;
                 secondary_header_fully_read_o <= '1';
             -- normal operation logic
             else
                 octet_counter_s <= octet_counter_s + 1;
+                secondary_header_fully_read_o <= '0';
             end if;
         end if;
     end process;

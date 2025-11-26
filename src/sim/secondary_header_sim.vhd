@@ -15,9 +15,9 @@ end entity secondary_header_sim;
 
 architecture behavioral of secondary_header_sim is
     component top_level is
-        --generic (
-        --    SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
-        --);
+        generic (
+            SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
+        );
         port (
             clk_i : in std_logic;
             version_number_i : in std_logic_vector(1 downto 0);
@@ -39,9 +39,9 @@ architecture behavioral of secondary_header_sim is
 
 begin
     top_level_inst : top_level
-    --generic map(
-    --    SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
-    --)
+    generic map(
+        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
+    )
     port map(
         clk_i => clk_s,
         version_number_i => version_number_s,
@@ -50,5 +50,19 @@ begin
         secondary_header_o => secondary_header_s,
         secondary_header_fully_read_o => secondary_header_fully_read_s
     );
+    
+    clock: process begin
+        clk_s <= '0';
+        wait for 10ns;
+        clk_s <= '1';
+        wait for 10ns;
+    end process clock;
+    
+    data_test: process begin
+        version_number_s <= "01";
+        length_s <= "111111";
+        data_field_s <= x"AFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA";
+        wait;
+    end process data_test;
 
 end architecture behavioral;
