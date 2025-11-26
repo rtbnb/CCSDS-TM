@@ -1,10 +1,10 @@
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 -- File : ReedSolomonEncoder_tb.vhd
 -- Created : 18.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for R/S Encoder
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;

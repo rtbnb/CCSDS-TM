@@ -1,10 +1,10 @@
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 -- File : FiniteField.vhd
 -- Created : 17.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : Custom Package for finite field maths
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
