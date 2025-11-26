@@ -1,10 +1,10 @@
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
--- File : < FileName >. vhd
--- Created : < Date >
--- Author : < Author >
--- Project Name : < Project Name >
--- Description : < Short description >
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
+-- File : header_encoder.vhd
+-- Created : 26.11.2025
+-- Author : Robin Eilers
+-- Project Name : HW/SW Project TM
+-- Description : CCSDS-132.0-B-3 Primary Header Encoder
+----------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
