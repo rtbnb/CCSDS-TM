@@ -26,8 +26,8 @@ architecture behavioral of convolutional_encoder is
 
     signal data_in_buffered_r : std_logic := '0';
     signal data_out_buffered_r : std_logic := '0';
-    signal data_in_ready_buffered_r : std_logic := '0';
-    signal data_out_ready_buffered_r : std_logic := '0';
+    type ready_signal_buffer_t is array (2 downto 0) of std_logic;
+    signal data_ready_buffered_r : ready_signal_buffer_t := (others => '0');
 begin
 
     process (clk_i, reset_i, data_in_ready_i)
@@ -46,8 +46,7 @@ begin
         if reset_i = '0' then
             data_in_buffered_r <= '0';
             data_out_buffered_r <= '0';
-            data_in_ready_buffered_r <= '0';
-            data_out_ready_buffered_r <= '0';
+            data_ready_buffered_r <= (others => '0');
         elsif rising_edge(clk_i) then
             if counter_r = '1' then
                 data_in_buffered_r <= data_in_i;
@@ -58,14 +57,15 @@ begin
             elsif counter_r = '1' then
                 data_out_buffered_r <= not data_in_buffered_r;
             end if;
-            
-            data_in_ready_buffered_r <= data_in_ready_i;
-            data_out_ready_buffered_r <= data_in_ready_buffered_r;
+
+            data_ready_buffered_r(0) <= data_in_ready_i;
+            data_ready_buffered_r(1) <= data_ready_buffered_r(0);
+            data_ready_buffered_r(2) <= data_ready_buffered_r(1);
         end if;
     end process;
 
     data_out_o       <= data_out_buffered_r;
-    data_out_ready_o <= data_out_ready_buffered_r;
+    data_out_ready_o <= data_ready_buffered_r(2);
 
 
 end architecture behavioral;
