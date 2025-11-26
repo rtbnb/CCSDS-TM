@@ -14,39 +14,52 @@ entity dummy_payload_data_generator is
 	Port(
         clk_i: in std_logic;
         data_freqency_divider_i: in std_logic_vector(3 downto 0);
-        data_output_o: out std_logic_vector(31 downto 0)
+        data_out_clk_o: out std_logic;
+        data_out_o: out std_logic_vector(31 downto 0)
 	);
 end entity dummy_payload_data_generator;
 
 architecture behavioral of dummy_payload_data_generator is
-    signal counter: std_logic_vector(3 downto 0);
+    signal out_clk_r: std_logic := '0';
+    signal counter_r: std_logic_vector(3 downto 0) := "0000";
+    signal data_sig_r: std_logic_vector(15 downto 0) := X"0000";
+
+    constant MAX_DUMMY_PAYLOAD_VALUE: std_logic_vector := X"AFFE"; --Maximum Dummy Payload Value. Can be set to anything as long as it stays under the 16bit max value
 begin
+    data_out_clk_o <= out_clk_r and clk_i;
 
-
-    dummy_payload_generator : process(clk) is
+    dummy_payload_clock_generator : process(clk_i) is
     begin
-        
-        if rising_edge(clk) then
+        if rising_edge(clk_i) then
+            if (unsigned(counter_r) + 1 < unsigned(data_freqency_divider_i)) then
+                counter_r <= std_logic_vector(unsigned(counter_r) + 1);
 
+                if out_clk_r <= '1' then
+                    out_clk_r <= '0';
+                end if;
+            else
+                counter_r <= "0000";
+                out_clk_r <= '1';
+            end if;
+        end if;
+    end process dummy_payload_clock_generator;
+
+    dummy_payload_data_generator : process(clk_i, out_clk_r) is
+        variable temp_data_s: std_logic_vector(15 downto 0);
+    begin
+        if falling_edge(clk_i) and out_clk_r = '1' then
+            temp_data_s := std_logic_vector(unsigned(data_sig_r) + 1);
+            data_out_o(15 downto 0) <= temp_data_s;
+            data_out_o(31 downto 16) <= not temp_data_s;
+
+            if temp_data_s < MAX_DUMMY_PAYLOAD_VALUE then
+                data_sig_r <= temp_data_s;
+            else
+                data_sig_r <= X"0000";        
+            end if;
         end if;
 
+    end process dummy_payload_data_generator;
 
 
-
-
-    end process dummy_payload_generator;
-
-
-
-    header_data_o(1 downto 0) <= transfer_frame_version_number_i;
-    header_data_o(11 downto 2) <= spacecraft_id_i;
-    header_data_o(14 downto 12) <= virtual_channel_id_i;
-    header_data_o(15) <= ocf_flag_i;
-    header_data_o(23 downto 16) <= master_channel_frame_count_i;
-    header_data_o(31 downto 24) <= virtual_channel_frame_count_i;
-    header_data_o(32) <= transfer_frame_secondary_header_flag_i;
-    header_data_o(33) <= snych_flag_i;
-    header_data_o(34) <= packet_order_flag_i;
-    header_data_o(36 downto 35) <= segment_length_id_i;
-    header_data_o(47 downto 37) <= first_header_pointer_i;
 end architecture behavioral;
