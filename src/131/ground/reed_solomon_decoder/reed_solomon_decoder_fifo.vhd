@@ -27,8 +27,31 @@ architecture behavioral of reed_solomon_decoder_fifo is
     CONSTANT ITERATIONS_FOR_ERROR_POLY : integer := 32;
     CONSTANT ITERATIONS_FOR_CHIEN_SEARCH : integer := 255;
     CONSTANT FIFO_LENGHT : integer := ITERATIONS_FOR_SYNDROME+ITERATIONS_FOR_ERROR_POLY+ITERATIONS_FOR_CHIEN_SEARCH - 1;
-    type finite_field_array_t is array (0 to FIFO_LENGHT) of std_logic_vector(7 downto 0);
-    
+    type reed_solomon_fifo_t is array (0 to FIFO_LENGHT) of std_logic_vector(7 downto 0);
+
+    signal reed_solomon_fifo : reed_solomon_fifo_t := (others => "00000000");
+    signal fifo_out : std_logic_vector(7 downto 0);
+
 begin
+    fifo_shift : process (clk_i)
+    begin
+        if reset_i = '0' then
+
+        elsif rising_edge(clk_i) then
+            -- Add clock division
+
+            -- Shift fifo by one element, and append new one
+            l_fifo_shift : for k in 0 to reed_solomon_fifo'length-1 loop
+                if k = 0 then
+                    reed_solomon_fifo(k) <= input_byte_i;
+                elsif k = FIFO_LENGHT-1 then
+                    fifo_out <= reed_solomon_fifo(k);
+                else 
+                    reed_solomon_fifo(k) <= reed_solomon_fifo(k-1);
+                end if;
+            end loop l_fifo_shift;
+        end if;
+            
+    end process fifo_shift;
 
 end architecture behavioral;
