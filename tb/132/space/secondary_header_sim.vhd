@@ -16,7 +16,7 @@ end entity secondary_header_sim;
 architecture behavioral of secondary_header_sim is
     component secondary_header_encoder is
         generic (
-            SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
+            secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
         );
         port (
             output_clk_i : in std_logic;
@@ -44,7 +44,7 @@ architecture behavioral of secondary_header_sim is
 begin
     secondary_header_encoder_inst : secondary_header_encoder
     generic map(
-        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
+        secondary_header_data_field_width_octets_g => 63
     )
     port map(
         output_clk_i => output_clk_s,
