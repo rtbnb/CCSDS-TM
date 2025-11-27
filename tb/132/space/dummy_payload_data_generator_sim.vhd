@@ -3,7 +3,7 @@
 -- Created : 26.11.2025
 -- Author : Robin Eilers
 -- Project Name : HW/SW Project TM
--- Description : CCSDS-132.0-B-3 Primary Header Encoder Simulation File
+-- Description : Sim File to simulate the dummy payload data generator
 ----------------------------------------------------------------
 
 
@@ -16,7 +16,7 @@ end dummy_payload_data_generator_sim;
 
 architecture Behavioral of dummy_payload_data_generator_sim is
 component top_level is
-	Port(
+	port(
         clk_i: in std_logic;
         data_frequency_divider_i: in std_logic_vector(3 downto 0);
         data_out_clk_o: out std_logic;
