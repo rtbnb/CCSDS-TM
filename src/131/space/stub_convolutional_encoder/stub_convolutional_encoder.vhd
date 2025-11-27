@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : convolutional_encoder.vhd
+-- File : stub_convolutional_encoder.vhd
 -- Created : 26.11.2025
 -- Author : Lukas Reil
 -- Project Name : HW/SW Project TM
@@ -9,7 +9,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity convolutional_encoder is
+entity stub_convolutional_encoder is
     port (
         clk_i               : in  std_logic;
         reset_i             : in  std_logic;
@@ -18,10 +18,10 @@ entity convolutional_encoder is
         data_out_o          : out std_logic;
         data_out_ready_o    : out std_logic
     );
-end entity convolutional_encoder;
+end entity stub_convolutional_encoder;
 
 
-architecture behavioral of convolutional_encoder is
+architecture behavioral of stub_convolutional_encoder is
     signal counter_r : std_logic := '0';
     signal counter_buffer_r : std_logic := '0';
 
