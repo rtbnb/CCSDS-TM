@@ -51,9 +51,10 @@ begin
         variable temp_data_s: std_logic_vector(15 downto 0);
     begin
         if falling_edge(clk_i) and out_clk_r = '1' then
+            data_out_o(15 downto 0) <= data_sig_r;
+            data_out_o(31 downto 16) <= not data_sig_r;
+
             temp_data_s := std_logic_vector(unsigned(data_sig_r) + 1);
-            data_out_o(15 downto 0) <= temp_data_s;
-            data_out_o(31 downto 16) <= not temp_data_s;
 
             if temp_data_s < MAX_DUMMY_PAYLOAD_VALUE then
                 data_sig_r <= temp_data_s;
