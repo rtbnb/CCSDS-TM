@@ -79,7 +79,9 @@ begin
         wait;
 
         -- Expeceted output sequence:
-
+        -- 10 01 01 10
+        -- while data_out_ready_s should be high for each valid output bit.
+        -- This shall be shifted relative to the input bits by two clock cycles.
 
 
 
