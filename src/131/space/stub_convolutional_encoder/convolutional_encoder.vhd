@@ -23,6 +23,7 @@ end entity convolutional_encoder;
 
 architecture behavioral of convolutional_encoder is
     signal counter_r : std_logic := '0';
+    signal counter_buffer_r : std_logic := '0';
 
     signal data_in_buffered_r : std_logic := '0';
     signal data_out_buffered_r : std_logic := '0';
@@ -34,10 +35,12 @@ begin
     begin
         if reset_i = '0' then
             counter_r <= '0';
+            counter_buffer_r <= '0';
         elsif rising_edge(clk_i) then
             if data_in_ready_i = '1' then
                 counter_r <= not counter_r;
             end if;
+            counter_buffer_r <= counter_r;
         end if;
     end process;
 
@@ -52,10 +55,10 @@ begin
                 data_in_buffered_r <= data_in_i;
             end if;
             
-            if counter_r = '0' then
-                data_out_buffered_r <= data_in_buffered_r;
-            elsif counter_r = '1' then
+            if counter_buffer_r = '0' then
                 data_out_buffered_r <= not data_in_buffered_r;
+            elsif counter_buffer_r = '1' then
+                data_out_buffered_r <= data_in_buffered_r;
             end if;
 
             data_ready_buffered_r(0) <= data_in_ready_i;
