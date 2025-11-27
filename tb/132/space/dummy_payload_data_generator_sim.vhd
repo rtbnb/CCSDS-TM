@@ -18,20 +18,20 @@ architecture Behavioral of dummy_payload_data_generator_sim is
 component top_level is
 	Port(
         clk_i: in std_logic;
-        data_freqency_divider_i: in std_logic_vector(3 downto 0);
+        data_frequency_divider_i: in std_logic_vector(3 downto 0);
         data_out_clk_o: out std_logic;
         data_out_o: out std_logic_vector(31 downto 0)
 	);
 end component top_level;
     signal clk_s: std_logic;
-    signal data_freqency_divider_s: std_logic_vector(3 downto 0);
+    signal data_frequency_divider_s: std_logic_vector(3 downto 0);
     signal data_out_clk_s: std_logic;
     signal data_out_s: std_logic_vector(31 downto 0);
 begin
 
 EUT: top_level port map (
     clk_i => clk_s,
-    data_freqency_divider_i => data_freqency_divider_s,
+    data_frequency_divider_i => data_frequency_divider_s,
     data_out_clk_o => data_out_clk_s,
     data_out_o => data_out_s
 );
@@ -46,8 +46,12 @@ end process;
 
 process is
 begin
-    data_freqency_divider_s <= "0001";
-    wait;
+    data_frequency_divider_s <= "1110";
+    wait for 150ns;
+    data_frequency_divider_s <= "0001";
+    wait for 150ns;
+    data_frequency_divider_s <= "0100";
+    wait for 150ns;
 end process;
 
 
