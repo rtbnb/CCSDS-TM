@@ -11,22 +11,21 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity header_decoder is
-port (
-    data_i: in std_logic_vector(47 downto 0);
-    is_oid_flag_o: out std_logic;
-    transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
-    spacecraft_id_o: out std_logic_vector(9 downto 0);
-    virtual_channel_id_o: out std_logic_vector(2 downto 0);
-    ocf_flag_o: out std_logic;
-    master_channel_frame_count_o: out std_logic_vector(7 downto 0);
-    virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
-    transfer_frame_secondary_header_flag_o: out std_logic;
-    snych_flag_o: out std_logic;
-    packet_order_flag_o: out std_logic;
-    segment_length_id_o: out std_logic_vector(1 downto 0);
-    first_header_pointer_o: out std_logic_vector(10 downto 0);
-);
-
+    port (
+        data_i: in std_logic_vector(47 downto 0);
+        is_oid_flag_o: out std_logic;
+        transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
+        spacecraft_id_o: out std_logic_vector(9 downto 0);
+        virtual_channel_id_o: out std_logic_vector(2 downto 0);
+        ocf_flag_o: out std_logic;
+        master_channel_frame_count_o: out std_logic_vector(7 downto 0);
+        virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
+        transfer_frame_secondary_header_flag_o: out std_logic;
+        snych_flag_o: out std_logic;
+        packet_order_flag_o: out std_logic;
+        segment_length_id_o: out std_logic_vector(1 downto 0);
+        first_header_pointer_o: out std_logic_vector(10 downto 0);
+    );
 end entity header_decoder;
 
 architecture behavioral of header_decoder is
