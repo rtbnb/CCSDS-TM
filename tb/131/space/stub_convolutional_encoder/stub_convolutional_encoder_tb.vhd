@@ -1,10 +1,10 @@
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 -- File : convolutional_encoder_tb.vhd
 -- Created : 26.11.2025
 -- Author : Lukas Reil
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for the stub convolutional encoder module.
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
