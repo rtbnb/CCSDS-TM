@@ -1,6 +1,6 @@
 ----------------------------------------------------------------
 -- File : reed_solomon_decoder_fifo.vhd
--- Created : 18.11.2025
+-- Created : 27.11.2025
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : R/S Decoder stub for MVP, just implements the FIFO for error correction
@@ -15,7 +15,7 @@ entity reed_solomon_decoder_fifo is
         clk_i   : in std_logic;
         reset_i : in std_logic;
         input_byte_i : in std_logic_vector (7 downto 0);
-        data_valid_i : out std_logic := '0';
+        data_valid_i : in std_logic := '0';
 
         data_valid_o : out std_logic;
         output_byte_o : out std_logic_vector (7 downto 0)
@@ -32,10 +32,10 @@ architecture behavioral of reed_solomon_decoder_fifo is
     CONSTANT MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
     
     
-    type reed_solomon_fifo_t is array (0 to FIFO_LENGHT) of std_logic_vector(7 downto 0);
+    type reed_solomon_fifo_t is array (0 to FIFO_LENGHT) of std_logic_vector(8 downto 0);
 
-    signal reed_solomon_fifo_r : reed_solomon_fifo_t := (others => "00000000");
-    signal fifo_out_r : std_logic_vector(7 downto 0);
+    signal reed_solomon_fifo_r : reed_solomon_fifo_t := (others => "000000000");
+    signal fifo_out_r : std_logic_vector(8 downto 0);
     signal clock_divier_count_r : integer range 0 to 255;
     
 begin
@@ -59,17 +59,19 @@ begin
 
         elsif rising_edge(clk_i) then
             -- Add clock division
+            if data_valid_i = '1' then
 
-            -- Shift fifo by one element, and append new one
-            l_fifo_shift : for k in 0 to reed_solomon_fifo_r'length-1 loop
-                if k = 0 then
-                    reed_solomon_fifo_r(k) <= input_byte_i;
-                elsif k = FIFO_LENGHT-1 then
-                    fifo_out_r <= reed_solomon_fifo_r(k);
-                else 
-                    reed_solomon_fifo_r(k) <= reed_solomon_fifo_r(k-1);
-                end if;
-            end loop l_fifo_shift;
+                -- Shift fifo by one element, and append new one
+                l_fifo_shift : for k in 0 to reed_solomon_fifo_r'length-1 loop
+                    if k = 0 then
+                        reed_solomon_fifo_r(k+1) <= data_valid_i & input_byte_i;
+                    elsif k = FIFO_LENGHT then
+                        fifo_out_r <= reed_solomon_fifo_r(k);
+                    else 
+                        reed_solomon_fifo_r(k+1) <= reed_solomon_fifo_r(k);
+                    end if;
+                end loop l_fifo_shift;
+            end if;
         end if;
     end process fifo_shift;
 
@@ -77,16 +79,20 @@ begin
     begin
         -- output values from index 0 to 223, prepare to correct error
         -- data valid flag shall be zero if not between 0 223
-
-        if clock_divier_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
-            -- Add corrected data here
-            output_byte_o <= fifo_out_r;
-            data_valid_o <= '1';
+        
+        if fifo_out_r(8) = '1' then
+            if clock_divier_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
+                -- Add corrected data here
+                output_byte_o <= fifo_out_r (7 downto 0);
+                data_valid_o <= '1';
+            else
+                output_byte_o <= "00000000";
+                data_valid_o <= '0';
+            end if;
         else
             output_byte_o <= "00000000";
             data_valid_o <= '0';
         end if;
-
         
     end process decoder_output_generator;
 
