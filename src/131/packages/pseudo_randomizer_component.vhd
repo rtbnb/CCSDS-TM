@@ -13,7 +13,7 @@ use ieee.numeric_std.all;
 
 entity pseudo_randomizer_component is 
     generic(
-        clock_divider_g : integer := 1
+        clock_divider_g : integer := 2
         );
     port(
         -- input ports 
