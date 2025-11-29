@@ -56,11 +56,11 @@ begin
       variable dataIn : integer := 0;
     
     begin
-        wait for 10 ns;
 
         dataIn:= dataIn + 1;
         input_byte_r <= STD_LOGIC_VECTOR(TO_UNSIGNED(dataIn,8));
-        
+        wait for 10 ns;
+    
         
     end process stimul;
 
