@@ -36,7 +36,8 @@ architecture behavioral of stub_convolutional_decoder_tb is
         );
     end component stub_convolutional_decoder;
 
-    signal clk_r               : std_logic := '0';
+    signal encoder_clk_r       : std_logic := '0';
+    signal decoder_clk_r       : std_logic := '0';
     signal reset_r             : std_logic := '1';
     signal data_in_r           : std_logic := '0';
     signal data_in_ready_r     : std_logic := '0';
@@ -46,13 +47,15 @@ architecture behavioral of stub_convolutional_decoder_tb is
     signal encoded_data_s        : std_logic;
     signal encoded_data_ready_s  : std_logic;
 
-    constant clk_period : time := 10 ns;
+    constant DECODER_CLK_PERIOD : time := 10 ns;
+    -- The decoder runs at 50 times the clock speed of the encoder (100 MHz vs 2 MHz)
+    constant ENCODER_CLK_PERIOD : time := 10 * 50 ns;
 
 begin
 
     dut_ce : stub_convolutional_encoder
         port map (
-            clk_i               => clk_r,
+            clk_i               => encoder_clk_r,
             reset_i             => reset_r,
             data_in_i           => data_in_r,
             data_in_ready_i     => data_in_ready_r,
@@ -62,7 +65,7 @@ begin
 
     dut_cd : stub_convolutional_decoder
         port map (
-            clk_i               => clk_r,
+            clk_i               => decoder_clk_r,
             reset_i             => reset_r,
             data_in_i           => encoded_data_s,
             data_in_ready_i     => encoded_data_ready_s,
@@ -71,13 +74,21 @@ begin
         );
     
 
-    clock_gen : process
+    decoder_clock_gen : process
     begin
-        clk_r <= '1';
-        wait for clk_period / 2;
-        clk_r <= '0';
-        wait for clk_period / 2;
-    end process clock_gen;
+        decoder_clk_r <= '1';
+        wait for DECODER_CLK_PERIOD / 2;
+        decoder_clk_r <= '0';
+        wait for DECODER_CLK_PERIOD / 2;
+    end process decoder_clock_gen;
+
+    encoder_clock_gen : process
+    begin
+        encoder_clk_r <= '1';
+        wait for ENCODER_CLK_PERIOD / 2;
+        encoder_clk_r <= '0';
+        wait for ENCODER_CLK_PERIOD / 2;
+    end process encoder_clock_gen;
 
     stimulus : process
     begin
@@ -89,34 +100,34 @@ begin
         wait for 20 ns;
 
         data_in_r <= '1';
-        wait for clk_period * 10; -- No output expected since data_in_ready_r is '0'
+        wait for ENCODER_CLK_PERIOD * 10; -- No output expected since data_in_ready_r is '0'
 
         data_in_ready_r <= '1';
-        wait for clk_period * 2; -- Inputs need to be held for two clock cycles
+        wait for ENCODER_CLK_PERIOD * 2; -- Inputs need to be held for two clock cycles
         data_in_r <= '0';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_r <= '0';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_r <= '1';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_ready_r <= '0';
-        wait for clk_period * 10;
+        wait for ENCODER_CLK_PERIOD * 10;
 
         data_in_r <= '0';
         data_in_ready_r <= '1';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_r <= '1';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_r <= '0';
-        wait for clk_period * 2;
+        wait for ENCODER_CLK_PERIOD * 2;
         data_in_ready_r <= '0';
-        wait for clk_period * 10;
+        wait for ENCODER_CLK_PERIOD * 10;
         wait;
 
         -- Expected output:
         -- ...XXX1001XXXXX010XXXX...
         -- X denotes don't care values due to input not being ready
-        -- Output ready signal should align with valid output data
+        -- Output ready signal should align with the beginning of each valid output bit
 
         
         

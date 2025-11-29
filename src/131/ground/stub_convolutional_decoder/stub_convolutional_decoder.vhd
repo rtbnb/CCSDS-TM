@@ -21,45 +21,41 @@ entity stub_convolutional_decoder is
 end entity stub_convolutional_decoder;
 
 architecture behavioral of stub_convolutional_decoder is
-    signal counter_r : std_logic := '0';
+    constant CLOCK_DIVIDER : integer := 100;
+    -- Divide by 4, because the decoder produces a bit every 100 clock cycles and the encoder produces 2 bits every 100 clock cycles.
+    -- The input gets sampled in the middle of the first transmitted bit, which is the bit, that belongs to the original data.
+    constant PHASE_OFFSET : integer := CLOCK_DIVIDER / 4;
 
     signal data_in_buffered_r : std_logic := '0';
-    signal data_out_buffered_r : std_logic := '0';
-    type ready_signal_buffer_t is array (1 downto 0) of std_logic;
-    signal data_ready_buffered_r : ready_signal_buffer_t := (others => '0');
+    signal data_out_ready_r : std_logic := '0';
 
 begin
 
-    clock_divider : process (clk_i, reset_i, data_in_ready_i)
+    data_processing : process (clk_i, reset_i)
+        variable clock_cycle_count_r : integer range 0 to CLOCK_DIVIDER := 0;
     begin
         if reset_i = '0' then
-            counter_r <= '0';
-        elsif rising_edge(clk_i) then
-            if data_in_ready_i = '1' then
-                counter_r <= not counter_r;
-            end if;
-        end if;
-    end process clock_divider;
-
-    data_processing : process (clk_i, reset_i, counter_r)
-    begin
-        if reset_i = '0' then
+            clock_cycle_count_r := 0;
             data_in_buffered_r <= '0';
-            data_out_buffered_r <= '0';
-            data_ready_buffered_r <= (others => '0');
+            data_out_ready_r <= '0';
         elsif rising_edge(clk_i) then
-            data_in_buffered_r <= data_in_i;
-            
-            if counter_r = '1' then
-                data_out_buffered_r <= data_in_buffered_r;
+            if data_in_ready_i = '0' then
+                clock_cycle_count_r := 0;
+            else
+                clock_cycle_count_r := clock_cycle_count_r + 1;
+                if clock_cycle_count_r = CLOCK_DIVIDER then
+                    clock_cycle_count_r := 0;
+                elsif clock_cycle_count_r = PHASE_OFFSET then
+                    data_in_buffered_r <= data_in_i;
+                    data_out_ready_r <= '1';
+                elsif clock_cycle_count_r = PHASE_OFFSET + 1 then
+                    data_out_ready_r <= '0';
+                end if;
             end if;
-
-            data_ready_buffered_r(0) <= data_in_ready_i;
-            data_ready_buffered_r(1) <= data_ready_buffered_r(0);
         end if;
     end process data_processing;
 
-    data_out_o       <= data_out_buffered_r;
-    data_out_ready_o <= data_ready_buffered_r(1);   
+    data_out_o       <= data_in_buffered_r;
+    data_out_ready_o <= data_out_ready_r;   
 
 end architecture behavioral;
