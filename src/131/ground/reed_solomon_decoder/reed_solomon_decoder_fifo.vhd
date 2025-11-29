@@ -41,15 +41,20 @@ architecture behavioral of reed_solomon_decoder_fifo is
 begin
 
     clock_divier : process (clk_i)
-    begin
-        if data_valid_i = '1' then
-             if clock_divier_count_r = MESSAGE_LENGHT then
+    begin        
+        if reset_i = '0' then
+
+        elsif rising_edge(clk_i) then
+            if fifo_out_r(8) = '1' then
+                 if clock_divier_count_r = MESSAGE_LENGHT then
+                    clock_divier_count_r <= 0;
+                 else
+                    clock_divier_count_r <= clock_divier_count_r + 1;
+                 end if;
+            else
                 clock_divier_count_r <= 0;
-             else
-                clock_divier_count_r <= clock_divier_count_r + 1;
-             end if;
+            end if;
         end if;
-        
     end process clock_divier;
 
     -- Handels FIFO logic, to shift data by one to simulate dalay of real decoder
@@ -62,13 +67,13 @@ begin
             if data_valid_i = '1' then
 
                 -- Shift fifo by one element, and append new one
-                l_fifo_shift : for k in 0 to reed_solomon_fifo_r'length-1 loop
+                l_fifo_shift : for k in 0 to FIFO_LENGHT loop
                     if k = 0 then
-                        reed_solomon_fifo_r(k+1) <= data_valid_i & input_byte_i;
+                        reed_solomon_fifo_r(k) <= data_valid_i & input_byte_i;
                     elsif k = FIFO_LENGHT then
-                        fifo_out_r <= reed_solomon_fifo_r(k);
+                        fifo_out_r <= reed_solomon_fifo_r(k-1);
                     else 
-                        reed_solomon_fifo_r(k+1) <= reed_solomon_fifo_r(k);
+                        reed_solomon_fifo_r(k) <= reed_solomon_fifo_r(k-1);
                     end if;
                 end loop l_fifo_shift;
             end if;
@@ -81,7 +86,7 @@ begin
         -- data valid flag shall be zero if not between 0 223
         
         if fifo_out_r(8) = '1' then
-            if clock_divier_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
+            if clock_divier_count_r < (MESSAGE_LENGHT-2*MAX_ERROR_COUNT) then
                 -- Add corrected data here
                 output_byte_o <= fifo_out_r (7 downto 0);
                 data_valid_o <= '1';
