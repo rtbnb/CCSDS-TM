@@ -34,20 +34,20 @@ architecture behavioral of synchronization_fifo_tb is
 
     component synchronization_fifo is
         generic (
-            DATA_WIDTH : integer := 8;
-            DEPTH      : integer := 16
+            data_width_g : integer := 8;
+            depth_g      : integer := 16
         );
         port (
             -- Write Interface
             wr_clk_i   : in  std_logic;
             wr_en_i    : in  std_logic;
-            wr_data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+            wr_data_i  : in  std_logic_vector(data_width_g-1 downto 0);
             full_o     : out std_logic;
 
             -- Read Interface
             rd_clk_i   : in  std_logic;
             rd_en_i    : in  std_logic;
-            rd_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+            rd_data_o  : out std_logic_vector(data_width_g-1 downto 0);
             empty_o    : out std_logic
         );
     end component synchronization_fifo;
@@ -57,8 +57,8 @@ begin
 
     fifo : synchronization_fifo
         generic map (
-            DATA_WIDTH => DATA_WIDTH,
-            DEPTH      => DEPTH
+            data_width_g => DATA_WIDTH,
+            depth_g      => DEPTH
         )
         port map (
             wr_clk_i   => wr_clk_r,
