@@ -41,28 +41,28 @@ begin
         variable data_octet_counter: integer := 0;
     begin
         if falling_edge(clk_i) and enable_i = '1' then
-            if data_octet_counter = secondary_header_data_field_width_octets_g + 1 then
+            if data_octet_counter = (secondary_header_data_field_width_octets_g + 1) then
+                secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
                 data_octet_counter := 0;
-                secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
             else 
-                data_octet_counter := data_octet_counter + 1;
                 secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
+                data_octet_counter := data_octet_counter + 1;
             end if;
         end if;
     end process read_data;
 
     -- output data field logic
     output_data_field: process(get_next_data_octet_i) is
-        variable data_octet_counter: integer := 0;
+        variable data_octet_counter_out: integer := 1;
     begin
         if rising_edge(get_next_data_octet_i) then
-            if data_octet_counter = secondary_header_data_field_width_octets_g then
+            if data_octet_counter_out = secondary_header_data_field_width_octets_g then
                 secondary_header_fully_read_o <= '1';
-                secondary_header_data_o <= secondary_header_r( ((data_octet_counter + 2) * 8) - 1 downto (data_octet_counter + 1) * 8);
-                data_octet_counter := 0;
+                secondary_header_data_o <= secondary_header_r( ((data_octet_counter_out + 1) * 8) - 1 downto (data_octet_counter_out) * 8);
+                data_octet_counter_out := 1;
             else
-                secondary_header_data_o <= secondary_header_r( ((data_octet_counter + 2) * 8) - 1 downto (data_octet_counter + 1) * 8);
-                data_octet_counter := data_octet_counter + 1;
+                secondary_header_data_o <= secondary_header_r( ((data_octet_counter_out + 1) * 8) - 1 downto (data_octet_counter_out) * 8);
+                data_octet_counter_out := data_octet_counter_out + 1;
                 secondary_header_fully_read_o <= '0';
             end if;
         end if;

@@ -9,6 +9,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use ieee.numeric_std.all;
 
 entity secondary_header_decoder_sim is
 --  Port ( );
@@ -34,7 +35,7 @@ component secondary_header_decoder is
     );
 end component secondary_header_decoder;
     signal enable_s: std_logic;
-    signal clk_s: std_logic;
+    signal clk_s: std_logic := '0';
     signal data_s: std_logic_vector(7 downto 0);
     signal reset_s: std_logic;
     signal secondary_header_data_s: std_logic_vector(7 downto 0);
@@ -61,6 +62,7 @@ begin
 
     input_data: process is
     begin
+        wait for 1000ns;
         -- Initialize signals
         enable_s <= '1';
         reset_s <= '0';
