@@ -44,7 +44,7 @@ begin
     clock_divier : process (clk_i)
     begin        
         if reset_i = '0' then
-
+            clock_divier_count_r <= 0;
         elsif rising_edge(clk_i) then
             if fifo_out_r(8) = '1' and new_data_in_fifo_r = '1' then
                  if clock_divier_count_r = MESSAGE_LENGHT then
@@ -62,7 +62,9 @@ begin
     fifo_shift : process (clk_i)
     begin
         if reset_i = '0' then
-
+            reed_solomon_fifo_r <= (others => "000000000");
+            new_data_in_fifo_r <= '0';
+            fifo_out_r <= "000000000";
         elsif rising_edge(clk_i) then
             -- Add clock division
             if data_valid_i = '1' then
@@ -88,8 +90,9 @@ begin
     begin
         -- output values from index 0 to 223, prepare to correct error
         -- data valid flag shall be zero if not between 0 223
-         if reset_i = '0' then
-
+        if reset_i = '0' then
+            data_valid_o <= '0';
+            output_byte_o <= "00000000";
         elsif rising_edge(clk_i) then
             if clock_divier_count_r < (MESSAGE_LENGHT-2*MAX_ERROR_COUNT) then
                 if fifo_out_r(8) = '1' and new_data_in_fifo_r = '1' then
