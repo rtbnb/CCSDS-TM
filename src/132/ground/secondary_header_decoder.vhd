@@ -15,15 +15,15 @@ entity secondary_header_decoder is
         secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
     );
     port(
-        enable_i: in std_logic;
+        enable_input_i: in std_logic;
+        enable_output_i: in std_logic;
+
         clk_i: in std_logic; -- data is read on falling edge of clk_i
+
         data_i: in std_logic_vector(7 downto 0);
-
-        reset_i: in std_logic; -- active low
-
         secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0'); -- data can be read on falling edge of get_next_data_octet_i
-        get_next_data_octet_i: in std_logic; -- data is valid on falling edge of get_next_data_octet_i
         secondary_header_fully_read_o: out std_logic := '0';
+
         version_o: out std_logic_vector(1 downto 0);
         length_o: out std_logic_vector(5 downto 0)
     );
@@ -40,7 +40,7 @@ begin
     read_data: process(clk_i) is
         variable data_octet_counter: integer := 0;
     begin
-        if falling_edge(clk_i) and enable_i = '1' then
+        if rising_edge(clk_i) and enable_input_i = '1' then
             if data_octet_counter = (secondary_header_data_field_width_octets_g + 1) then
                 secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
                 data_octet_counter := 0;
@@ -55,7 +55,7 @@ begin
     output_data_field: process(get_next_data_octet_i) is
         variable data_octet_counter_out: integer := 1;
     begin
-        if rising_edge(get_next_data_octet_i) then
+        if rising_edge(clk_i) and enable_output_i = '1' then
             if data_octet_counter_out = secondary_header_data_field_width_octets_g then
                 secondary_header_fully_read_o <= '1';
                 secondary_header_data_o <= secondary_header_r( ((data_octet_counter_out + 1) * 8) - 1 downto (data_octet_counter_out) * 8);
