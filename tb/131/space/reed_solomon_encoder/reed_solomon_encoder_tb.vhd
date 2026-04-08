@@ -14,7 +14,7 @@ use work.finite_field.all;
 entity reed_solomon_encoder_tb is
 end entity reed_solomon_encoder_tb;
 
-architecture bhv of reed_solomon_encoder_tb is
+architecture behavioral of reed_solomon_encoder_tb is
 
     component reed_solomon_encoder is
     port (
