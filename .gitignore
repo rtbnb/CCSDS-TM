@@ -9,3 +9,6 @@ build/example/
 build/*
 .Xil/
 
+# vivado artifacts
+ip_core/
+
