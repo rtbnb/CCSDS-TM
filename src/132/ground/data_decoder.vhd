@@ -103,7 +103,7 @@ begin
                         input_data_counter_r <= 0;
                     end if;
                 when data =>
-                    
+                    input_data_counter_r <= 0;
             end case;
         end if;
 
