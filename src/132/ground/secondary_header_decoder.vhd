@@ -12,16 +12,16 @@ use ieee.numeric_std.all;
 
 entity secondary_header_decoder is
     generic(
-        secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
+        secondary_header_data_field_width_octets_g : integer := 63
     );
     port(
         enable_input_i: in std_logic;
         enable_output_i: in std_logic;
 
-        clk_i: in std_logic; -- data is read on falling edge of clk_i
+        clk_i: in std_logic;
 
         data_i: in std_logic_vector(7 downto 0);
-        secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0'); -- data can be read on falling edge of get_next_data_octet_i
+        secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0');
         secondary_header_fully_read_o: out std_logic := '0';
 
         version_o: out std_logic_vector(1 downto 0);
