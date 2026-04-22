@@ -108,7 +108,6 @@ begin
                     packet_state_r <= data;
                 when data =>
                     if (packet_length_int(packet_len => packet_data_len_r) - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
-                        -- even number packet end
                         packet_state_r <= packet_id_low;
                         packet_data_field_octet_counter <= 0;
                     else
