@@ -20,8 +20,9 @@ entity reed_solomon_encoder is
 
         output_byte_o : out std_logic_vector (7 downto 0);
         encoder_done_flag_o : out std_logic := '0';
-        data_valid_o: out std_logic:= '0'
-        
+        data_valid_o: out std_logic:= '0';
+        read_data_fifo_o    : out std_logic := '0'
+    
     );
 end entity;
 
@@ -57,21 +58,25 @@ begin
             encoder_done_flag_o <= '0';
             output_byte_o <= "00000000";
             data_valid_o <= '0';
+            read_data_fifo_o <= '0';
 
             -- TODO: reset internal variables
             finite_field_regs_r <= (others => "00000000");
         elsif rising_edge(clk_i) then
             rising_edge_count_r <= 0;             
             --encoder_done_flag_o <= '0';
+            read_data_fifo_o <= '0';
 
             -- A byte shall be computed every 16 Clk cylces (To leave time for CC and RNG)
             if rising_edge_count_r = CLOCK_DIVISION then
                 rising_edge_count_r <= 0;
+                read_data_fifo_o <= '1';
 
                 -- Reset clk devicer count after 259 Cycles (of by one thats why 258)
                 if clock_devider_count_r = MESSAGE_LENGHT+ASM_BYTE_LENGHT-1 then
                     clock_devider_count_r <= 0; 
                     encoder_done_flag_o <= '0';
+                    read_data_fifo_o <= '0';
                 else
                     -- leave space for ASM (4 Bytes)
                     if clock_devider_count_r >= MESSAGE_LENGHT then
@@ -79,6 +84,7 @@ begin
                         encoder_done_flag_o <= '1';
                         output_byte_o <= "00000000";
                         data_valid_o <= '0';
+                        read_data_fifo_o <= '0';
                     -- Normal encoder logic
                     else
                         -- Send out 223 bytes of user data
@@ -101,21 +107,23 @@ begin
                                 gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
                                 );
                             data_valid_o <= '1';
+                            
+                            read_data_fifo_o <= '0';
                         end if;
 
-                            -- Calculate the new Values for the registers
-                            loop_register_updating : for register_index in 0 to finite_field_regs_r'length-1 loop
-                                if register_index = 0 then
-
-                                    -- There is now -1th element of the register so no addition (or a addition by zero)
-                                    finite_field_regs_r(register_index) <= gf_mult(rs_generator_poly_s(register_index), input_addition);
-                                else
-                                    -- This is the full calculation r_k(i+1) = r_(k-1)(i) + g_k * in
-                                    finite_field_regs_r(register_index) <=  gf_add(
-                                            gf_mult(rs_generator_poly_s(register_index), input_addition), 
-                                            finite_field_regs_r(register_index-1));
-                                end if;
-                            end loop loop_register_updating;
+                        -- Calculate the new Values for the registers
+                        loop_register_updating : for register_index in 0 to finite_field_regs_r'length-1 loop
+                            if register_index = 0 then
+    
+                                -- There is now -1th element of the register so no addition (or a addition by zero)
+                                finite_field_regs_r(register_index) <= gf_mult(rs_generator_poly_s(register_index), input_addition);
+                            else
+                                -- This is the full calculation r_k(i+1) = r_(k-1)(i) + g_k * in
+                                finite_field_regs_r(register_index) <=  gf_add(
+                                        gf_mult(rs_generator_poly_s(register_index), input_addition), 
+                                        finite_field_regs_r(register_index-1));
+                            end if;
+                        end loop loop_register_updating;
 
 
                     end if; 
