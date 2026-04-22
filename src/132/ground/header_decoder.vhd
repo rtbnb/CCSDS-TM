@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity header_decoder is
     port (
-        data_i: in std_logic_vector(47 downto 0);
+        header_data_i: in std_logic_vector(47 downto 0);
         is_oid_flag_o: out std_logic;
         transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
         spacecraft_id_o: out std_logic_vector(9 downto 0);
@@ -30,7 +30,7 @@ end entity header_decoder;
 
 architecture behavioral of header_decoder is
 begin
-    is_oid_flag_o <= '1' when data_i(47 downto 37) = "11111111110" else '0';
+    is_oid_flag_o <= '1' when header_data_i(47 downto 37) = "11111111110" else '0';
     transfer_frame_version_number_o <= data_i(1 downto 0);
     spacecraft_id_o <= data_i(11 downto 2);
     virtual_channel_id_o <= data_i(14 downto 12);

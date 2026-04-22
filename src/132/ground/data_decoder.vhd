@@ -30,9 +30,10 @@ architecture behavioral of data_decoder is
     constant OUTPUT_DATA_SIZE: integer := 32;
     constant INPUT_DATA_SIZE: integer := 16;
     constant PRIME_HEADER_16_BIT_MULTIPLIES: integer := 3;
+    constant TM_FRAME_SIZE: integer := 2046; -- in octets
     component header_decoder is
         port (
-            data_i: in std_logic_vector(47 downto 0);
+            header_data_i: in std_logic_vector(47 downto 0);
             is_oid_flag_o: out std_logic;
             transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
             spacecraft_id_o: out std_logic_vector(9 downto 0);
@@ -63,17 +64,17 @@ architecture behavioral of data_decoder is
     -- data
     signal prime_header_r: std_logic_vector(47 downto 0);
     signal data_r: std_logic_vector(255 downto 0); -- storage for one space packet
-    signal input_data_counter_r: integer range 0 to 1022; -- 2046 octets of a frame can be split into 1023 16Bit values
     signal is_oid_flag_s: std_logic;
     
     
-    type deserialization_state_t is (header, data);
+    type deserialization_state_t is (header, data_low_word, data_high_word);
     signal state_s: deserialization_state_t := header;
     signal data_field_size_s: integer;
+    signal data_buffer_r: std_logic_vector(31 downto 0);
     
 begin
     hd: header_decoder port map(
-        data_i => prime_header_r,
+        header_data_i => prime_header_r,
         is_oid_flag_o => is_oid_flag_s,
         transfer_frame_version_number_o => mcid_s(11 downto 10),
         spacecraft_id_o => mcid_s(9 downto 0),
@@ -91,19 +92,37 @@ begin
     tf_prime_header_o <= prime_header_r;
 
     deserialization: process(data_clk_i)
-
+    variable input_data_counter: integer range 0 to TM_FRAME_SIZE / INPUT_DATA_SIZE - 1; -- 2046 octets of a frame can be split into 1023 16Bit values
     begin
         if rising_edge(data_clk_i) then
             case state_s is
                 when header =>
-                    prime_header_r(((input_data_counter_r + 1) * INPUT_DATA_SIZE) - 1 downto input_data_counter_r * INPUT_DATA_SIZE) <= data_i(((input_data_counter_r + 1) * INPUT_DATA_SIZE) - 1 downto input_data_counter_r * INPUT_DATA_SIZE);
-                    input_data_counter_r <= input_data_counter_r + 1;
-                    if (input_data_counter_r = PRIME_HEADER_16_BIT_MULTIPLIES - 1) then
-                        state_s <= data;
-                        input_data_counter_r <= 0;
+                    prime_header_r(((input_data_counter + 1) * INPUT_DATA_SIZE) - 1 downto input_data_counter * INPUT_DATA_SIZE) <= data_i;
+                    input_data_counter <= input_data_counter + 1;
+                    if (input_data_counter = PRIME_HEADER_16_BIT_MULTIPLIES - 1) then
+                        state_s <= data_low_word;
                     end if;
-                when data =>
-                    input_data_counter_r <= 0;
+                when data_low_word =>
+                    data_clk_o <= '0';
+                    data_buffer_r(15 downto 0) <= data_i;
+                    input_data_counter <= input_data_counter + 1;
+                    if (input_data_counter >= TM_FRAME_SIZE / INPUT_DATA_SIZE - 1) then
+                        state_s <= high_word_stub;
+                        input_data_counter <= 0;
+                    else
+                        state_s <= header;
+                    end if;
+                when data_high_word =>
+                    data_clk_o <= '1';
+                    data_buffer_r(31 downto 16) <= data_i;
+                    input_data_counter <= input_data_counter + 1;
+                    if (input_data_counter >= TM_FRAME_SIZE / INPUT_DATA_SIZE - 1) then
+                        state_s <= header;
+                        input_data_counter <= 0;
+                    else
+                        state_s <= data_low_word;
+                    end if;
+                    
             end case;
         end if;
 
