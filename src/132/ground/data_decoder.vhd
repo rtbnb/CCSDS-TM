@@ -11,121 +11,106 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity data_decoder is
+    generic (
+        tm_frame_data_size_octet_g: integer := 2040;
+    );
+
     port (
         -- outputs
         data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
-        data_clk_o: out std_logic;
-        date_fully_read_o: out std_logic;
-
-        tf_prime_header_o: out std_logic_vector(47 downto 0);
+        data_valid_o: out std_logic _= '0';
+        date_fully_read_o: out std_logic := '0';
 
         -- inputs
         data_i: in std_logic_vector(15 downto 0);
-        data_clk_i: in std_logic
+        data_clk_i: in std_logic -- "16 Bit" clock
+        data_valid_i: in std_logic := '0';
     );
 end entity data_decoder;
 
 architecture behavioral of data_decoder is
-    -- TF prime header
-    constant OUTPUT_DATA_SIZE: integer := 32;
-    constant INPUT_DATA_SIZE: integer := 16;
-    constant PRIME_HEADER_16_BIT_MULTIPLIES: integer := 3;
-    constant TM_FRAME_SIZE: integer := 2046; -- in octets
-    component header_decoder is
-        port (
-            header_data_i: in std_logic_vector(47 downto 0);
-            is_oid_flag_o: out std_logic;
-            transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
-            spacecraft_id_o: out std_logic_vector(9 downto 0);
-            virtual_channel_id_o: out std_logic_vector(2 downto 0);
-            ocf_flag_o: out std_logic;
-            master_channel_frame_count_o: out std_logic_vector(7 downto 0);
-            virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
-            transfer_frame_secondary_header_flag_o: out std_logic;
-            snych_flag_o: out std_logic;
-            packet_order_flag_o: out std_logic;
-            segment_length_id_o: out std_logic_vector(1 downto 0);
-            first_header_pointer_o: out std_logic_vector(10 downto 0)
-        );
-    end component header_decoder;
-    
-    signal mcid_s: std_logic_vector(11 downto 0);
-    signal vcid_s: std_logic_vector(2 downto 0);
-    signal ocf_flag_s: std_logic;
-    signal master_channel_frame_count_s: std_logic_vector(7 downto 0);
-    signal virtual_channel_frame_count_s: std_logic_vector(7 downto 0);
-    signal secondary_header_flag_s: std_logic;
-    signal synch_flag_s: std_logic;
-    signal packet_order_flag_s: std_logic;
-    signal segment_length_id_s: std_logic_vector(1 downto 0);
-    signal first_header_pointer_s: std_logic_vector(10 downto 0);
-    -- TF secondary header
+    -- constants
+    constant OUTPUT_DATA_SIZE_OCTET: integer := 4;
+    constant INPUT_DATA_SIZE_OCTET: integer := 2;
+    constant PACKET_MAX_SIZE_OCTET: integer := 256;
 
     -- data
-    signal prime_header_r: std_logic_vector(47 downto 0);
-    signal data_r: std_logic_vector(255 downto 0); -- storage for one space packet
-    signal is_oid_flag_s: std_logic;
+    -- signal data_one_r: std_logic_vector(PACKET_MAX_SIZE_OCTET - 1 downto 0); -- storage for one space packet
+    -- signal data_two_r: std_logic_vector(PACKET_MAX_SIZE_OCTET - 1 downto 0);
+    -- type data_select_enum_t is (data_one, data_two);
+    -- signal data_buffer_select_r: data_select_enum_t := data_one;
+    type packet_state_t is (packet_id, packet_sequence_control, packet_len, data, packet_id_odd, packet_sequence_control_odd, packet_len_odd);
+    signal packet_state_r: packet_state_t := packet_id;
+    signal packet_header_r: std_logic_vector((6 * 8) - 1 downto 0) := (others => '0');
     
     
-    type deserialization_state_t is (header, data_low_word, data_high_word);
-    signal state_s: deserialization_state_t := header;
-    signal data_field_size_s: integer;
+    type deserialization_state_t is (data_low_word, data_high_word);
+    signal state_s: deserialization_state_t := data_low_word;
     signal data_buffer_r: std_logic_vector(31 downto 0);
+    signal packet_size_octet_r: integer range 1 to PACKET_MAX_SIZE_OCTET;
+    signal packet_valid_r: std_logic := '1';
+    signal packet_apid_r: std_logic_vector(10 downto 0);
     
-begin
-    hd: header_decoder port map(
-        header_data_i => prime_header_r,
-        is_oid_flag_o => is_oid_flag_s,
-        transfer_frame_version_number_o => mcid_s(11 downto 10),
-        spacecraft_id_o => mcid_s(9 downto 0),
-        virtual_channel_id_o => vcid_s,
-        ocf_flag_o => ocf_flag_s,
-        master_channel_frame_count_o => master_channel_frame_count_s,
-        virtual_channel_frame_count_o => virtual_channel_frame_count_s,
-        transfer_frame_secondary_header_flag_o => secondary_header_flag_s,
-        snych_flag_o => synch_flag_s,
-        packet_order_flag_o => packet_order_flag_s,
-        segment_length_id_o => segment_length_id_s,
-        first_header_pointer_o => first_header_pointer_s
-    );
+begin 
 
-    tf_prime_header_o <= prime_header_r;
-
-    deserialization: process(data_clk_i)
-    variable input_data_counter: integer range 0 to TM_FRAME_SIZE / INPUT_DATA_SIZE - 1; -- 2046 octets of a frame can be split into 1023 16Bit values
+    packet_header: process(data_clk_i)
+    variable packet_data_field_octet_counter: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
+    variable packet_odd_size_field: std_logic_vector(15 downto 0);
     begin
         if rising_edge(data_clk_i) then
-            case state_s is
-                when header =>
-                    prime_header_r(((input_data_counter + 1) * INPUT_DATA_SIZE) - 1 downto input_data_counter * INPUT_DATA_SIZE) <= data_i;
-                    input_data_counter <= input_data_counter + 1;
-                    if (input_data_counter = PRIME_HEADER_16_BIT_MULTIPLIES - 1) then
-                        state_s <= data_low_word;
-                    end if;
-                when data_low_word =>
-                    data_clk_o <= '0';
-                    data_buffer_r(15 downto 0) <= data_i;
-                    input_data_counter <= input_data_counter + 1;
-                    if (input_data_counter >= TM_FRAME_SIZE / INPUT_DATA_SIZE - 1) then
-                        state_s <= high_word_stub;
-                        input_data_counter <= 0;
+            case packet_state_r is
+                when packet_id =>
+                    packet_apid_r <= data_i(15 downto 5);
+                    packet_state_r <= packet_sequence_control;
+                when packet_sequence_control =>
+                    packet_state_r <= packet_len;
+                when packet_len =>
+                    packet_size_octet_r <= to_integer(unsigned(data_i)) + 1; -- value of 0 is a data field size of 1
+                    packet_state_r <= data;
+                when data =>
+                    if (packet_size_octet_r - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
+                        -- even number packet end
+                        packet_state_r <= packet_id;
+                        packet_data_field_octet_counter <= 0;
+                    elsif (packet_size_octet_r - packet_data_field_octet_counter) = (INPUT_DATA_SIZE_OCTET - 1) then
+                        -- odd number packet end
+                        packet_apid_r(2 downto 0) <= data_i(15 downto 13);
+                        packet_data_field_octet_counter <= 0;
                     else
-                        state_s <= header;
+                        packet_data_field_octet_counter <= packet_data_field_octet_counter + INPUT_DATA_SIZE_OCTET;
                     end if;
-                when data_high_word =>
-                    data_clk_o <= '1';
-                    data_buffer_r(31 downto 16) <= data_i;
-                    input_data_counter <= input_data_counter + 1;
-                    if (input_data_counter >= TM_FRAME_SIZE / INPUT_DATA_SIZE - 1) then
-                        state_s <= header;
-                        input_data_counter <= 0;
-                    else
-                        state_s <= data_low_word;
-                    end if;
-                    
+                when packet_id_odd =>
+                    packet_apid_r(10 downto 3) <= data_i(7 downto 0);
+                    packet_state_r <= packet_sequence_control_odd;
+                when packet_sequence_control_odd =>
+                    packet_odd_size_field(7 downto 0) <= data_i(15 downto 8);
+                when packet_len_odd =>
+                    packet_size_octet_r <= to_integer(unsigned(packet_odd_size_field(7 downto 0) & data_i(7 downto 0))) + 1;
+                    packet_data_field_octet_counter <= 1;
+                    packet_state_r <= data;
             end case;
         end if;
+    end process packet_header;
 
-    end process deserialization;
+    with packet_apid_r select packet_valid_r <=
+        '0' when '11111111111',
+        '1' when others;
+
+    data_output: process(data_clk_i, packet_valid_r)
+    begin
+        if rising_edge(data_clk_i) then
+            if packet_valid_r then
+                case state_s is
+                    when data_low_word =>
+                        data_valid_o <= '0';
+                        data_buffer_r(15 downto 0) <= data_i;
+                    when data_high_word =>
+                        data_valid_o <= '1';
+                        data_buffer_r(31 downto 16) <= data_i;
+                end case;
+            end if;
+        end if;
+
+    end process data_output;
 
 end architecture behavioral;
