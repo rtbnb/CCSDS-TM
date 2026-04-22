@@ -74,6 +74,7 @@ begin
                         packet_data_field_octet_counter <= 0;
                     elsif (packet_size_octet_r - packet_data_field_octet_counter) = (INPUT_DATA_SIZE_OCTET - 1) then
                         -- odd number packet end
+                        packet_state_r <= packet_id_odd;
                         packet_apid_r(2 downto 0) <= data_i(15 downto 13);
                         packet_data_field_octet_counter <= 0;
                     else
@@ -108,6 +109,8 @@ begin
                         data_valid_o <= '1';
                         data_buffer_r(31 downto 16) <= data_i;
                 end case;
+            else
+                data_valid_o <= '0';
             end if;
         end if;
 
