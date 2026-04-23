@@ -24,7 +24,7 @@ entity header_decoder is
         snych_flag_o: out std_logic;
         packet_order_flag_o: out std_logic;
         segment_length_id_o: out std_logic_vector(1 downto 0);
-        first_header_pointer_o: out std_logic_vector(10 downto 0);
+        first_header_pointer_o: out std_logic_vector(10 downto 0)
     );
 end entity header_decoder;
 

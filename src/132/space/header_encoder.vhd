@@ -23,6 +23,7 @@ entity header_encoder is
         packet_order_flag_i: in std_logic;
         segment_length_id_i: in std_logic_vector(1 downto 0);
         first_header_pointer_i: in std_logic_vector(10 downto 0);
+        is_oid_flag_i: in std_logic;
         header_data_o: out std_logic_vector(47 downto 0)
 	);
 end entity header_encoder;
@@ -39,5 +40,5 @@ begin
     header_data_o(33) <= snych_flag_i;
     header_data_o(34) <= packet_order_flag_i;
     header_data_o(36 downto 35) <= segment_length_id_i;
-    header_data_o(47 downto 37) <= first_header_pointer_i;
+    header_data_o(47 downto 37) <= first_header_pointer_i when is_oid_flag_i = '0' else "11111111110";
 end architecture behavioral;
