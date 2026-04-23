@@ -106,7 +106,7 @@ begin
                     -- Reset clk devicer count after 259 Cycles (of by one thats why 258)
                     if clock_devider_count_r = MESSAGE_LENGHT+ASM_BYTE_LENGHT-1 then
                         clock_devider_count_r <= 0; 
-                        encoder_done_flag_o <= '0';
+                        encoder_done_flag_o <= '1';
                         read_next_value_r <= '1';
                         output_byte_o <= "00000000";
                     else
@@ -119,6 +119,8 @@ begin
                             read_next_value_r <= '0';
                         -- Normal encoder logic
                         else
+                            encoder_done_flag_o <= '0';
+                            
                             -- Send out 223 bytes of user data
                             if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
                                 -- Encoder Message Logic
