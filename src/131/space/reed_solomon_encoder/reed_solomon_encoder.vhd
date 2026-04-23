@@ -31,6 +31,8 @@ architecture behavioral of reed_solomon_encoder is
 
     signal clock_devider_count_r : integer range 0 to 258 := 0;
     signal rising_edge_count_r : integer range 0 to 15 := 1;
+    signal read_next_value_r : std_logic := '0';
+    signal first_value_done_r : std_logic := '0';
     
     signal finite_field_regs_r : finite_field_array_t := (others => "00000000");
     signal rs_generator_poly_s : finite_field_array_t := (x"01",x"5B",x"7F",x"56",
@@ -59,6 +61,7 @@ begin
             output_byte_o <= "00000000";
             data_valid_o <= '0';
             read_data_fifo_o <= '0';
+            first_value_done_r <= '0';
 
             -- TODO: reset internal variables
             finite_field_regs_r <= (others => "00000000");
@@ -66,73 +69,100 @@ begin
             rising_edge_count_r <= 0;             
             --encoder_done_flag_o <= '0';
             read_data_fifo_o <= '0';
+            
+            -- Check if R/S Requieres new data if so produce rising edge on read fifo line to enable fifo reading
+            if rising_edge_count_r = CLOCK_DIVISION-2 then
+                if read_next_value_r = '1' or first_value_done_r = '0' then
+                    read_data_fifo_o <= '1';
+                end if;
+                
+                if first_value_done_r = '0' then
+                    first_value_done_r <= '1';
+                    clock_devider_count_r <= 0;
+            
+                end if;
+            end if;
+            
+            -- Falling edge of read data fifo with one clk offset to just read a singular value
+            if rising_edge_count_r = CLOCK_DIVISION-1 then
+                read_data_fifo_o <= '0';
+            end if;
 
             -- A byte shall be computed every 16 Clk cylces (To leave time for CC and RNG)
             if rising_edge_count_r = CLOCK_DIVISION then
                 rising_edge_count_r <= 0;
-                read_data_fifo_o <= '1';
-
-                -- Reset clk devicer count after 259 Cycles (of by one thats why 258)
-                if clock_devider_count_r = MESSAGE_LENGHT+ASM_BYTE_LENGHT-1 then
-                    clock_devider_count_r <= 0; 
-                    encoder_done_flag_o <= '0';
-                    read_data_fifo_o <= '0';
+                read_next_value_r <= '1';
+                read_data_fifo_o <= '0';
+                
+                if first_value_done_r = '0' then
+                    
                 else
-                    -- leave space for ASM (4 Bytes)
-                    if clock_devider_count_r >= MESSAGE_LENGHT then
-                        -- Encoder Done Flag, wait for 32 Bit for ASM data    
-                        encoder_done_flag_o <= '1';
-                        output_byte_o <= "00000000";
-                        data_valid_o <= '0';
-                        read_data_fifo_o <= '0';
-                    -- Normal encoder logic
+                
+                
+
+                    -- Reset clk devicer count after 259 Cycles (of by one thats why 258)
+                    if clock_devider_count_r = MESSAGE_LENGHT+ASM_BYTE_LENGHT-1 then
+                        clock_devider_count_r <= 0; 
+                        encoder_done_flag_o <= '0';
+                        read_next_value_r <= '0';
                     else
-                        -- Send out 223 bytes of user data
-                        if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
-                            -- Encoder Message Logic
-                            input_addition:= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
-                            input_addition:= gf_add(
-                                DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
-                                finite_field_regs_r(MAX_ERROR_COUNT*2-1)
-                            );
-                            
-                            output_byte_o <= input_byte_i;
-                            data_valid_o <= '1';
+                        -- leave space for ASM (4 Bytes)
+                        if clock_devider_count_r >= MESSAGE_LENGHT then
+                            -- Encoder Done Flag, wait for 32 Bit for ASM data    
+                            encoder_done_flag_o <= '1';
+                            output_byte_o <= "00000000";
+                            data_valid_o <= '0';
+                            read_next_value_r <= '0';
+                        -- Normal encoder logic
                         else
-                            -- Adding Parity sympols and zeroing the input value
-                            input_addition := "00000000";
-                            
-                            -- Output paritiy check sympols
-                            output_byte_o <= CONVENTIONAL_TO_DUAL(
-                                gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
+                            -- Send out 223 bytes of user data
+                            if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
+                                -- Encoder Message Logic
+                                input_addition:= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
+                                input_addition:= gf_add(
+                                    DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
+                                    finite_field_regs_r(MAX_ERROR_COUNT*2-1)
                                 );
-                            data_valid_o <= '1';
-                            
-                            read_data_fifo_o <= '0';
-                        end if;
-
-                        -- Calculate the new Values for the registers
-                        loop_register_updating : for register_index in 0 to finite_field_regs_r'length-1 loop
-                            if register_index = 0 then
-    
-                                -- There is now -1th element of the register so no addition (or a addition by zero)
-                                finite_field_regs_r(register_index) <= gf_mult(rs_generator_poly_s(register_index), input_addition);
+                                
+                                output_byte_o <= input_byte_i;
+                                data_valid_o <= '1';
                             else
-                                -- This is the full calculation r_k(i+1) = r_(k-1)(i) + g_k * in
-                                finite_field_regs_r(register_index) <=  gf_add(
-                                        gf_mult(rs_generator_poly_s(register_index), input_addition), 
-                                        finite_field_regs_r(register_index-1));
+                                -- Adding Parity sympols and zeroing the input value
+                                input_addition := "00000000";
+                                
+                                -- Output paritiy check sympols
+                                output_byte_o <= CONVENTIONAL_TO_DUAL(
+                                    gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
+                                    );
+                                data_valid_o <= '1';
+                                
+                                read_next_value_r <= '0';
                             end if;
-                        end loop loop_register_updating;
-
-
-                    end if; 
-                    clock_devider_count_r <= clock_devider_count_r + 1;
+    
+                            -- Calculate the new Values for the registers
+                            loop_register_updating : for register_index in 0 to finite_field_regs_r'length-1 loop
+                                if register_index = 0 then
+        
+                                    -- There is now -1th element of the register so no addition (or a addition by zero)
+                                    finite_field_regs_r(register_index) <= gf_mult(rs_generator_poly_s(register_index), input_addition);
+                                else
+                                    -- This is the full calculation r_k(i+1) = r_(k-1)(i) + g_k * in
+                                    finite_field_regs_r(register_index) <=  gf_add(
+                                            gf_mult(rs_generator_poly_s(register_index), input_addition), 
+                                            finite_field_regs_r(register_index-1));
+                                end if;
+                            end loop loop_register_updating;
+    
+    
+                        end if; 
+                        clock_devider_count_r <= clock_devider_count_r + 1;
+                    end if;
                 end if;
-            else
-                rising_edge_count_r <= rising_edge_count_r + 1;
-                data_valid_o <= '0';
-            end if;
+                
+                else
+                    rising_edge_count_r <= rising_edge_count_r + 1;
+                    data_valid_o <= '0';
+                end if;              
         end if;
         
     end process reed_solomon_encoder;
