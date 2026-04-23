@@ -17,8 +17,9 @@ entity reed_solomon_encoder is
         clk_i   : in std_logic;
         reset_i : in std_logic;
         input_byte_i : in std_logic_vector (7 downto 0);
+        fifo_empty_i: in std_logic := '0';
 
-        output_byte_o : out std_logic_vector (7 downto 0);
+        output_byte_o : out std_logic_vector (7 downto 0) := (others => '0');
         encoder_done_flag_o : out std_logic := '0';
         data_valid_o: out std_logic:= '0';
         read_data_fifo_o    : out std_logic := '0'
@@ -33,6 +34,7 @@ architecture behavioral of reed_solomon_encoder is
     signal rising_edge_count_r : integer range 0 to 15 := 1;
     signal read_next_value_r : std_logic := '0';
     signal first_value_done_r : std_logic := '0';
+    signal fifo_empty_r : std_logic := '0';
     
     signal finite_field_regs_r : finite_field_array_t := (others => "00000000");
     signal rs_generator_poly_s : finite_field_array_t := (x"01",x"5B",x"7F",x"56",
@@ -74,6 +76,7 @@ begin
             if rising_edge_count_r = CLOCK_DIVISION-2 then
                 if read_next_value_r = '1' or first_value_done_r = '0' then
                     read_data_fifo_o <= '1';
+                    fifo_empty_r <= fifo_empty_i;
                 end if;
                 
                 if first_value_done_r = '0' then
@@ -94,7 +97,7 @@ begin
                 read_next_value_r <= '1';
                 read_data_fifo_o <= '0';
                 
-                if first_value_done_r = '0' then
+                if first_value_done_r = '0' or fifo_empty_r = '1' then
                     
                 else
                 
@@ -104,7 +107,8 @@ begin
                     if clock_devider_count_r = MESSAGE_LENGHT+ASM_BYTE_LENGHT-1 then
                         clock_devider_count_r <= 0; 
                         encoder_done_flag_o <= '0';
-                        read_next_value_r <= '0';
+                        read_next_value_r <= '1';
+                        output_byte_o <= "00000000";
                     else
                         -- leave space for ASM (4 Bytes)
                         if clock_devider_count_r >= MESSAGE_LENGHT then
@@ -126,6 +130,10 @@ begin
                                 
                                 output_byte_o <= input_byte_i;
                                 data_valid_o <= '1';
+                                
+                                if (clock_devider_count_r = MESSAGE_LENGHT-2*MAX_ERROR_COUNT-1) then
+                                    read_next_value_r <= '0';
+                                end if;
                             else
                                 -- Adding Parity sympols and zeroing the input value
                                 input_addition := "00000000";
