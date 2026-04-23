@@ -25,6 +25,7 @@ entity data_decoder is
         data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
         data_valid_i: in std_logic := '0'
+        tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
     );
 end entity data_decoder;
 
@@ -35,10 +36,6 @@ architecture behavioral of data_decoder is
     constant PACKET_MAX_SIZE_OCTET: integer := 256;
 
     -- data
-    -- signal data_one_r: std_logic_vector(PACKET_MAX_SIZE_OCTET - 1 downto 0); -- storage for one space packet
-    -- signal data_two_r: std_logic_vector(PACKET_MAX_SIZE_OCTET - 1 downto 0);
-    -- type data_select_enum_t is (data_one, data_two);
-    -- signal data_buffer_select_r: data_select_enum_t := data_one;
     type packet_state_t is (packet_id_low, packet_id_high, packet_sequence_control_low, packet_sequence_control_high, packet_len_low, packet_len_high, data);
     signal packet_state_r: packet_state_t := packet_id_low;
     signal packet_header_r: std_logic_vector((6 * 8) - 1 downto 0) := (others => '0');
@@ -54,11 +51,11 @@ architecture behavioral of data_decoder is
     signal packet_apid_r: std_logic_vector(10 downto 0);
     signal packet_apid_valid_r: std_logic := '0';
 
-    type octet_extraction_state_t is (low_octet, high_octet);
-    signal octet_extraction_state_r: octet_extraction_state_t := low_octet;
-
     signal previous_octet_r: std_logic_vector(7 downto 0);
     signal previous_octet_from_fourth_r: std_logic_vector(7 downto 0);
+
+    signal tm_data_field_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g - 1 := 0;
+    signal is_packet_extraction_r: std_logic := '0';
 
     function packet_length_int(packet_len: std_logic_vector(15 downto 0)) return integer is variable packet_len_int: integer range 1 to PACKET_MAX_SIZE_OCTET;
     begin
@@ -71,12 +68,15 @@ begin
     variable packet_data_field_octet_counter: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
     begin
         if rising_edge(clk_i) then
+            tm_data_field_octet_counter_r <= tm_data_field_octet_counter_r + 1;
             case packet_state_r is
                 when packet_id_low =>
-                    packet_apid_valid_r <= '0';
-                    packet_apid_r(2 downto 0) <= data_i(7 downto 5);
-                    previous_octet_r <= data_i;
-                    packet_state_r <= packet_id_high;
+                    if tm_data_field_octet_counter_r >= tm_frame_first_header_pointer_i then
+                        packet_apid_valid_r <= '0';
+                        packet_apid_r(2 downto 0) <= data_i(7 downto 5);
+                        previous_octet_r <= data_i;
+                        packet_state_r <= packet_id_high;
+                    end if;
                 when packet_id_high =>
                     packet_apid_r(10 downto 3) <= data_i;
                     packet_state_r <= packet_sequence_control_low;
@@ -100,23 +100,15 @@ begin
                         packet_state_r <= data;
                     end if;
             end case;
+            if tm_data_field_octet_counter_r = tm_frame_data_size_octet_g - 1 then 
+                tm_data_field_octet_counter_r <= 0;
+            end if;
         end if;
     end process packet_header;
 
     packet_valid_r <= '0' when (packet_apid_valid_r = '1') and (packet_apid_r = "11111111111") else
                       '1' when (packet_apid_valid_r = '1') else
                       '0';
-
-    --packet_valid_update: process (packet_apid_r, packet_apid_valid_r)
-    --begin
-    --    if packet_apid_valid_r = '1' then
-    --        if packet_apid_r = "11111111111" then
-    --            packet_valid_r <= '0';
-    --        else
-    --            packet_valid_r <= '1';
-    --        end if;
-    --    end if;
-    --end process packet_valid_update;
 
     data_output: process(clk_i, packet_valid_r, packet_last_cycle_valid_r)
     begin
