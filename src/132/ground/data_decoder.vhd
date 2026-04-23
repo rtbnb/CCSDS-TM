@@ -19,10 +19,10 @@ entity data_decoder is
         -- outputs
         data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
         data_valid_o: out std_logic := '0';
-        date_fully_read_o: out std_logic := '0';
+        data_fully_read_o: out std_logic := '0';
 
         -- inputs
-        data_i: in std_logic_vector(15 downto 0);
+        data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
         data_valid_i: in std_logic := '0'
     );
@@ -44,7 +44,7 @@ architecture behavioral of data_decoder is
     signal packet_header_r: std_logic_vector((6 * 8) - 1 downto 0) := (others => '0');
     
     
-    type deserialization_state_t is (data_first_octet, data_second_octet, data_third_octet, data_fourth_octet);
+    type deserialization_state_t is (data_first_octet, data_second_octet, data_third_octet, data_fourth_octet, data_first_octet_previous_add);
     signal state_r: deserialization_state_t := data_first_octet;
     signal data_buffer_r: std_logic_vector(31 downto 0);
     signal packet_data_len_r: std_logic_vector(15 downto 0);
@@ -56,9 +56,9 @@ architecture behavioral of data_decoder is
 
     type octet_extraction_state_t is (low_octet, high_octet);
     signal octet_extraction_state_r: octet_extraction_state_t := low_octet;
-    signal current_octet_r: std_logic_vector(7 downto 0);
 
     signal previous_octet_r: std_logic_vector(7 downto 0);
+    signal previous_octet_from_fourth_r: std_logic_vector(7 downto 0);
 
     function packet_length_int(packet_len: std_logic_vector(15 downto 0)) return integer is variable packet_len_int: integer range 1 to PACKET_MAX_SIZE_OCTET;
     begin
@@ -67,33 +67,18 @@ architecture behavioral of data_decoder is
     end function;
     
 begin
-    octet_extraction: process(clk_i)
-    begin
-        if rising_edge(clk_i) then 
-            case octet_extraction_state_r is
-                when low_octet =>
-                    current_octet_r <= data_i(7 downto 0);
-                    octet_extraction_state_r <= high_octet;
-                when high_octet =>
-                    current_octet_r <= data_i(15 downto 0);
-                    octet_extraction_state_r <= low_octet;
-            end case;
-        end if;
-    end process octet_extraction;
-
     packet_header: process(clk_i)
     variable packet_data_field_octet_counter: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
-    variable packet_odd_size_field: std_logic_vector(15 downto 0);
     begin
         if rising_edge(clk_i) then
             case packet_state_r is
                 when packet_id_low =>
                     packet_apid_valid_r <= '0';
-                    packet_apid_r(2 downto 0) <= current_octet_r(7 downto 5);
-                    previous_octet_r <= current_octet_r;
+                    packet_apid_r(2 downto 0) <= data_i(7 downto 5);
+                    previous_octet_r <= data_i;
                     packet_state_r <= packet_id_high;
                 when packet_id_high =>
-                    packet_apid_r(10 downto 3) <= current_octet_r;
+                    packet_apid_r(10 downto 3) <= data_i;
                     packet_state_r <= packet_sequence_control_low;
                     packet_apid_valid_r <= '1';
                 when packet_sequence_control_low =>
@@ -101,10 +86,10 @@ begin
                 when packet_sequence_control_high =>
                     packet_state_r <= packet_len_low;
                 when packet_len_low =>
-                    packet_data_len_r(7 downto 0) <= current_octet_r;
+                    packet_data_len_r(15 downto 8) <= data_i;
                     packet_state_r <= packet_len_high;
                 when packet_len_high =>
-                    packet_data_len_r(15 downto 8) <= current_octet_r;
+                    packet_data_len_r(7 downto 0) <= data_i;
                     packet_state_r <= data;
                 when data =>
                     if (packet_length_int(packet_len => packet_data_len_r) - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
@@ -118,20 +103,22 @@ begin
         end if;
     end process packet_header;
 
-    packet_valid_update: process (packet_apid_r, packet_apid_valid_r)
-    begin
-        if packet_apid_valid_r = '1' then
-            if packet_apid_r = "11111111111" then
-                packet_valid_r <= '0';
-            else
-                packet_valid_r <= '1';
-            end if;
-        else
-            
-        end if;
-    end process packet_valid_update;
+    packet_valid_r <= '0' when (packet_apid_valid_r = '1') and (packet_apid_r = "11111111111") else
+                      '1' when (packet_apid_valid_r = '1') else
+                      '0';
 
-    data_output: process(clk_i, packet_valid_r)
+    --packet_valid_update: process (packet_apid_r, packet_apid_valid_r)
+    --begin
+    --    if packet_apid_valid_r = '1' then
+    --        if packet_apid_r = "11111111111" then
+    --            packet_valid_r <= '0';
+    --        else
+    --            packet_valid_r <= '1';
+    --        end if;
+    --    end if;
+    --end process packet_valid_update;
+
+    data_output: process(clk_i, packet_valid_r, packet_last_cycle_valid_r)
     begin
         if rising_edge(clk_i) then
             if packet_valid_r = '1' then
@@ -141,39 +128,48 @@ begin
                         when data_first_octet =>
                             data_valid_o <= '0';
                             data_buffer_r(7 downto 0) <= previous_octet_r;
-                            data_buffer_r(15 downto 8) <= current_octet_r;
+                            data_buffer_r(15 downto 8) <= data_i;
                             state_r <= data_third_octet;
                         when data_second_octet =>
                             data_buffer_r(15 downto 8) <= previous_octet_r;
-                            data_buffer_r(23 downto 16) <= current_octet_r;
+                            data_buffer_r(23 downto 16) <= data_i;
                             state_r <= data_fourth_octet;
                         when data_third_octet =>
                             data_buffer_r(23 downto 16) <= previous_octet_r;
-                            data_buffer_r(31 downto 24) <= current_octet_r;
+                            data_buffer_r(31 downto 24) <= data_i;
                             state_r <= data_first_octet;
                         when data_fourth_octet =>
                             data_valid_o <= '1';
                             data_buffer_r(31 downto 24) <= previous_octet_r;
-                            previous_octet_r <= current_octet_r;
-                            state_r <= data_first_octet;
+                            previous_octet_from_fourth_r <= data_i;
+                            state_r <= data_first_octet_previous_add;
                             packet_last_cycle_valid_r <= '0';
+                        when data_first_octet_previous_add =>
+                            data_valid_o <= '0';
+                            data_buffer_r(7 downto 0) <= previous_octet_from_fourth_r;
+                            data_buffer_r(15 downto 8) <= data_i;
+                            state_r <= data_third_octet;
                     end case;
                 else
                     case state_r is
                         when data_first_octet =>
                             data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= current_octet_r;
+                            data_buffer_r(7 downto 0) <= data_i;
                             state_r <= data_second_octet;
                         when data_second_octet =>
-                            data_buffer_r(15 downto 8) <= current_octet_r;
+                            data_buffer_r(15 downto 8) <= data_i;
                             state_r <= data_third_octet;
                         when data_third_octet =>
-                            data_buffer_r(23 downto 16) <= current_octet_r;
+                            data_buffer_r(23 downto 16) <= data_i;
                             state_r <= data_fourth_octet;
                         when data_fourth_octet =>
                             data_valid_o <= '1';
-                            data_buffer_r(31 downto 24) <= current_octet_r;
+                            data_buffer_r(31 downto 24) <= data_i;
                             state_r <= data_first_octet;
+                        when data_first_octet_previous_add =>
+                            data_valid_o <= '0';
+                            data_buffer_r(7 downto 0) <= data_i;
+                            state_r <= data_second_octet;
                     end case;
                     packet_last_cycle_valid_r <= '1';
                 end if;
@@ -182,7 +178,8 @@ begin
                 data_valid_o <= '0';
             end if;
         end if;
-
     end process data_output;
+
+    data_o <= data_buffer_r;
 
 end architecture behavioral;
