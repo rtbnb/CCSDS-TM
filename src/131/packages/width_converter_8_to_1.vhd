@@ -99,9 +99,9 @@ begin
                 else
                     if data_valid_working_r = '1' then
                     
-                    data_valid_o <= '0';
+                        data_valid_o <= '1';
                     else
-                    data_valid_o <= '0';
+                        data_valid_o <= '0';
                     
                     end if;
                  end if;
