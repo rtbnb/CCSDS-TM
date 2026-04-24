@@ -24,8 +24,8 @@ entity data_decoder is
         -- inputs
         data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
-        data_valid_i: in std_logic := '0'
-        tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+        data_valid_i: in std_logic := '0';
+        tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0')
     );
 end entity data_decoder;
 
@@ -70,40 +70,42 @@ begin
     variable packet_data_field_octet_counter: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
     begin
         if rising_edge(clk_i) then
-            tm_data_field_octet_counter_r <= tm_data_field_octet_counter_r + 1;
-            case packet_state_r is
-                when packet_id_low =>
-                    if tm_data_field_octet_counter_r >= tm_frame_first_header_pointer_i then
-                        packet_apid_valid_r <= '0';
-                        packet_apid_r(2 downto 0) <= data_i(7 downto 5);
-                        previous_octet_r <= data_i;
-                        packet_state_r <= packet_id_high;
-                    end if;
-                when packet_id_high =>
-                    packet_apid_r(10 downto 3) <= data_i;
-                    packet_state_r <= packet_sequence_control_low;
-                    packet_apid_valid_r <= '1';
-                when packet_sequence_control_low =>
-                    packet_state_r <= packet_sequence_control_high;
-                when packet_sequence_control_high =>
-                    packet_state_r <= packet_len_low;
-                when packet_len_low =>
-                    packet_data_len_r(15 downto 8) <= data_i;
-                    packet_state_r <= packet_len_high;
-                when packet_len_high =>
-                    packet_data_len_r(7 downto 0) <= data_i;
-                    packet_state_r <= data;
-                when data =>
-                    if (packet_length_int(packet_len => packet_data_len_r) - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
-                        packet_state_r <= packet_id_low;
-                        packet_data_field_octet_counter := 0;
-                    else
-                        packet_data_field_octet_counter := packet_data_field_octet_counter + 1;
+            if data_valid_i = '1' then
+                tm_data_field_octet_counter_r <= tm_data_field_octet_counter_r + 1;
+                case packet_state_r is
+                    when packet_id_low =>
+                        if tm_data_field_octet_counter_r >= to_integer(unsigned(tm_frame_first_header_pointer_i)) then
+                            packet_apid_valid_r <= '0';
+                            packet_apid_r(2 downto 0) <= data_i(7 downto 5);
+                            previous_octet_r <= data_i;
+                            packet_state_r <= packet_id_high;
+                        end if;
+                    when packet_id_high =>
+                        packet_apid_r(10 downto 3) <= data_i;
+                        packet_state_r <= packet_sequence_control_low;
+                        packet_apid_valid_r <= '1';
+                    when packet_sequence_control_low =>
+                        packet_state_r <= packet_sequence_control_high;
+                    when packet_sequence_control_high =>
+                        packet_state_r <= packet_len_low;
+                    when packet_len_low =>
+                        packet_data_len_r(15 downto 8) <= data_i;
+                        packet_state_r <= packet_len_high;
+                    when packet_len_high =>
+                        packet_data_len_r(7 downto 0) <= data_i;
                         packet_state_r <= data;
-                    end if;
-            end case;
-            if tm_data_field_octet_counter_r = tm_frame_data_size_octet_g - 1 then 
-                tm_data_field_octet_counter_r <= 0;
+                    when data =>
+                        if (packet_length_int(packet_len => packet_data_len_r) - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
+                            packet_state_r <= packet_id_low;
+                            packet_data_field_octet_counter := 0;
+                        else
+                            packet_data_field_octet_counter := packet_data_field_octet_counter + 1;
+                            packet_state_r <= data;
+                        end if;
+                end case;
+                if tm_data_field_octet_counter_r = tm_frame_data_size_octet_g - 1 then 
+                    tm_data_field_octet_counter_r <= 0;
+                end if;
             end if;
         end if;
     end process packet_header;
