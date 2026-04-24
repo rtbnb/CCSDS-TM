@@ -25,7 +25,7 @@ architecture behavioral of secondary_header_sim is
             length_i : in std_logic_vector(5 downto 0);
             data_field_i : in std_logic_vector(7 downto 0);
             secondary_header_o : out std_logic_vector(7 downto 0) := (others => '0');
-            secondary_header_fully_read_o : out std_logic := '0'; -- high in the clk cycle when the last byte is read
+            secondary_header_fully_read_o : out std_logic := '0';
             secondary_header_valid_o : out std_logic := '0'
         );
     end component secondary_header_encoder;
