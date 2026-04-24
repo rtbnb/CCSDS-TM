@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity secondary_header_decoder is
     generic(
-        secondary_header_data_field_width_octets_g : integer := 63
+        secondary_header_data_field_width_octets_g : integer := 63 -- 63 maximum value of data field from CCSDS-132-0-B-3 4.1.3.1.3 b
     );
     port(
         enable_input_i: in std_logic;
