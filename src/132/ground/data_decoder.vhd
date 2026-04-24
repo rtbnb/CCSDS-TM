@@ -24,8 +24,8 @@ entity data_decoder is
         -- inputs
         data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
-        data_valid_i: in std_logic := '0'
-        tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+        data_valid_i: in std_logic := '0';
+        tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0')
     );
 end entity data_decoder;
 
