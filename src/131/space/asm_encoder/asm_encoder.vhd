@@ -54,7 +54,7 @@ begin
             data_valid_o <= '0'; -- reset clock
             -- check if input data is valid 
             if data_valid_i ='1' then
-                if encoder_done_i = '1' then 
+                if encoder_done_i = '1' and counter_r < 32 then 
                     -- include asm if pseudorandomizer done
                     data_o <= ASM_PATTERN(31-counter_r);
                     counter_r <= counter_r + 1;
