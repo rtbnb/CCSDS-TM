@@ -29,7 +29,7 @@ end entity decoder_buffer_and_structure;
 architecture behavioral of decoder_buffer_and_structure is
     component header_decoder is
         port (
-            data_i: in std_logic_vector(47 downto 0);
+            header_data_i: in std_logic_vector(47 downto 0);
             is_oid_flag_o: out std_logic;
             transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
             spacecraft_id_o: out std_logic_vector(9 downto 0);
@@ -119,14 +119,14 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
 begin
     HD: header_decoder port map (
-        data_i => header_data_r,
+        header_data_i => header_data_r,
         is_oid_flag_o => is_oid_flag_s,
         transfer_frame_version_number_o => transfer_frame_version_number_s,
         spacecraft_id_o => spacecraft_id_s,
         virtual_channel_id_o => virtual_channel_id_s,
         ocf_flag_o => ocf_flag_s,
-        master_channel_frame_count_0 => master_channel_frame_count_s,
-        virtual_channel_frame_count_0 => virtual_channel_frame_count_s,
+        master_channel_frame_count_o => master_channel_frame_count_s,
+        virtual_channel_frame_count_o => virtual_channel_frame_count_s,
         transfer_frame_secondary_header_flag_o => transfer_frame_secondary_header_flag_s,
         synch_flag_o => synch_flag_s,
         packet_order_flag_o => packet_order_flag_s,
@@ -155,7 +155,7 @@ begin
                 tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                 case state_r is
                     when header =>
-                        header_data_i((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
+                        header_data_r((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
                         if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET - 1 then
                             -- TODO implement secondary header logic after MVP
                             if first_header_pointer_s = "11111111110" then
@@ -182,8 +182,11 @@ begin
             end if;
         end if;
     end process state_machine;
+    
+    dd_clk_s <= clk_i;
 
     dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
     tm_data_field_valid_o <= dd_data_valid_o_s;
+    tm_data_field_o <= dd_data_o_s;
 
 end architecture behavioral;

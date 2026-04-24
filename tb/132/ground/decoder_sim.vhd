@@ -26,7 +26,7 @@ architecture behavioral of decoder_sim is
 
             -- outputs
             tm_data_field_o: out std_logic_vector(31 downto 0);
-            tm_data_field_valid_o: out std_logic;
+            tm_data_field_valid_o: out std_logic
         );
     end component decoder_buffer_and_structure;
 
@@ -75,8 +75,50 @@ begin
         data_s <= "00000000";
         wait for 10ns;
         -- data field 2040 octets
-        for i in 0 to 2039 loop
-            data_s <= std_logic_vector(to_unsigned(i, 8));
+        for i in 0 to 6 loop
+            -- packet version number + packet type + sec hdr flag + apid
+            data_s <= "00000000";
+            wait for 10ns;
+            -- apid
+            data_s <= "00000000";
+            wait for 10ns;
+            -- packet sequence control
+            data_s <= "00000000";
+            wait for 10ns;
+            -- packet sequence control
+            data_s <= "00000000";
+            wait for 10ns;
+            -- packet data length
+            data_s <= "00000000";
+            wait for 10ns;
+            -- packet data length
+            data_s <= "11111001"; -- 249
+            wait for 10ns;
+            for j in 0 to 250 loop
+                data_s <= std_logic_vector(to_unsigned(j, 8));
+                wait for 10ns;
+            end loop;
+        end loop;
+        -- packet version number + packet type + sec hdr flag + apid
+        data_s <= "00000000";
+        wait for 10ns;
+        -- apid
+        data_s <= "00000001";
+        wait for 10ns;
+        -- packet sequence control
+        data_s <= "00000000";
+        wait for 10ns;
+        -- packet sequence control
+        data_s <= "00000000";
+        wait for 10ns;
+        -- packet data length
+        data_s <= "00000000";
+        wait for 10ns;
+        -- packet data length
+        data_s <= "11110001"; -- 241 -> data field size of 242 and packet size 248
+        wait for 10ns;
+        for j in 0 to 242 loop
+            data_s <= std_logic_vector(to_unsigned(j, 8));
             wait for 10ns;
         end loop;
         wait;
