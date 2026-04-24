@@ -46,7 +46,7 @@ architecture behavioral of data_decoder is
     signal state_r: deserialization_state_t := data_first_octet;
     signal data_buffer_r: std_logic_vector(31 downto 0);
     signal packet_data_len_r: std_logic_vector(15 downto 0);
-    signal packet_last_cycle_valid_r: std_logic := '0';
+    signal packet_last_cycle_valid_r: std_logic := '1';
     signal packet_valid_r: std_logic := '0';
 
     signal packet_apid_r: std_logic_vector(10 downto 0);
@@ -79,11 +79,12 @@ begin
                             packet_apid_r(2 downto 0) <= data_i(7 downto 5);
                             previous_octet_r <= data_i;
                             packet_state_r <= packet_id_high;
+                            packet_apid_valid_r <= '1';
                         end if;
                     when packet_id_high =>
                         packet_apid_r(10 downto 3) <= data_i;
                         packet_state_r <= packet_sequence_control_low;
-                        packet_apid_valid_r <= '1';
+                        -- packet_apid_valid_r <= '1';
                     when packet_sequence_control_low =>
                         packet_state_r <= packet_sequence_control_high;
                     when packet_sequence_control_high =>
@@ -139,7 +140,7 @@ begin
                             data_buffer_r(31 downto 24) <= previous_octet_r;
                             previous_octet_from_fourth_r <= data_i;
                             state_r <= data_first_octet_previous_add;
-                            packet_last_cycle_valid_r <= '0';
+                            packet_last_cycle_valid_r <= '0'; --packet_last_cycle_valid_r <= '0';
                         when data_first_octet_previous_add =>
                             data_valid_o <= '0';
                             data_buffer_r(7 downto 0) <= previous_octet_from_fourth_r;
@@ -170,7 +171,7 @@ begin
                     packet_last_cycle_valid_r <= '1';
                 end if;
             else
-                packet_last_cycle_valid_r <= '0';
+                packet_last_cycle_valid_r <= '1';-- packet_last_cycle_valid_r <= '0';
                 data_valid_o <= '0';
             end if;
         end if;
