@@ -22,7 +22,7 @@ entity decoder_buffer_and_structure is
 
         -- outputs
         tm_data_field_o: out std_logic_vector(31 downto 0);
-        tm_data_field_valid_o: out std_logic;
+        tm_data_field_valid_o: out std_logic
     );
 end entity decoder_buffer_and_structure;
 
@@ -41,7 +41,7 @@ architecture behavioral of decoder_buffer_and_structure is
             synch_flag_o: out std_logic;
             packet_order_flag_o: out std_logic;
             segment_length_id_o: out std_logic_vector(1 downto 0);
-            first_header_pointer_o: out std_logic_vector(10 downto 0);
+            first_header_pointer_o: out std_logic_vector(10 downto 0)
         );
     end component header_decoder;
 
@@ -78,8 +78,8 @@ architecture behavioral of decoder_buffer_and_structure is
             -- inputs
             data_i: in std_logic_vector(7 downto 0);
             clk_i: in std_logic; -- "8 Bit" x4 clock
-            data_valid_i: in std_logic := '0'
-            tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+            data_valid_i: in std_logic := '0';
+            tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0')
         );
     end component data_decoder;
 
@@ -115,7 +115,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_fully_read_s: std_logic := '0';
     signal dd_data_i_s: std_logic_vector(7 downto 0);
     signal dd_clk_s: std_logic;
-    signal dd_data_valid_i_s: std_logic := '0'
+    signal dd_data_valid_i_s: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
 begin
     HD: header_decoder port map (
