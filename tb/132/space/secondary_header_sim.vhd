@@ -16,7 +16,7 @@ end entity secondary_header_sim;
 architecture behavioral of secondary_header_sim is
     component secondary_header_encoder is
         generic (
-            secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3
+            secondary_header_data_field_width_octets_g : integer := 63 -- 63 maximum value of data field from CCSDS-132-0-B-3 4.1.3.1.3 b
         );
         port (
             output_clk_i : in std_logic;
@@ -25,7 +25,7 @@ architecture behavioral of secondary_header_sim is
             length_i : in std_logic_vector(5 downto 0);
             data_field_i : in std_logic_vector(7 downto 0);
             secondary_header_o : out std_logic_vector(7 downto 0) := (others => '0');
-            secondary_header_fully_read_o : out std_logic := '0'; -- high in the clk cycle when the last byte is read
+            secondary_header_fully_read_o : out std_logic := '0';
             secondary_header_valid_o : out std_logic := '0'
         );
     end component secondary_header_encoder;
