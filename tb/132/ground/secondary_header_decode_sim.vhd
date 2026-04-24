@@ -28,7 +28,7 @@ component secondary_header_decoder is
 
         reset_i: in std_logic; -- active low
 
-        secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0'); -- data can be read on falling edge of get_next_data_octet_i
+        secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0');
         secondary_header_fully_read_o: out std_logic := '0';
         version_o: out std_logic_vector(1 downto 0);
         length_o: out std_logic_vector(5 downto 0)
