@@ -19,6 +19,7 @@ entity reed_solomon_decoder_fifo is
 
         data_valid_o : out std_logic;
         output_byte_o : out std_logic_vector (7 downto 0)
+        
     );
 end entity;
 
@@ -47,7 +48,7 @@ begin
             clock_divier_count_r <= 0;
         elsif rising_edge(clk_i) then
             if fifo_out_r(8) = '1' and new_data_in_fifo_r = '1' then
-                 if clock_divier_count_r = MESSAGE_LENGHT then
+                 if clock_divier_count_r = MESSAGE_LENGHT-1 then
                     clock_divier_count_r <= 0;
                  else
                     clock_divier_count_r <= clock_divier_count_r + 1;
@@ -96,6 +97,7 @@ begin
         elsif rising_edge(clk_i) then
             if clock_divier_count_r < (MESSAGE_LENGHT-2*MAX_ERROR_COUNT) then
                 if fifo_out_r(8) = '1' and new_data_in_fifo_r = '1' then
+                --if fifo_out_r(8) = '1' then
                     -- Add corrected data here
                     output_byte_o <= fifo_out_r (7 downto 0);
                     data_valid_o <= '1';
@@ -106,7 +108,7 @@ begin
                 end if;
             else
                 --output_byte_o <= "00000000";
-                output_byte_o <= "00000000";
+                output_byte_o <= "10000000";
                 data_valid_o <= '0';
             end if;
         
