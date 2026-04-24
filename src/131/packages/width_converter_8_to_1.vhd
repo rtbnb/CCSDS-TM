@@ -97,7 +97,13 @@ begin
                         data_valid_o <= '0';
                     end if;
                 else
+                    if data_valid_working_r = '1' then
+                    
                     data_valid_o <= '0';
+                    else
+                    data_valid_o <= '0';
+                    
+                    end if;
                  end if;
 
                 clock_devider_count_r <= clock_devider_count_r + 1;
