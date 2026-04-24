@@ -139,7 +139,7 @@ begin
     begin
         
         if falling_edge(clk_i) then
-            
+                   
             if (state_r = INITIAL) then
                 virtual_channel_id_r <= "000";
                 is_oid_frame_r <= '1';
@@ -147,39 +147,21 @@ begin
             elsif (state_r = PAYLOAD) then
                 
                 if is_oid_frame_r = '1' then
-                    data_o <= testCounter_r;
                     oid_length_counter_r <= oid_length_counter_r + 1;
-                    if oid_length_counter_r = OID_PACKET_LENGTH -1 then
-                        state_r <= PRIMARY_HEADER;
-                        vch0_data_en_o <= '0';
-                        
-                        if vch_available_s = '1' then
-                            -- select next
-                            is_oid_frame_r <= '0';
-                        else
-                            is_oid_frame_r <= '1';
-                        end if;                        
-                        
-                    end if;
+                    data_o <= testCounter_r;
                 else
-                    data_o <= vch0_data_i; 
-                    if vch0_frame_ready_i = '0' then
-                        state_r <= PRIMARY_HEADER;
-                        master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
-                        
-                        vch0_data_en_o <= '0';
-                        
-                        -- check if OID is needed for the next frame
-                        if vch_available_s = '1' then
-                            -- select next
-                            is_oid_frame_r <= '0';
-                        else
-                            is_oid_frame_r <= '1';
-                        end if;
-                    end if;                     
-                end if; 
-            
+                    data_o <= vch0_data_i;
+                end if;
                 
+                -- this only gets triggert when the frame is ending
+                if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH -1) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then
+                    is_oid_frame_r <= not vch_available_s;        
+                    master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
+                    state_r <= PRIMARY_HEADER;
+                    vch0_data_en_o <= '0';
+                    
+                end if;
+             
             elsif (state_r = PRIMARY_HEADER) then
                 out_en_o <= '1'; -- This needs only to be set once
             

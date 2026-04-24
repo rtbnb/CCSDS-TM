@@ -39,7 +39,7 @@ architecture behavioral of virtual_channel_buffer_sim is
 
     signal data_i_s: std_logic_vector(7 downto 0) := (others => '0');
     signal data_valid_i_s: std_logic := '0';
-    signal ready_o: std_logic;
+    signal ready_o_s: std_logic;
 
     signal frame_ready_o_s: std_logic;
     signal data_out_en_i_s: std_logic := '0';
