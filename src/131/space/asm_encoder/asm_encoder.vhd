@@ -3,7 +3,7 @@
 -- Created      : 26.03.2026
 -- Author       : Hannah Lindner 
 -- Project Name : HW/SW Project TM
--- Description  : component to add asm sstream after pseudo randomization,
+-- Description  : component to add asm stream after pseudo randomization,
 -- ASM Pattern  : 0x1ACFFC1D
 ----------------------------------------------------------------
 
@@ -29,7 +29,7 @@ entity asm_encoder is
     ); 
 end asm_encoder;
 
-architecture Behavioral of asm_encoder is
+architecture behavioral of asm_encoder is
 
 constant ASM_PATTERN    : std_logic_vector(31 downto 0) := x"1ACFFC1D";
 signal counter_r        : integer range 0 to 32 := 0;
@@ -72,4 +72,4 @@ begin
     
 end process P1; 
 
-end Behavioral;
+end behavioral;

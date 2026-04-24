@@ -28,7 +28,7 @@ entity asm_decoder is
     );
 end asm_decoder;
 
-architecture Behavioral of asm_decoder is
+architecture behavioral of asm_decoder is
     signal shift_register_r : std_logic_vector(31 downto 0) := (others => '0'); 
     constant ASM_PATTERN    : std_logic_vector(31 downto 0) := x"1ACFFC1D"; 
     signal counter_r        : integer range 0 to 32 := 0;
@@ -92,4 +92,4 @@ begin
 end process; 
 
 
-end Behavioral;
+end behavioral;
