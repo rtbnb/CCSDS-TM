@@ -144,7 +144,7 @@ begin
                 virtual_channel_id_r <= "000";
                 is_oid_frame_r <= '1';
                 state_r <= PRIMARY_HEADER;
-            elsif (state_r = PAYLOAD) then
+            elsif (state_r = PAYLOAD) and out_full_i = '0' then
                 
                 if is_oid_frame_r = '1' then
                     oid_length_counter_r <= oid_length_counter_r + 1;
@@ -162,7 +162,7 @@ begin
                     
                 end if;
              
-            elsif (state_r = PRIMARY_HEADER) then
+            elsif (state_r = PRIMARY_HEADER) and out_full_i = '0' then
                 out_en_o <= '1'; -- This needs only to be set once
             
                 data_o <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
@@ -176,17 +176,10 @@ begin
                     else
                         vch0_data_en_o <= '1';    
                     end if;
-                    
-                    
                 end if;
-   
             end if;
-                       
         end if;
         
-        
-    
-    
     end process;
 
 end architecture behavioral;
