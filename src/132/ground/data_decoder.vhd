@@ -58,7 +58,8 @@ architecture behavioral of data_decoder is
     signal tm_data_field_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g - 1 := 0;
     signal is_packet_extraction_r: std_logic := '0';
 
-    function packet_length_int(packet_len: std_logic_vector(15 downto 0)) return integer is variable packet_len_int: integer range 1 to PACKET_MAX_SIZE_OCTET;
+    function packet_length_int(packet_len: std_logic_vector(15 downto 0)) return integer is
+        variable packet_len_int: integer range 1 to PACKET_MAX_SIZE_OCTET;
     begin
         packet_len_int := to_integer(unsigned(packet_len));
         return packet_len_int;
