@@ -41,7 +41,7 @@ begin
         variable data_octet_counter: integer := 0;
     begin
         if rising_edge(clk_i) and enable_input_i = '1' then
-            if data_octet_counter = (secondary_header_data_field_width_octets_g + 1) then
+            if data_octet_counter = (secondary_header_data_field_width_octets_g) then
                 secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
                 data_octet_counter := 0;
             else 
@@ -52,7 +52,7 @@ begin
     end process read_data;
 
     -- output data field logic
-    output_data_field: process(get_next_data_octet_i) is
+    output_data_field: process(clk_i, enable_output_i) is
         variable data_octet_counter_out: integer := 1;
     begin
         if rising_edge(clk_i) and enable_output_i = '1' then

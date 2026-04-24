@@ -23,13 +23,13 @@ component secondary_header_decoder is
     port(
         enable_input_i: in std_logic;
         enable_output_i: in std_logic;
-        clk_i: in std_logic; -- data is read on falling edge of clk_i
+
+        clk_i: in std_logic;
+
         data_i: in std_logic_vector(7 downto 0);
-
-        reset_i: in std_logic; -- active low
-
         secondary_header_data_o: out std_logic_vector(7 downto 0 ) := (others => '0');
         secondary_header_fully_read_o: out std_logic := '0';
+
         version_o: out std_logic_vector(1 downto 0);
         length_o: out std_logic_vector(5 downto 0)
     );
@@ -53,49 +53,38 @@ begin
         enable_output_i => enable_output_s,
         clk_i => clk_s,
         data_i => data_s,
-        reset_i => reset_s,
         secondary_header_data_o => secondary_header_data_s,
-        get_next_data_octet_i => get_next_data_octet_s,
         secondary_header_fully_read_o => secondary_header_fully_read_s,
         version_o => version_s,
         length_o => length_s
     );
+    
+    clk: process is
+    begin
+        clk_s <= '0';
+        wait for 5ns;
+        clk_s <= '1';
+        wait for 5ns;
+   end process clk;
 
     input_data: process is
     begin
-        wait for 1000ns;
-        -- Initialize signals
-        enable_s <= '1';
-        reset_s <= '0';
-        clk_s <= '0';
-        enable_input_s <= '1';
-        enable_output_s <= '0';
-        wait for 10 ns;
-
         -- Provide test data
         data_s <= "111111" & "01";
-        clk_s <= '1';
-        wait for 5 ns;
-        clk_s <= '0';
-        wait for 5 ns;
+        enable_input_s <= '1';
+        wait for 10 ns;
         for i in 0 to 62 loop
             data_s <= std_logic_vector(to_unsigned(i, 8));
-            clk_s <= '1';
-            wait for 5 ns;
-            clk_s <= '0';
-            wait for 5 ns;
+            wait for 10 ns;
         end loop;
+        enable_input_s <= '0';
 
         wait for 50ns;
 
         -- read data field
-        enable_input_s <= '0';
         enable_output_s <= '1';
         for i in 0 to 62 loop
-            clk_s <= '1';
-            wait for 5 ns;
-            clk_s <= '0';
-            wait for 5 ns;
+            wait for 10 ns;
         end loop;
     end process input_data;
 
