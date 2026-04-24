@@ -34,11 +34,12 @@ architecture behavioral of data_decoder is
     constant OUTPUT_DATA_SIZE_OCTET: integer := 4;
     constant INPUT_DATA_SIZE_OCTET: integer := 2;
     constant PACKET_MAX_SIZE_OCTET: integer := 256;
+    constant PACKET_HEADER_SIZE_OCTET: integer := 6;
 
     -- data
     type packet_state_t is (packet_id_low, packet_id_high, packet_sequence_control_low, packet_sequence_control_high, packet_len_low, packet_len_high, data);
     signal packet_state_r: packet_state_t := packet_id_low;
-    signal packet_header_r: std_logic_vector((6 * 8) - 1 downto 0) := (others => '0');
+    signal packet_header_r: std_logic_vector((PACKET_HEADER_SIZE_OCTET * 8) - 1 downto 0) := (others => '0');
     
     
     type deserialization_state_t is (data_first_octet, data_second_octet, data_third_octet, data_fourth_octet, data_first_octet_previous_add);
