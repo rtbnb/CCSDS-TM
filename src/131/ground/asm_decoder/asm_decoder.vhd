@@ -69,20 +69,22 @@ begin
                             asm_detected_r <= '1'; 
                             data_valid_o <= '0';
                             decoder_done_o <= '1';
-                            data_o <= 'L';
+                            data_o <= 'U';
                         else 
                             data_valid_o <= '1';
                             decoder_done_o <= '0';
                         end if; 
                     elsif asm_detected_r = '1' then 
                     -- if asm pattern was already detected, delay data valid flag for 32 cycles 
-                        if counter_r = 31 then 
+                        if counter_r = 30 then 
                             counter_r <= 0; 
                             asm_detected_r <= '0'; 
+                            data_o <= 'U';
                         else
                             counter_r <= counter_r + 1; 
                             asm_detected_r <= '1'; 
                             data_valid_o <= '0';
+                            data_o <= 'U';
                         end if; 
                     end if; -- asm detection
                 end if; -- register full check 
