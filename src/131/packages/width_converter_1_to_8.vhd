@@ -58,7 +58,7 @@ begin
                
             end if;
             
-            if val_count_r = '1' then
+            if val_count_r = '1' or val_count_r = '0' then
                 val_count_r <= '0'; 
                 if data_valid_i = '1' then
                     byte_working_r(CLOCK_DIVISION-clock_devider_count_r-1) <= input_bit_i;
