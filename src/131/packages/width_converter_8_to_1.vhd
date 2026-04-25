@@ -33,6 +33,7 @@ architecture behavioral of width_converter_8_to_1 is
     
     signal working_byte_r : std_logic_vector (7 downto 0):="00000000";
     signal data_valid_r : std_logic :='0';
+    signal encoder_done_working_r :std_logic :='0';
     signal encoder_done_r: std_logic :='0';
     signal data_valid_working_r : std_logic :='0';
     
@@ -55,8 +56,12 @@ begin
         elsif rising_edge(clk_i) then
             
             if encoder_done_i = '1' then
-                encoder_done_r <= encoder_done_i;
+                encoder_done_working_r <= encoder_done_i;
+            --else
+                --encoder_done_working_r <= encoder_done_i;
             end if; 
+            
+            
                 
         
             if data_valid_i = '1' then
@@ -79,12 +84,14 @@ begin
                     data_valid_working_r <= '1'; 
                 end if;
                 
-                if encoder_done_r = '1' then
-                    encoder_done_o <= '1';
-                else
-                    encoder_done_o <= '0';
-                end if;
-                encoder_done_r <= '0';
+                if encoder_done_working_r = '1' then
+                        encoder_done_o <= '1';
+                    else
+                        encoder_done_o <= '0';
+                    end if;
+                    
+                encoder_done_working_r <= '0';
+                
                 data_valid_r <= '0';
                 data_valid_o <= '0';
 
@@ -96,6 +103,8 @@ begin
                     else
                         data_valid_o <= '0';
                     end if;
+                    
+                                    
                 else
                     if data_valid_working_r = '1' then
                     
