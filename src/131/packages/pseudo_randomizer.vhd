@@ -13,7 +13,8 @@ use ieee.numeric_std.all;
 
 entity pseudo_randomizer is 
     generic(
-        clock_divider_g : integer := 1
+        clock_divider_g : integer := 1;
+        is_ground_g     : boolean := false
         );
     port(
         -- input ports 
@@ -60,7 +61,9 @@ begin
         elsif rising_edge(clk_i) then 
             -- clock division
             clock_counter_r := clock_counter_r + 1;
-            --data_valid_o <= '0';
+            if is_ground_g = true then 
+                data_valid_o <= '0';
+            end if; 
             if clock_counter_r = clock_divider_g then 
                 if data_valid_i = '1' then
                     -- XOR data 
