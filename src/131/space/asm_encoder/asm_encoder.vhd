@@ -50,26 +50,25 @@ begin
     elsif rising_edge(clk_i) then
         -- increase clock counter 
         clock_counter_r := clock_counter_r + 1; 
+        --data_valid_o <= '0'; -- reset clock
         if clock_counter_r = clock_divider_g then 
-            data_valid_o <= '0'; -- reset clock
             -- check if input data is valid 
-            if data_valid_i ='1' then
                 if encoder_done_i = '1' and counter_r < 32 then 
                     -- include asm if pseudorandomizer done
                     data_o <= ASM_PATTERN(31-counter_r);
                     counter_r <= counter_r + 1;
                     data_valid_o <= '1';
                 else
-                    -- otherwise forward data 
-                    counter_r <= 0; 
-                    data_o <= data_i; 
-                    data_valid_o <= '1';
+                    if data_valid_i = '1' then 
+                        -- otherwise forward data 
+                        counter_r <= 0; 
+                        data_o <= data_i; 
+                        data_valid_o <= '1';
+                    end if; 
                 end if; 
-           end if;
         clock_counter_r := 0; -- reset clock counter 
         end if;
     end if;
-    
 end process P1; 
 
 end behavioral;
