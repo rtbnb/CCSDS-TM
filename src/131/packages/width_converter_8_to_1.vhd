@@ -57,8 +57,8 @@ begin
             
             if encoder_done_i = '1' then
                 encoder_done_working_r <= encoder_done_i;
-            --else
-                --encoder_done_working_r <= encoder_done_i;
+            else
+                encoder_done_working_r <= encoder_done_i;
             end if; 
             
             
@@ -76,7 +76,8 @@ begin
             end if;
             if clock_devider_count_r = CLOCK_DIVISION then
                 clock_devider_count_r <= 0;
-                
+              
+            
 
                 -- Check if data was valid while sending out data and sample new data if true
                 if data_valid_r = '1' then
@@ -84,25 +85,26 @@ begin
                     data_valid_working_r <= '1'; 
                 end if;
                 
-                if encoder_done_working_r = '1' then
-                        encoder_done_o <= '1';
-                    else
-                        encoder_done_o <= '0';
-                    end if;
-                    
-                encoder_done_working_r <= '0';
                 
                 data_valid_r <= '0';
                 data_valid_o <= '0';
 
             else
                 if (clock_devider_count_r mod 2 = 0) then
-                    if data_valid_working_r = '1' then
-                        output_bit_o <= working_byte_r(7-clock_devider_count_r/2);
-                        data_valid_o <= '1';
+                    if encoder_done_working_r = '1' then
+                        encoder_done_o <= '1';
+                        output_bit_o <= '0';
                     else
-                        data_valid_o <= '0';
+                        encoder_done_o <= '0';
+                        
+                        if data_valid_working_r = '1' and  encoder_done_working_r = '0' then
+                            output_bit_o <= working_byte_r(7-clock_devider_count_r/2);
+                            data_valid_o <= '1';
+                        else
+                            data_valid_o <= '0';
+                        end if;
                     end if;
+                    
                     
                                     
                 else
