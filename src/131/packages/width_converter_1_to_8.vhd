@@ -44,6 +44,7 @@ begin
             val_count_r <= '0';
 
         elsif rising_edge(clk_i) then
+           data_valid_o <= '0';
             
             if clock_devider_count_r = CLOCK_DIVISION then
                clock_devider_count_r <= 0; 
@@ -58,18 +59,13 @@ begin
                
             end if;
             
-            if val_count_r = '1' or val_count_r = '0' then
-                val_count_r <= '0'; 
-                if data_valid_i = '1' then
-                    byte_working_r(CLOCK_DIVISION-clock_devider_count_r-1) <= input_bit_i;
-                    clock_devider_count_r <= clock_devider_count_r + 1; 
-                    data_valid_r <= '1';
-                end if;
-            
-            else
-                val_count_r <= '1';
+            if data_valid_i = '1' then
+                byte_working_r(CLOCK_DIVISION-clock_devider_count_r-1) <= input_bit_i;
+                clock_devider_count_r <= clock_devider_count_r + 1; 
+                data_valid_r <= '1';
             end if;
-            
+         
+        
             
         end if;
         
