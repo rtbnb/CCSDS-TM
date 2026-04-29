@@ -158,7 +158,7 @@ begin
                         header_data_r((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
                         if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET - 1 then
                             -- TODO implement secondary header logic after MVP
-                            if first_header_pointer_s = "11111111110" then
+                            if data_i & first_header_pointer_s(2 downto 0)  = "11111111110" then
                                 state_r <= data_wait;
                             else
                                 state_r <= data;
