@@ -118,62 +118,84 @@ begin
     data_output: process(clk_i, packet_valid_r, packet_last_cycle_valid_r)
     begin
         if rising_edge(clk_i) then
-            if packet_valid_r = '1' then
-                if packet_last_cycle_valid_r = '0' then
-                    packet_last_cycle_valid_r <= '1';
-                    case state_r is
-                        when data_first_octet =>
-                            data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= previous_octet_r;
-                            data_buffer_r(15 downto 8) <= data_i;
-                            state_r <= data_third_octet;
-                        when data_second_octet =>
-                            data_buffer_r(15 downto 8) <= previous_octet_r;
-                            data_buffer_r(23 downto 16) <= data_i;
-                            state_r <= data_fourth_octet;
-                        when data_third_octet =>
-                            data_buffer_r(23 downto 16) <= previous_octet_r;
-                            data_buffer_r(31 downto 24) <= data_i;
-                            state_r <= data_first_octet;
-                        when data_fourth_octet =>
-                            data_valid_o <= '1';
-                            data_buffer_r(31 downto 24) <= previous_octet_r;
-                            previous_octet_from_fourth_r <= data_i;
-                            state_r <= data_first_octet_previous_add;
-                            packet_last_cycle_valid_r <= '0'; --packet_last_cycle_valid_r <= '0';
-                        when data_first_octet_previous_add =>
-                            data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= previous_octet_from_fourth_r;
-                            data_buffer_r(15 downto 8) <= data_i;
-                            state_r <= data_third_octet;
-                    end case;
-                else
-                    case state_r is
-                        when data_first_octet =>
-                            data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= data_i;
-                            state_r <= data_second_octet;
-                        when data_second_octet =>
-                            data_buffer_r(15 downto 8) <= data_i;
-                            state_r <= data_third_octet;
-                        when data_third_octet =>
-                            data_buffer_r(23 downto 16) <= data_i;
-                            state_r <= data_fourth_octet;
-                        when data_fourth_octet =>
-                            data_valid_o <= '1';
-                            data_buffer_r(31 downto 24) <= data_i;
-                            state_r <= data_first_octet;
-                        when data_first_octet_previous_add =>
-                            data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= data_i;
-                            state_r <= data_second_octet;
-                    end case;
-                    packet_last_cycle_valid_r <= '1';
-                end if;
-            else
-                packet_last_cycle_valid_r <= '1';-- packet_last_cycle_valid_r <= '0';
-                data_valid_o <= '0';
+            if (data_valid_i = '1') then
+                case state_r is
+                    when data_first_octet =>
+                        data_valid_o <= '0';
+                        data_buffer_r(7 downto 0) <= data_i;
+                        state_r <= data_second_octet;
+                    when data_second_octet =>
+                        data_buffer_r(15 downto 8) <= data_i;
+                        state_r <= data_third_octet;
+                    when data_third_octet =>
+                        data_buffer_r(23 downto 16) <= data_i;
+                        state_r <= data_fourth_octet;
+                    when data_fourth_octet =>
+                        data_valid_o <= '1';
+                        data_buffer_r(31 downto 24) <= data_i;
+                        state_r <= data_first_octet;
+                    when data_first_octet_previous_add =>
+                        data_valid_o <= '0';
+                        data_buffer_r(7 downto 0) <= data_i;
+                        state_r <= data_second_octet;
+                end case;
             end if;
+            --if packet_valid_r = '1' then
+            --    if packet_last_cycle_valid_r = '0' then
+            --        packet_last_cycle_valid_r <= '1';
+            --        case state_r is
+            --            when data_first_octet =>
+            --                data_valid_o <= '0';
+            --                data_buffer_r(7 downto 0) <= previous_octet_r;
+            --                data_buffer_r(15 downto 8) <= data_i;
+            --                state_r <= data_third_octet;
+            --            when data_second_octet =>
+            --                data_buffer_r(15 downto 8) <= previous_octet_r;
+            --                data_buffer_r(23 downto 16) <= data_i;
+            --                state_r <= data_fourth_octet;
+            --            when data_third_octet =>
+            --                data_buffer_r(23 downto 16) <= previous_octet_r;
+            --                data_buffer_r(31 downto 24) <= data_i;
+            --                state_r <= data_first_octet;
+            --            when data_fourth_octet =>
+            --                data_valid_o <= '1';
+            --                data_buffer_r(31 downto 24) <= previous_octet_r;
+            --                previous_octet_from_fourth_r <= data_i;
+            --                state_r <= data_first_octet_previous_add;
+            --                packet_last_cycle_valid_r <= '0'; --packet_last_cycle_valid_r <= '0';
+            --            when data_first_octet_previous_add =>
+            --                data_valid_o <= '0';
+            --                data_buffer_r(7 downto 0) <= previous_octet_from_fourth_r;
+            --                data_buffer_r(15 downto 8) <= data_i;
+            --                state_r <= data_third_octet;
+            --        end case;
+            --    else
+            --        case state_r is
+            --            when data_first_octet =>
+            --                data_valid_o <= '0';
+            --                data_buffer_r(7 downto 0) <= data_i;
+            --                state_r <= data_second_octet;
+            --            when data_second_octet =>
+            --                data_buffer_r(15 downto 8) <= data_i;
+            --                state_r <= data_third_octet;
+            --            when data_third_octet =>
+            --                data_buffer_r(23 downto 16) <= data_i;
+            --                state_r <= data_fourth_octet;
+            --            when data_fourth_octet =>
+            --                data_valid_o <= '1';
+            --                data_buffer_r(31 downto 24) <= data_i;
+            --                state_r <= data_first_octet;
+            --            when data_first_octet_previous_add =>
+            --                data_valid_o <= '0';
+            --                data_buffer_r(7 downto 0) <= data_i;
+            --                state_r <= data_second_octet;
+            --        end case;
+            --        packet_last_cycle_valid_r <= '1';
+            --    end if;
+            --else
+            --    packet_last_cycle_valid_r <= '1';-- packet_last_cycle_valid_r <= '0';
+            --    data_valid_o <= '0';
+            --end if;
         end if;
     end process data_output;
 
