@@ -87,7 +87,7 @@ architecture behavioral of decoder_buffer_and_structure is
     constant TM_FRAME_HEADER_SIZE_OCTET: integer := 6;
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
     constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_data_size_octet_g;
-    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := 2047;
+    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := 2046;
 
     -- TM Frame buffer
     signal tm_frame_buffer_r: std_logic_vector((TM_FRAME_BUFFER_SIZE_OCTET) * 8 - 1 downto 0);
