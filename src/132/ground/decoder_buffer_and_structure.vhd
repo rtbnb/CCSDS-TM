@@ -88,6 +88,12 @@ architecture behavioral of decoder_buffer_and_structure is
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
     constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := 2040;
 
+    -- TM Frame buffer
+    signal tm_frame_buffer_one_r: std_logic_vector((TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET) * 8 - 1 downto 0);
+    signal tm_frame_buffer_two_r: std_logic_vector((TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET) * 8 - 1 downto 0);
+    type buffer_selector_t is (buffer_one, buffer_two);
+    signal buffer_selector_r: buffer_selector_t := buffer_one;
+
     -- state machine
     type state_t is (header, secondary_header, data, data_wait);
     signal state_r: state_t := header;
@@ -147,10 +153,10 @@ begin
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s
     );
 
-    state_machine: process(clk_i) is
+    -- input TM Frame to Buffer
+    input_tm_frame: process(clk_i) is
     begin
         if rising_edge(clk_i) then
-            dd_data_valid_i_s <= '0';
             if data_valid_i = '1' then
                 tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                 case state_r is
@@ -179,10 +185,48 @@ begin
                             tm_frame_octet_counter_r <= 0;
                         end if;
                 end case;
+                tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
             end if;
         end if;
-    end process state_machine;
-    
+    end process input_tm_frame;
+
+    -- to not send half space packets to output you can compare the needed octets (Packet header size) against the remaining length of the tm transfer frame
+    -- state_machine: process(clk_i) is
+    -- begin
+    --     if rising_edge(clk_i) then
+    --         dd_data_valid_i_s <= '0';
+    --         if data_valid_i = '1' then
+    --             tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
+    --             case state_r is
+    --                 when header =>
+    --                     header_data_r((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
+    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET - 1 then
+    --                         -- TODO implement secondary header logic after MVP
+    --                         if data_i & first_header_pointer_s(2 downto 0)  = "11111111110" then
+    --                             state_r <= data_wait;
+    --                         else
+    --                             state_r <= data;
+    --                         end if;
+    --                     end if;
+    --                 when secondary_header =>
+    --                 when data =>
+    --                     dd_data_i_s <= data_i;
+    --                     dd_data_valid_i_s <= '1';
+    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
+    --                         state_r <= header;
+    --                         tm_frame_octet_counter_r <= 0;
+    --                     end if;
+    --                 when data_wait =>
+    --                     dd_data_valid_i_s <= '0';
+    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
+    --                         state_r <= header;
+    --                         tm_frame_octet_counter_r <= 0;
+    --                     end if;
+    --             end case;
+    --         end if;
+    --     end if;
+    -- end process state_machine;
+     
     dd_clk_s <= clk_i;
 
     dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
