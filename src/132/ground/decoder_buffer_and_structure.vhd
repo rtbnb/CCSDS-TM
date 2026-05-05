@@ -86,19 +86,26 @@ architecture behavioral of decoder_buffer_and_structure is
     -- TM Frame field sizes
     constant TM_FRAME_HEADER_SIZE_OCTET: integer := 6;
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
-    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := 2040;
+    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_data_size_octet_g;
+    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := 2047;
 
     -- TM Frame buffer
-    signal tm_frame_buffer_one_r: std_logic_vector((TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET) * 8 - 1 downto 0);
-    signal tm_frame_buffer_two_r: std_logic_vector((TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET) * 8 - 1 downto 0);
-    type buffer_selector_t is (buffer_one, buffer_two);
-    signal buffer_selector_r: buffer_selector_t := buffer_one;
+    signal tm_frame_buffer_r: std_logic_vector((TM_FRAME_BUFFER_SIZE_OCTET) * 8 - 1 downto 0);
+    --type buffer_selector_t is (buffer_one, buffer_two);
+    --signal buffer_selector_r: buffer_selector_t := buffer_one;
+    signal tm_frame_buffer_counter_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
+    signal tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
+    signal next_tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
+    signal tm_frame_data_field_start_index_s: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1;
+    signal tm_frame_data_field_index_r: integer range 0 to TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 := 0;
+    signal tm_frame_data_enable_output_s: boolean := false;
+    signal tm_frame_data_finished_output_r: boolean := false;
+    signal tm_frame_data_valid_r: boolean := false;
+    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1;
 
     -- state machine
     type state_t is (header, secondary_header, data, data_wait);
     signal state_r: state_t := header;
-
-    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1;
 
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
@@ -153,6 +160,8 @@ begin
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s
     );
 
+    tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
+
     -- input TM Frame to Buffer
     input_tm_frame: process(clk_i) is
     begin
@@ -190,42 +199,59 @@ begin
         end if;
     end process input_tm_frame;
 
+    tm_frame_input_count: process(clk_i) is
+    begin
+        if rising_edge(clk_i) then
+            -- reset data valid after data field transmitted
+            if tm_frame_data_finished_output_r then
+                tm_frame_data_valid_r <= false;
+            end if;
+            if data_valid_i = '1' then
+                tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
+                if tm_frame_octet_counter_r = TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1 then
+                    -- finished buffering full frame
+                    -- using next_tm_frame_buffer_start_index because it stores the beginning of the now completely buffered tm frame
+                    header_data_r(7 downto 0) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 0) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 0) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    header_data_r(15 downto 8) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    header_data_r(23 downto 16) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 2) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 2) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    header_data_r(31 downto 24) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 3) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 3) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    header_data_r(39 downto 32) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 4) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 4) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    header_data_r(47 downto 40) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 5) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8 + 7 downto ((next_tm_frame_buffer_start_index_r + 5) mod TM_FRAME_BUFFER_SIZE_OCTET) * 8);
+                    -- set control signals
+                    next_tm_frame_buffer_start_index_r <= (tm_frame_buffer_counter_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET;
+                    tm_frame_buffer_start_index_r <= next_tm_frame_buffer_start_index_r;
+                    tm_frame_octet_counter_r <= 0;
+                    tm_frame_data_valid_r <= true;
+                end if;
+            end if;
+        end if;
+    end process tm_frame_input_count;
+
+
+    tm_frame_data_enable_output_r <= 
+        true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' else
+        false when is_oid_flag_s = '1';
+        false;
+
     -- to not send half space packets to output you can compare the needed octets (Packet header size) against the remaining length of the tm transfer frame
-    -- state_machine: process(clk_i) is
-    -- begin
-    --     if rising_edge(clk_i) then
-    --         dd_data_valid_i_s <= '0';
-    --         if data_valid_i = '1' then
-    --             tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
-    --             case state_r is
-    --                 when header =>
-    --                     header_data_r((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
-    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET - 1 then
-    --                         -- TODO implement secondary header logic after MVP
-    --                         if data_i & first_header_pointer_s(2 downto 0)  = "11111111110" then
-    --                             state_r <= data_wait;
-    --                         else
-    --                             state_r <= data;
-    --                         end if;
-    --                     end if;
-    --                 when secondary_header =>
-    --                 when data =>
-    --                     dd_data_i_s <= data_i;
-    --                     dd_data_valid_i_s <= '1';
-    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-    --                         state_r <= header;
-    --                         tm_frame_octet_counter_r <= 0;
-    --                     end if;
-    --                 when data_wait =>
-    --                     dd_data_valid_i_s <= '0';
-    --                     if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-    --                         state_r <= header;
-    --                         tm_frame_octet_counter_r <= 0;
-    --                     end if;
-    --             end case;
-    --         end if;
-    --     end if;
-    -- end process state_machine;
+    -- 1 Tick Reset time required
+    output_tm_frame: process(clk_i) is
+    begin
+        if rising_edge(clk_i) then
+            if tm_frame_data_enable_output_r then
+                dd_data_i_s <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8);
+                dd_data_valid_i_s <= '1';
+                tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
+                if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
+                    tm_frame_data_field_index_r <= 0;
+                    tm_frame_data_finished_output_r <= true;
+                end if;
+            else
+                dd_data_valid_i_s <= '0';
+                tm_frame_data_finished_output_r <= false;
+            end if;
+        end if;
+    end process output_tm_frame;
      
     dd_clk_s <= clk_i;
 
