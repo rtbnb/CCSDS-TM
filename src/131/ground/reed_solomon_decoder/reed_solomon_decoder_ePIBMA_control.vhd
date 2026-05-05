@@ -63,7 +63,7 @@ begin
                 gamma_r <= x"01";
                 z_r <= x"01";
             else
-                if (nor(delta_i) and (gf_to_int(l_a_r) <= gf_to_int(l_a_r))) then
+                if (gf_to_int(delta_i) > 0) and (gf_to_int(l_a_r) <= gf_to_int(l_a_r)) then
                     mc1_o <= '1';
                     l_a_r <= gf_add(l_b_r,x"01");
                     l_b_r <= l_a_r;
@@ -71,7 +71,7 @@ begin
                 else
                     mc1_o <= '0';
                     
-                    if gf_to_int(l_b_r) = t-1 then
+                    if gf_to_int(l_b_r) = max_number_of_errors_g-1 then
                         mc3_o <= '1';
                         l_b_r <= l_b_r;
                     else
