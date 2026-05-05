@@ -103,10 +103,6 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_valid_r: boolean := false;
     signal tm_frame_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1;
 
-    -- state machine
-    type state_t is (header, secondary_header, data, data_wait);
-    signal state_r: state_t := header;
-
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
     signal is_oid_flag_s: std_logic;
@@ -228,9 +224,9 @@ begin
     end process tm_frame_input_count;
 
 
-    tm_frame_data_enable_output_r <= 
+    tm_frame_data_enable_output_s <= 
         true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' else
-        false when is_oid_flag_s = '1';
+        false when is_oid_flag_s = '1' else
         false;
 
     -- to not send half space packets to output you can compare the needed octets (Packet header size) against the remaining length of the tm transfer frame
@@ -238,7 +234,7 @@ begin
     output_tm_frame: process(clk_i) is
     begin
         if rising_edge(clk_i) then
-            if tm_frame_data_enable_output_r then
+            if tm_frame_data_enable_output_s then
                 dd_data_i_s <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8);
                 dd_data_valid_i_s <= '1';
                 tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
