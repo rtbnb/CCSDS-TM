@@ -156,44 +156,21 @@ begin
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s
     );
 
-    tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
-
     -- input TM Frame to Buffer
     input_tm_frame: process(clk_i) is
     begin
         if rising_edge(clk_i) then
             if data_valid_i = '1' then
-                tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
-                case state_r is
-                    when header =>
-                        header_data_r((tm_frame_octet_counter_r + 1) * 8 - 1 downto tm_frame_octet_counter_r * 8) <= data_i;
-                        if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET - 1 then
-                            -- TODO implement secondary header logic after MVP
-                            if data_i & first_header_pointer_s(2 downto 0)  = "11111111110" then
-                                state_r <= data_wait;
-                            else
-                                state_r <= data;
-                            end if;
-                        end if;
-                    when secondary_header =>
-                    when data =>
-                        dd_data_i_s <= data_i;
-                        dd_data_valid_i_s <= '1';
-                        if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-                            state_r <= header;
-                            tm_frame_octet_counter_r <= 0;
-                        end if;
-                    when data_wait =>
-                        dd_data_valid_i_s <= '0';
-                        if tm_frame_octet_counter_r = TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-                            state_r <= header;
-                            tm_frame_octet_counter_r <= 0;
-                        end if;
-                end case;
-                tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
+                tm_frame_buffer_r((tm_frame_buffer_counter_r + 1) * 8 - 1 downto tm_frame_buffer_counter_r * 8) <= data_i;
+                tm_frame_buffer_counter_r <= tm_frame_buffer_counter_r + 1;
+                if tm_frame_buffer_counter_r = TM_FRAME_BUFFER_SIZE_OCTET - 1 then
+                    tm_frame_buffer_counter_r <= 0;
+                end if;
             end if;
         end if;
     end process input_tm_frame;
+
+    tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
 
     tm_frame_input_count: process(clk_i) is
     begin
