@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
--- File : reed_solomon_decoder_ePIBMA_PE.vhd
+-- File : reed_solomon_decoder_epibma_pe.vhd
 -- Created : 05.05.2026
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
@@ -11,29 +11,29 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.finite_field.all;
 
-entity reed_solomon_decoder_ePIBMA_PE is
+entity reed_solomon_decoder_epibma_pe is
     port (
         clk_i               : in  std_logic;
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic;
-        new_omega_i         : in std_logic_vector(7 downto 0);
-        new_theta_i         : in std_logic_vector(7 downto 0);
+        new_omega_i         : in finite_field_t;
+        new_theta_i         : in finite_field_t;
         
-        omega_i : in std_logic_vector(7 downto 0);
-        gamma_i : in std_logic_vector(7 downto 0);
-        delta_i : in std_logic_vector(7 downto 0);
-        theta_i : in std_logic_vector(7 downto 0);
+        omega_i : in finite_field_t;
+        gamma_i : in finite_field_t;
+        delta_i : in finite_field_t;
+        theta_i : in finite_field_t;
         mc1_i : in std_logic;
         mc2_i : in std_logic;
         mc3_i : in std_logic; 
         
-        omega_o : out std_logic_vector(7 downto 0);
-        theta_o : out std_logic_vector(7 downto 0);
+        omega_o : out finite_field_t;
+        theta_o : out finite_field_t
 
     );
-end entity reed_solomon_decoder_ePIBMA_PE;
+end entity reed_solomon_decoder_epibma_pe;
 
-architecture behavioral of reed_solomon_decoder_ePIBMA_PE is
+architecture behavioral of reed_solomon_decoder_epibma_pe is
     signal theta_r: finite_field_t :="00000000";
     signal omega_r: finite_field_t :="00000000";
 begin
@@ -54,7 +54,19 @@ begin
                 -- OmegaI * gamma + thetaR * delta
                 omega_r <= gf_add(gf_mult(omega_i, gamma_i),gf_mult(theta_r, delta_i));
                 
-                if 
+                if mc2_i = '1' then
+                    theta_r <= x"00";
+                else
+                    if mc1_i = '1' then 
+                        theta_r <= omega_i;
+                    else
+                        if mc3_i = '1' then
+                            theta_r <= theta_i;
+                        else
+                            theta_r <= theta_r;
+                        end if;
+                    end if;
+                end if;
                 
             end if;
         end if;
