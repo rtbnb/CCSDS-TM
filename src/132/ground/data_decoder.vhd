@@ -139,6 +139,8 @@ begin
                         data_buffer_r(7 downto 0) <= data_i;
                         state_r <= data_second_octet;
                 end case;
+            else
+                data_valid_o <= '0';
             end if;
             --if packet_valid_r = '1' then
             --    if packet_last_cycle_valid_r = '0' then
