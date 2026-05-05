@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity decoder_buffer_and_structure is
     generic (
-        tm_frame_data_size_octet_g: integer := 2040
+        tm_frame_size_octet_g: integer := 2046
     );
     port (
         -- inputs
@@ -86,8 +86,8 @@ architecture behavioral of decoder_buffer_and_structure is
     -- TM Frame field sizes
     constant TM_FRAME_HEADER_SIZE_OCTET: integer := 6;
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
-    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_data_size_octet_g;
-    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := 2046;
+    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_size_octet_g - TM_FRAME_HEADER_SIZE_OCTET - TM_FRAME_SECONDARY_HEADER_SIZE_OCTET;
+    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := tm_frame_size_octet_g;
 
     -- TM Frame buffer
     signal tm_frame_buffer_r: std_logic_vector((TM_FRAME_BUFFER_SIZE_OCTET) * 8 - 1 downto 0);
@@ -101,7 +101,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_enable_output_s: boolean := false;
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
-    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1;
+    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1;
 
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
@@ -122,9 +122,9 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_o_s: std_logic_vector(31 downto 0);
     signal dd_data_valid_o_s: std_logic := '0';
     signal dd_data_fully_read_s: std_logic := '0';
-    signal dd_data_i_s: std_logic_vector(7 downto 0);
+    signal dd_data_i_r: std_logic_vector(7 downto 0);
     signal dd_clk_s: std_logic;
-    signal dd_data_valid_i_s: std_logic := '0';
+    signal dd_data_valid_i_r: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
 begin
     HD: header_decoder port map (
@@ -144,15 +144,15 @@ begin
     );
 
     DD: data_decoder generic map (
-        tm_frame_data_size_octet_g => tm_frame_data_size_octet_g
+        tm_frame_data_size_octet_g => TM_FRAME_DATA_FIELD_SIZE_OCTET
     )
     port map (
         data_o => dd_data_o_s,
         data_valid_o => dd_data_valid_o_s,
         data_fully_read_o => dd_data_fully_read_s,
-        data_i => dd_data_i_s,
+        data_i => dd_data_i_r,
         clk_i => dd_clk_s,
-        data_valid_i => dd_data_valid_i_s,
+        data_valid_i => dd_data_valid_i_r,
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s
     );
 
@@ -212,15 +212,15 @@ begin
     begin
         if rising_edge(clk_i) then
             if tm_frame_data_enable_output_s then
-                dd_data_i_s <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8);
-                dd_data_valid_i_s <= '1';
+                dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8);
+                dd_data_valid_i_r <= '1';
                 tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
                 if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
                     tm_frame_data_field_index_r <= 0;
                     tm_frame_data_finished_output_r <= true;
                 end if;
             else
-                dd_data_valid_i_s <= '0';
+                dd_data_valid_i_r <= '0';
                 tm_frame_data_finished_output_r <= false;
             end if;
         end if;
