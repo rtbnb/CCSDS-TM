@@ -91,8 +91,6 @@ architecture behavioral of decoder_buffer_and_structure is
 
     -- TM Frame buffer
     signal tm_frame_buffer_r: std_logic_vector((TM_FRAME_BUFFER_SIZE_OCTET) * 8 - 1 downto 0);
-    --type buffer_selector_t is (buffer_one, buffer_two);
-    --signal buffer_selector_r: buffer_selector_t := buffer_one;
     signal tm_frame_buffer_counter_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal next_tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
@@ -118,7 +116,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal segment_length_id_s: std_logic_vector(1 downto 0);
     signal first_header_pointer_s: std_logic_vector(10 downto 0);
 
-    -- data decoder
+    -- data decoder (dd instance)
     signal dd_data_o_s: std_logic_vector(31 downto 0);
     signal dd_data_valid_o_s: std_logic := '0';
     signal dd_data_fully_read_s: std_logic := '0';
