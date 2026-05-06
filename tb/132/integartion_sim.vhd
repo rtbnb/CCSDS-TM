@@ -82,53 +82,6 @@ begin
             test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) +1));  
         end if;
         wait for CLK_PERIOD;
-        -- data field 2040 octets
-        --for i in 0 to 6 loop
-        --    -- packet version number + packet type + sec hdr flag + apid
-        --    test_input_data_s <= "00000000";
-        --    wait for CLK_PERIOD;
-        --    -- apid
-        --    test_input_data_s <= "00000000";
-        --    wait for CLK_PERIOD;
-        --    -- packet sequence control
-        --    test_input_data_s <= "00000000";
-        --    wait for CLK_PERIOD;
-        --    -- packet sequence control
-        --    test_input_data_s <= "00000000";
-        --    wait for CLK_PERIOD;
-        --    -- packet data length
-        --    test_input_data_s <= "00000000";
-        --    wait for CLK_PERIOD;
-        --    -- packet data length
-        --    test_input_data_s <= "11111001"; -- 249
-        --    wait for CLK_PERIOD;
-        --    for j in 0 to 250 loop
-        --        test_input_data_s <= std_logic_vector(to_unsigned(j, 8));
-        --        wait for CLK_PERIOD;
-        --    end loop;
-        --end loop;
-        ---- packet version number + packet type + sec hdr flag + apid
-        --test_input_data_s <= "00000000";
-        --wait for CLK_PERIOD;
-        ---- apid
-        --test_input_data_s <= "00000001";
-        --wait for CLK_PERIOD;
-        ---- packet sequence control
-        --test_input_data_s <= "00000000";
-        --wait for CLK_PERIOD;
-        ---- packet sequence control
-        --test_input_data_s <= "00000000";
-        --wait for CLK_PERIOD;
-        ---- packet data length
-        --test_input_data_s <= "00000000";
-        --wait for CLK_PERIOD;
-        ---- packet data length
-        --test_input_data_s <= "11110001"; -- 241 -> data field size of 242 and packet size 248
-        --wait for CLK_PERIOD;
-        --for j in 0 to 242 loop
-        --    test_input_data_s <= std_logic_vector(to_unsigned(j, 8));
-        --    wait for CLK_PERIOD;
-        --end loop;
     end process data_test;
 
 end architecture behavioral;
