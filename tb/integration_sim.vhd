@@ -8,6 +8,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use ieee.numeric_std.all;
 
 entity integration_sim is
 
@@ -16,6 +17,8 @@ end entity integration_sim;
 architecture behavioral of integration_sim is
     component system_integration_wrapper is
         port (
+            ground_clk_i_1 : in std_logic;
+            rd_en_i_0 : std_logic;
             clk_i_0 : in STD_LOGIC;
             data_i_0 : in STD_LOGIC_VECTOR ( 7 downto 0 );
             data_valid_i_0 : in STD_LOGIC;
@@ -34,7 +37,8 @@ architecture behavioral of integration_sim is
     
 
 
-    constant CLK_PERIOD : time := 10 ns;
+    constant GND_CLK_PERIOD : time := 10 ns;
+    constant CLK_PERIOD : time := 500 ns;
 
     signal clk_s: std_logic := '0';
     signal reset_s: std_logic := '0';
@@ -47,9 +51,15 @@ architecture behavioral of integration_sim is
     signal test_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
     signal test_input_valid_s: std_logic := '0';
     signal test_input_ready_s: std_logic;
+    
+    -- ground
+    signal ground_clk_s: std_logic := '0';
+    signal read_en_fifo_s: std_logic := '1';
 
 begin
     DBF: system_integration_wrapper port map (
+        ground_clk_i_1 => ground_clk_s,
+        rd_en_i_0 => read_en_fifo_s,
         data_i_0 => test_input_data_s,
         data_valid_i_0 => test_input_valid_s,
         clk_i_0 => clk_s,
@@ -70,6 +80,11 @@ begin
         wait;
     end process general_settings;
 
+    ground_clk: process begin
+        ground_clk_s <= not ground_clk_s;
+        wait for GND_CLK_PERIOD;
+    end process ground_clk;
+
     clock: process begin
         clk_s <= not clk_s;
         wait for CLK_PERIOD;
@@ -78,7 +93,7 @@ begin
     data_test: process begin
         wait for CLK_PERIOD;
         if (test_input_ready_s = '1') then
-            test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) +1));  
+            test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) + 1));  
         end if;
         wait for CLK_PERIOD;
     end process data_test;
