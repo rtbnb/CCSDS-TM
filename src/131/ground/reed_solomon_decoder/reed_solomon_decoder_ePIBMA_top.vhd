@@ -17,6 +17,7 @@ entity reed_solomon_decoder_epibma_top is
     );
     port (
         clk_i               : in  std_logic;
+        clk_2_i               : in  std_logic;
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic
     );
@@ -24,27 +25,78 @@ end entity reed_solomon_decoder_epibma_top;
 
 architecture behavioral of reed_solomon_decoder_epibma_top is
     type finite_field_epibma_t is array (0 to max_number_of_errors_g*2) of finite_field_t;
+    type finite_field_epibma_2_t is array (0 to max_number_of_errors_g*2-1) of finite_field_t;
     
-    signal omega_array_r: finite_field_epibma_t;
-    signal theta_array_r : finite_field_epibma_t;
+    signal omega_array_r: finite_field_epibma_2_t;
+    signal theta_array_r : finite_field_epibma_2_t;
     
-    signal omega_new_array_r: finite_field_epibma_t := (x"01",x"71",x"E8",x"F0",
-                                                        x"7E",x"DF",x"26",x"8F",
-                                                        x"0C",x"47",x"93",x"BF",
-                                                        x"97",x"82",x"E6",x"6A",
-                                                        x"16",x"14",x"C9",x"32",
-                                                        x"46",x"3E",x"01",x"AD",
-                                                        x"BE",x"3A",x"3C",x"DC",
-                                                        x"56",x"CA",x"42",x"03",x"70");
+    signal omega_new_array_r: finite_field_epibma_t := (x"8A",
+x"46",
+x"20",
+x"13",
+x"C9",
+x"A4",
+x"51",
+x"E8",
+x"77",
+x"FB",
+x"BD",
+x"9E",
+x"4C",
+x"25",
+x"D2",
+x"6A",
+x"36",
+x"18",
+x"0F",
+x"C7",
+x"A3",
+x"91",
+x"88",
+x"47",
+x"E3",
+x"B1",
+x"98",
+x"4F",
+x"E7",
+x"B3",
+x"99",
+x"8C",
+x"01");
                                                         
-    signal theta_new_array_r: finite_field_epibma_t := (x"01",x"00",x"E8",x"F0",
-                                                        x"7E",x"DF",x"26",x"8F",
-                                                        x"0C",x"47",x"93",x"BF",
-                                                        x"97",x"82",x"E6",x"6A",
-                                                        x"16",x"14",x"C9",x"32",
-                                                        x"46",x"3E",x"01",x"AD",
-                                                        x"BE",x"3A",x"3C",x"DC",
-                                                        x"56",x"CA",x"42",x"03",x"70");
+    signal theta_new_array_r: finite_field_epibma_t := (x"8A",
+x"46",
+x"20",
+x"13",
+x"C9",
+x"A4",
+x"51",
+x"E8",
+x"77",
+x"FB",
+x"BD",
+x"9E",
+x"4C",
+x"25",
+x"D2",
+x"6A",
+x"36",
+x"18",
+x"0F",
+x"C7",
+x"A3",
+x"91",
+x"88",
+x"47",
+x"E3",
+x"B1",
+x"98",
+x"4F",
+x"E7",
+x"B3",
+x"99",
+x"00",
+x"01");
     
     signal mc1_r : std_logic;
     signal mc2_r : std_logic_vector(max_number_of_errors_g*2 downto 0);
@@ -76,9 +128,9 @@ begin
         );
     
   rs_decoder_epibma_pe_gen:for i in 1 to max_number_of_errors_g*2-1 generate
-        rs_decoder_epibma_pe_inst: entity work.reed_solomon_decoder_epibma_pe
+        rs_decoder_epibma_pe_inst_loop: entity work.reed_solomon_decoder_epibma_pe
             port map (
-                clk_i =>   clk_i,          
+                clk_i =>   clk_2_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(i),      
@@ -92,23 +144,23 @@ begin
                 mc2_i => mc2_r(i),
                 mc3_i => mc3_r,
                 
-                omega_o => omega_array_r(i+1),
-                theta_o => theta_array_r(i+1)
+                omega_o => omega_array_r(i-1),
+                theta_o => theta_array_r(i-1)
             );
     end generate rs_decoder_epibma_pe_gen;
     
-    rs_decoder_epibma_pe_inst: entity work.reed_solomon_decoder_epibma_pe
+    rs_decoder_epibma_pe_inst_last_element: entity work.reed_solomon_decoder_epibma_pe
         port map (
-                clk_i =>   clk_i,          
+                clk_i =>   clk_2_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(0),      
                 new_theta_i =>  theta_new_array_r(0),      
                 
-                omega_i => x"00",
+                omega_i => omega_array_r(0),
                 gamma_i => gamma_r,
                 delta_i => delta_o_r,
-                theta_i => x"00",
+                theta_i => theta_array_r(0),
                 mc1_i => mc1_r,
                 mc2_i => mc2_r(0),
                 mc3_i => mc3_r,
@@ -117,24 +169,24 @@ begin
                 theta_o => open
             );
        
-       rs_decoder_epibma_pe_inst2: entity work.reed_solomon_decoder_epibma_pe
+       rs_decoder_epibma_pe_inst_first_element: entity work.reed_solomon_decoder_epibma_pe
         port map (
-                clk_i =>   clk_i,          
+                clk_i =>   clk_2_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(32),      
                 new_theta_i =>  theta_new_array_r(32),      
                 
-                omega_i => omega_array_r(32),
+                omega_i => x"00",
                 gamma_i => gamma_r,
                 delta_i => delta_o_r,
-                theta_i => theta_array_r(32),
+                theta_i => x"00",
                 mc1_i => mc1_r,
                 mc2_i => mc2_r(32),
                 mc3_i => mc3_r,
                 
-                omega_o => delta_i_r,
-                theta_o => open
+                omega_o => omega_array_r(31),
+                theta_o => theta_array_r(31)
             );
     
     
