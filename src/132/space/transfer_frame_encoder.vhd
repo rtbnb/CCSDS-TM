@@ -159,6 +159,7 @@ begin
                     master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
                     state_r <= PRIMARY_HEADER;
                     vch0_data_en_o <= '0';
+                    oid_length_counter_r <= 0;
                     
                 end if;
              
