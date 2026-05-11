@@ -26,10 +26,11 @@ end entity oid_generator;
 
 architecture behavioral of oid_generator is 
 
-    constant    INIT_SEQUENCE           : std_logic_vector(31 downto 0) := "00000000001111111111111111111101"; 
+    constant    INIT_SEQUENCE           : std_logic_vector(31 downto 0) := "11111111001111111111111111111101"; --"00000000001111111111111111111101"; 
     signal      shift_register_r        : std_logic_vector(31 downto 0) := INIT_SEQUENCE;
     signal      counter_r               : integer range 0 to 8 := 0;
     signal      generate_output_byte_r  : std_logic := '0';
+    signal      first_data_requested_r  : std_logic := '0';
 
 begin 
 
@@ -40,15 +41,20 @@ begin
     begin 
         if reset_i = '0'  then 
             -- reset signals 
-            data_o                      <= "00000000";
+            data_o                      <= "11111111";
             shift_register_r            <= INIT_SEQUENCE;
             -- reset variables 
             new_element_s               := '0'; 
             new_shift_register          := (others => '0');
             data_valid_o                <= '0';
+            first_data_requested_r      <= '0';
 
         elsif rising_edge(clk_i) then 
             data_valid_o <= '0';
+            if (enable_i = '1') and (first_data_requested_r = '0') then 
+                data_valid_o <= '1'; 
+                first_data_requested_r <= '1';
+            end if;
             if (enable_i = '1') or (generate_output_byte_r = '1') then
                 -- output data 
                 data_o(7 - counter_r)   <= shift_register_r(0);
