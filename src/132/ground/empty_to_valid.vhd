@@ -1,0 +1,41 @@
+----------------------------------------------------------------
+-- File : empty_to_valid.vhd
+-- Created : 05.05.2026
+-- Author : Nico Tunkowski
+-- Project Name : HW/SW Project TM
+-- Description : Empty to Valid Flag Converter
+----------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity empty_to_valid is
+    port (
+        empty_i: in std_logic;
+        data_valid_o: out std_logic;
+        rd_clk_o: out std_logic;
+        clk_i: in std_logic
+    );
+end entity empty_to_valid;
+
+architecture behavioral of empty_to_valid is
+    signal data_available_r: std_logic := '0';
+begin
+    delay: process(clk_i) is
+    begin
+        if rising_edge(clk_i) then
+            data_available_r <= not empty_i;
+            if data_available_r = '1' then
+                data_valid_o <= '1';
+            else
+                data_valid_o <= '0';
+            end if;
+        end if;
+    end process delay;
+    
+    with data_available_r select
+        rd_clk_o <= clk_i when '1',
+                      '0' when others;
+
+end architecture behavioral;
