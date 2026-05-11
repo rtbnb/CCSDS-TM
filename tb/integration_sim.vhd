@@ -76,7 +76,6 @@ begin
         reset_s <= '1';
         transfer_frame_version_number_s <= "11";
         spacecraft_id_s <= "0000000001";
-        test_input_valid_s <= '1';
         wait;
     end process general_settings;
 
@@ -89,13 +88,36 @@ begin
         clk_s <= not clk_s;
         wait for CLK_PERIOD;
     end process clock;
-    
-    data_test: process begin
+
+    space_packet_input: process begin
+        test_input_valid_s <= '1';
+        -- Space packet header: Packet Version number + Packet ident
+        test_input_data_s <= "00000000";
         wait for CLK_PERIOD;
-        if (test_input_ready_s = '1') then
-            test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) + 1));  
-        end if;
+        -- Space packet header: APID 
+        test_input_data_s <= "00000000";
         wait for CLK_PERIOD;
-    end process data_test;
+        -- Space packet header: Sequence flag + sequence count
+        test_input_data_s <= "01000000";
+        wait for CLK_PERIOD;
+        -- Space packet header: sequence count
+        test_input_data_s <= "00000000";
+        wait for CLK_PERIOD;
+        -- Space packet header: packet length
+        test_input_data_s <= "00000000";
+        wait for CLK_PERIOD;
+        -- Space packet header: packet length
+        test_input_data_s <= "11111001";
+        wait for CLK_PERIOD;
+        -- space packet data field:
+        for i in 0 to 249 loop
+            test_input_data_s <= std_logic_vector(to_unsigned(i, 8));
+            wait for CLK_PERIOD;
+        end loop;
+    end process space_packet_input;
+
+    space_packet_validation: process begin
+        wait;
+    end process space_packet_validation;
 
 end architecture behavioral;
