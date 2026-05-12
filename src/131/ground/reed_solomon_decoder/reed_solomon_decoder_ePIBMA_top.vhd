@@ -17,7 +17,6 @@ entity reed_solomon_decoder_epibma_top is
     );
     port (
         clk_i               : in  std_logic;
-        clk_2_i               : in  std_logic;
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic
     );
@@ -130,7 +129,7 @@ begin
   rs_decoder_epibma_pe_gen:for i in 1 to max_number_of_errors_g*2-1 generate
         rs_decoder_epibma_pe_inst_loop: entity work.reed_solomon_decoder_epibma_pe
             port map (
-                clk_i =>   clk_2_i,          
+                clk_i =>   clk_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(i),      
@@ -141,7 +140,7 @@ begin
                 delta_i => delta_o_r,
                 theta_i => theta_array_r(i),
                 mc1_i => mc1_r,
-                mc2_i => mc2_r(i),
+                mc2_i => mc2_r(max_number_of_errors_g*2-i),
                 mc3_i => mc3_r,
                 
                 omega_o => omega_array_r(i-1),
@@ -151,7 +150,7 @@ begin
     
     rs_decoder_epibma_pe_inst_last_element: entity work.reed_solomon_decoder_epibma_pe
         port map (
-                clk_i =>   clk_2_i,          
+                clk_i =>   clk_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(0),      
@@ -162,7 +161,7 @@ begin
                 delta_i => delta_o_r,
                 theta_i => theta_array_r(0),
                 mc1_i => mc1_r,
-                mc2_i => mc2_r(0),
+                mc2_i => mc2_r(32),
                 mc3_i => mc3_r,
                 
                 omega_o => delta_i_r,
@@ -171,7 +170,7 @@ begin
        
        rs_decoder_epibma_pe_inst_first_element: entity work.reed_solomon_decoder_epibma_pe
         port map (
-                clk_i =>   clk_2_i,          
+                clk_i =>   clk_i,          
                 reset_i => reset_i,
                 new_poly_i => new_poly_i,    
                 new_omega_i =>  omega_new_array_r(32),      
@@ -182,7 +181,7 @@ begin
                 delta_i => delta_o_r,
                 theta_i => x"00",
                 mc1_i => mc1_r,
-                mc2_i => mc2_r(32),
+                mc2_i => mc2_r(0),
                 mc3_i => mc3_r,
                 
                 omega_o => omega_array_r(31),

@@ -42,64 +42,55 @@ begin
     begin
         if reset_i = '0' then
             --new_poly_r <= '0';
+            gamma_r <= x"01";
         elsif rising_edge(clk_i) then
             --new_poly_r <= new_poly_i;
             if (new_poly_i = '1') then
                 gamma_r <= x"01";
-            
+                l_a_r <= 0;
+                l_b_r <= 0;
+                
+                -- Pre compute mc2_o to make sure it has the correct value for first iter
+                mc2_r <= "000000000000000000000000000000100";
+                
+                
+                
             elsif ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) then
+                l_a_r <= l_b_r + 1;
+                l_b_r <= l_a_r;
                 gamma_r <= delta_i;
+                
+                mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
             else
+                if (l_b_r = max_number_of_errors_g-1) then
+                    l_b_r <= l_b_r;
+                else
+                    l_b_r <= l_b_r+1;
+                end if;
                 gamma_r <= gamma_r;
+                l_a_r <= l_a_r;
+                
+                mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
             end if;
         end if;
         
     end process synchronizer;
     
-    delta_o <= x"00" when (reset_i = '0') else
-                delta_i;
-    mc1_o <= '0' when (reset_i = '0') else
+   gamma_o <= gamma_r;
+   mc2_o <= mc2_r;
+   
+   delta_o <= x"00" when reset_i = '0' else 
+              delta_i;
+  
+   mc1_o <= '0' when (reset_i = '0') else
              '1' when ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) else
              '0';
-    
-    -- interneral register for next cylce
-    mc2_r <= "000000000000000000000000000000001" when (reset_i = '0') else
-             "000000000000000000000000000000001" when (new_poly_i = '1') else
-             mc2_r(max_number_of_errors_g*2 downto 1) & '1';
-    
-    -- register out for current cycle
-    mc2_o <= "000000000000000000000000000000001" when (reset_i = '0') else
-             "000000000000000000000000000000001" when (new_poly_i = '1') else
-             mc2_r(max_number_of_errors_g*2 downto 1) & '1';
-            
-    mc3_o <= '0' when (reset_i = '0') else
-             '1' when (l_b_r = max_number_of_errors_g-1) else
-             '0';
              
-    --l_a_r <= 0 when (reset_i = '0') else
-    --         0 when (new_poly_i = '1') else
-    --         l_b_r + 1 when ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) else
-     --        l_a_r;
-    
-    --l_b_r <= 0 when (reset_i = '0') else
-    --         0 when (new_poly_i = '1') else
-    ---         l_a_r + 1 when ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) else
-     --        l_b_r when (l_b_r = max_number_of_errors_g-1) else
-     --        l_b_r + 1;
-             
-   -- interneral register for next cylce    
-   --gamma_r <= x"01" when (reset_i = '0') else
-   --           x"01" when (new_poly_r = '1') else
-   --           delta_i when ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) else
-   --           gamma_r;
-   
-   gamma_o <= gamma_r;
-              
-   -- register out for current cycle
-   --gamma_o <= x"01" when (reset_i = '0') else
-   --           x"01" when (new_poly_r = '1') else
-   --           delta_i when ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) else
-   --           gamma_r;
+   mc3_o <= '0' when (reset_i = '0') else
+            '1' when (l_b_r = max_number_of_errors_g-1) else
+            '0';
+          
+
        
     
 
