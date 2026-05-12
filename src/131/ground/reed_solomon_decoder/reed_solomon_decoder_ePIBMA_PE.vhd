@@ -40,37 +40,27 @@ begin
     processing_element : process (clk_i)
     begin
         if reset_i = '0' then
-            omega_o <= x"00";
             omega_r <= x"00";
-            
-            theta_o <= x"00";
             theta_r <= x"00";
         elsif rising_edge(clk_i) then
             if new_poly_i = '1' then
                 theta_r<=new_theta_i;
                 omega_r<=new_omega_i;
-                theta_o<=new_theta_i;
-                omega_o<=new_omega_i;
             else
                 -- Calculate new Omega value:
                 -- OmegaI * gamma + thetaR * delta
                 omega_r <= gf_add(gf_mult(omega_i, gamma_i),gf_mult(theta_r, delta_i));
-                omega_o <= gf_add(gf_mult(omega_i, gamma_i),gf_mult(theta_r, delta_i));
                 
                 if mc2_i = '1' then
                     theta_r <= x"00";
-                    theta_o <= x"00";
                 else
                     if mc1_i = '1' then 
                         theta_r <= omega_i;
-                        theta_o <= omega_i;
                     else
                         if mc3_i = '1' then
-                            theta_r <= theta_i;
-                            theta_o <= theta_i;
+                            theta_r <= theta_i;                            
                         else
                             theta_r <= theta_r;
-                            theta_o <= theta_r;
                         end if;
                     end if;
                 end if;
@@ -78,6 +68,8 @@ begin
             end if;
         end if;
     end process processing_element;
+    omega_o <= omega_r;
+    theta_o <= theta_r;
 
 
 end architecture behavioral;
