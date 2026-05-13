@@ -52,6 +52,12 @@ architecture behavioral of integration_sim is
     -- ground
     signal ground_clk_s: std_logic := '0';
 
+    -- automatic testbench
+    constant WORDS_PER_FRAME: integer := 510;
+    
+    signal output_word_counter_r: integer := 0;
+    signal test_output_data_s: std_logic_vector(7 downto 0) := (others => '0');
+
 begin
     DBF: system_integration_wrapper port map (
         ground_clk_i_1 => ground_clk_s,
@@ -92,35 +98,28 @@ begin
         wait for CLK_PERIOD;
     end process data_test;
 
-    --space_packet_input: process begin
-    --    if test_input_ready_s = '1' then
-    --        test_input_valid_s <= '1';
-    --        -- Space packet header: Packet Version number + Packet ident
-    --        test_input_data_s <= "00000000";
-    --        wait for CLK_PERIOD;
-    --        -- Space packet header: APID 
-    --        test_input_data_s <= "00000000";
-    --        wait for CLK_PERIOD;
-    --        -- Space packet header: Sequence flag + sequence count
-    --        test_input_data_s <= "01000000";
-    --        wait for CLK_PERIOD;
-    --        -- Space packet header: sequence count
-    --        test_input_data_s <= "00000000";
-    --        wait for CLK_PERIOD;
-    --        -- Space packet header: packet length
-    --        test_input_data_s <= "00000000";
-    --        wait for CLK_PERIOD;
-    --        -- Space packet header: packet length
-    --        test_input_data_s <= "11111001";
-    --        wait for CLK_PERIOD;
-    --        -- space packet data field:
-    --        for i in 0 to 249 loop
-    --            test_input_data_s <= std_logic_vector(to_unsigned(i, 8));
-    --            wait for CLK_PERIOD;
-    --        end loop;
-    --    else
-    --        wait for CLK_PERIOD;
-    --    end if;
-    --end process space_packet_input;
-
+    test: process begin
+        wait for GND_CLK_PERIOD;
+        if tm_data_field_valid_s = '1' then
+            output_word_counter_r <= output_word_counter_r + 1;
+            if output_word_counter_r = WORDS_PER_FRAME then
+                output_word_counter_r <= 0;
+            end if;
+            assert (tm_data_field_s(7 downto 0) = test_output_data_s) 
+            report "mismatching output data first octet" severity error;
+            
+            assert (tm_data_field_s(15 downto 8) = std_logic_vector((unsigned(test_output_data_s) + 1))) 
+            report "mismatching output data second octet" severity error;
+            
+            assert (tm_data_field_s(23 downto 16) = std_logic_vector((unsigned(test_output_data_s) + 2))) 
+            report "mismatching output data third octet" severity error;
+            
+            assert (tm_data_field_s(31 downto 24) = std_logic_vector((unsigned(test_output_data_s) + 3))) 
+            report "mismatching output data fourth octet" severity error;
+            
+            test_output_data_s <= std_logic_vector((unsigned(test_output_data_s) + 4));
+            
+        end if;
+        wait for GND_CLK_PERIOD;
+    end process test;
 end architecture behavioral;
