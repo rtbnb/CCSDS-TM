@@ -25,17 +25,12 @@ begin
     delay: process(clk_i) is
     begin
         if rising_edge(clk_i) then
-            data_available_r <= not empty_i;
-            if data_available_r = '1' then
-                data_valid_o <= '1';
-            else
-                data_valid_o <= '0';
-            end if;
+            data_valid_o <= not empty_i;
         end if;
     end process delay;
     
-    with data_available_r select
-        rd_clk_o <= clk_i when '1',
+    with empty_i select
+        rd_clk_o <= clk_i when '0',
                       '0' when others;
 
 end architecture behavioral;

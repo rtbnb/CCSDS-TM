@@ -18,11 +18,9 @@ architecture behavioral of integration_sim is
     component system_integration_wrapper is
         port (
             ground_clk_i_1 : in std_logic;
-            rd_en_i_0 : std_logic;
             clk_i_0 : in STD_LOGIC;
             data_i_0 : in STD_LOGIC_VECTOR ( 7 downto 0 );
             data_valid_i_0 : in STD_LOGIC;
-            out_full_i_0 : in STD_LOGIC;
             ready_o_0 : out STD_LOGIC;
             reset_i_0 : in STD_LOGIC;
             spacecraft_id_i_0 : in STD_LOGIC_VECTOR ( 9 downto 0 );
@@ -45,7 +43,6 @@ architecture behavioral of integration_sim is
 
     signal transfer_frame_version_number_s: std_logic_vector(1 downto 0);
     signal spacecraft_id_s: std_logic_vector(9 downto 0);
-    signal out_full_i_s: std_logic := '0';
 
     -- test signals
     signal test_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
@@ -54,12 +51,10 @@ architecture behavioral of integration_sim is
     
     -- ground
     signal ground_clk_s: std_logic := '0';
-    signal read_en_fifo_s: std_logic := '1';
 
 begin
     DBF: system_integration_wrapper port map (
         ground_clk_i_1 => ground_clk_s,
-        rd_en_i_0 => read_en_fifo_s,
         data_i_0 => test_input_data_s,
         data_valid_i_0 => test_input_valid_s,
         clk_i_0 => clk_s,
@@ -67,13 +62,13 @@ begin
         reset_i_0 => reset_s,
         tm_data_field_o_0 => tm_data_field_s,
         tm_data_field_valid_o_0 => tm_data_field_valid_s,
-        out_full_i_0 => out_full_i_s,
         transfer_frame_version_number_i_0 => transfer_frame_version_number_s,
         spacecraft_id_i_0 => spacecraft_id_s
     );
     
     general_settings: process begin
         reset_s <= '1';
+        test_input_valid_s <= '1';
         transfer_frame_version_number_s <= "11";
         spacecraft_id_s <= "0000000001";
         wait;
@@ -89,35 +84,43 @@ begin
         wait for CLK_PERIOD;
     end process clock;
 
-    space_packet_input: process begin
-        test_input_valid_s <= '1';
-        -- Space packet header: Packet Version number + Packet ident
-        test_input_data_s <= "00000000";
+    data_test: process begin
         wait for CLK_PERIOD;
-        -- Space packet header: APID 
-        test_input_data_s <= "00000000";
+        if (test_input_ready_s = '1') then
+            test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) +1));  
+        end if;
         wait for CLK_PERIOD;
-        -- Space packet header: Sequence flag + sequence count
-        test_input_data_s <= "01000000";
-        wait for CLK_PERIOD;
-        -- Space packet header: sequence count
-        test_input_data_s <= "00000000";
-        wait for CLK_PERIOD;
-        -- Space packet header: packet length
-        test_input_data_s <= "00000000";
-        wait for CLK_PERIOD;
-        -- Space packet header: packet length
-        test_input_data_s <= "11111001";
-        wait for CLK_PERIOD;
-        -- space packet data field:
-        for i in 0 to 249 loop
-            test_input_data_s <= std_logic_vector(to_unsigned(i, 8));
-            wait for CLK_PERIOD;
-        end loop;
-    end process space_packet_input;
+    end process data_test;
 
-    space_packet_validation: process begin
-        wait;
-    end process space_packet_validation;
+    --space_packet_input: process begin
+    --    if test_input_ready_s = '1' then
+    --        test_input_valid_s <= '1';
+    --        -- Space packet header: Packet Version number + Packet ident
+    --        test_input_data_s <= "00000000";
+    --        wait for CLK_PERIOD;
+    --        -- Space packet header: APID 
+    --        test_input_data_s <= "00000000";
+    --        wait for CLK_PERIOD;
+    --        -- Space packet header: Sequence flag + sequence count
+    --        test_input_data_s <= "01000000";
+    --        wait for CLK_PERIOD;
+    --        -- Space packet header: sequence count
+    --        test_input_data_s <= "00000000";
+    --        wait for CLK_PERIOD;
+    --        -- Space packet header: packet length
+    --        test_input_data_s <= "00000000";
+    --        wait for CLK_PERIOD;
+    --        -- Space packet header: packet length
+    --        test_input_data_s <= "11111001";
+    --        wait for CLK_PERIOD;
+    --        -- space packet data field:
+    --        for i in 0 to 249 loop
+    --            test_input_data_s <= std_logic_vector(to_unsigned(i, 8));
+    --            wait for CLK_PERIOD;
+    --        end loop;
+    --    else
+    --        wait for CLK_PERIOD;
+    --    end if;
+    --end process space_packet_input;
 
 end architecture behavioral;
