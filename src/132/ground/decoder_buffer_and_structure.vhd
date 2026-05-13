@@ -210,7 +210,7 @@ begin
     begin
         if rising_edge(clk_i) then
             if tm_frame_data_enable_output_s then
-                dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET - 1)) * 8);
+                dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)) * 8 + 7 downto ((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)) * 8);
                 dd_data_valid_i_r <= '1';
                 tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
                 if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
