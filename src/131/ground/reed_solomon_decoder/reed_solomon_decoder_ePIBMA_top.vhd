@@ -18,7 +18,11 @@ entity reed_solomon_decoder_epibma_top is
     port (
         clk_i               : in  std_logic;
         reset_i             : in  std_logic;
-        new_poly_i          : in std_logic
+        new_poly_i          : in std_logic;
+        
+        epibma_done_o: out std_logic;
+        error_locator_poly_o : out finite_field_error_locator_t;
+        error_mag_poly_o : out finite_field_error_mag_t
     );
 end entity reed_solomon_decoder_epibma_top;
 
@@ -29,71 +33,71 @@ architecture behavioral of reed_solomon_decoder_epibma_top is
     signal omega_array_r: finite_field_epibma_2_t;
     signal theta_array_r : finite_field_epibma_2_t;
     
-    signal omega_new_array_r: finite_field_epibma_t := (x"2F",
-x"F1",
-x"33",
-x"F1",
-x"78",
-x"2F",
-x"2F",
+    signal omega_new_array_r: finite_field_epibma_t := (x"CC",
+x"D2",
+x"CF",
+x"90",
+x"05",
+x"C6",
+x"D9",
+x"FA",
+x"E3",
+x"44",
+x"4E",
+x"45",
+x"70",
+x"03",
+x"42",
+x"CA",
+x"56",
+x"DC",
+x"3C",
+x"3A",
+x"BE",
+x"AD",
 x"01",
-x"F9",
-x"C0",
-x"FA",
-x"E1",
-x"33",
-x"C0",
-x"33",
-x"17",
-x"C0",
-x"F9",
-x"F4",
-x"FA",
-x"FE",
-x"E1",
-x"F1",
-x"E1",
-x"01",
-x"92",
-x"A7",
-x"8F",
-x"F9",
-x"FE",
-x"FA",
-x"A5",
+x"3E",
+x"46",
+x"32",
+x"C9",
+x"14",
+x"16",
+x"6A",
+x"E6",
+x"82",
 x"01");
                                                         
-    signal theta_new_array_r: finite_field_epibma_t := (x"2F",
-x"F1",
-x"33",
-x"F1",
-x"78",
-x"2F",
-x"2F",
+    signal theta_new_array_r: finite_field_epibma_t := (x"CC",
+x"D2",
+x"CF",
+x"90",
+x"05",
+x"C6",
+x"D9",
+x"FA",
+x"E3",
+x"44",
+x"4E",
+x"45",
+x"70",
+x"03",
+x"42",
+x"CA",
+x"56",
+x"DC",
+x"3C",
+x"3A",
+x"BE",
+x"AD",
 x"01",
-x"F9",
-x"C0",
-x"FA",
-x"E1",
-x"33",
-x"C0",
-x"33",
-x"17",
-x"C0",
-x"F9",
-x"F4",
-x"FA",
-x"FE",
-x"E1",
-x"F1",
-x"E1",
-x"01",
-x"92",
-x"A7",
-x"8F",
-x"F9",
-x"FE",
-x"FA",
+x"3E",
+x"46",
+x"32",
+x"C9",
+x"14",
+x"16",
+x"6A",
+x"E6",
 x"00",
 x"01");
     
@@ -103,6 +107,7 @@ x"01");
     signal delta_i_r : finite_field_t;
     signal delta_o_r : finite_field_t;
     signal gamma_r : finite_field_t;
+    signal theta_i_r : finite_field_t;
     
    
     
@@ -123,7 +128,9 @@ begin
             gamma_o => gamma_r,
             mc1_o => mc1_r,
             mc2_o => mc2_r,
-            mc3_o => mc3_r
+            mc3_o => mc3_r,
+            
+            epibma_done_o => epibma_done_o
         );
     
   rs_decoder_epibma_pe_gen:for i in 1 to max_number_of_errors_g*2-1 generate
@@ -165,7 +172,7 @@ begin
                 mc3_i => mc3_r,
                 
                 omega_o => delta_i_r,
-                theta_o => open
+                theta_o => theta_i_r
             );
        
        rs_decoder_epibma_pe_inst_first_element: entity work.reed_solomon_decoder_epibma_pe
@@ -189,5 +196,12 @@ begin
             );
     
     
-    
+    error_locator_poly_o <= (delta_i_r, omega_array_r(0),  omega_array_r(1),  omega_array_r(2),  omega_array_r(3),  omega_array_r(4),
+                                        omega_array_r(5),  omega_array_r(6),  omega_array_r(7),  omega_array_r(8),  omega_array_r(9),
+                                        omega_array_r(10), omega_array_r(11), omega_array_r(12), omega_array_r(13), omega_array_r(14),  
+                                        omega_array_r(15));
+                                        
+    error_mag_poly_o    <= (theta_i_r,  theta_array_r(0), theta_array_r(1), theta_array_r(2), theta_array_r(3), theta_array_r(4),
+                                        theta_array_r(5), theta_array_r(6), theta_array_r(7), theta_array_r(8), theta_array_r(9),
+                                        theta_array_r(10), theta_array_r(11), theta_array_r(12), theta_array_r(13), theta_array_r(14));                   
 end architecture behavioral;

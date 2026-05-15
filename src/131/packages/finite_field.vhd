@@ -16,6 +16,8 @@ package finite_field is
     constant FIELD_GEN_POLY : std_logic_vector(8 downto 0) := "110000111"; -- TODO: Check if this works with the multiplication or if the Type needs to be FiniteField
     
     type finite_field_look_up_t is array (0 to 255) of finite_field_t;
+	type finite_field_error_locator_t is array (0 to 16) of finite_field_t;
+	type finite_field_error_mag_t is array (0 to 15) of finite_field_t;
 
     constant DUAL_TO_CONVENTIONAL : finite_field_look_up_t := ("00000000","11001100","10101100","01100000","01111001","10110101"
                                                             ,"11010101","00011001","11110000","00111100","01011100","10010000"
@@ -60,6 +62,7 @@ package finite_field is
                                                             ,"01010100","10011000","11111000","00110100","00101101","11100001"
                                                             ,"10000001","01001101","10100100","01101000","00001000","11000100"
                                                             ,"11011101","00010001","01110001","10111101");
+															
     constant CONVENTIONAL_TO_DUAL : finite_field_look_up_t := ("00000000","01111011","10101111","11010100","10011001","11100010"
                                                             ,"00110110","01001101","11111010","10000001","01010101","00101110"
                                                             ,"01100011","00011000","11001100","10110111","10000110","11111101"
@@ -104,7 +107,12 @@ package finite_field is
                                                             ,"00111110","01000101","11110010","10001001","01011101","00100110"
                                                             ,"01101011","00010000","11000100","10111111");
 
-    
+    constant ERROR_LOCATOR_LOOK_UP : finite_field_error_locator_t := (x"01",x"AD",x"BE",x"3A",
+																			x"3C",x"DC",x"56",x"CA",
+																			x"42",x"03",x"70",x"45",
+																			x"4E",x"44",x"E3",x"FA",
+																			x"D9");
+	
     
     function gf_add (
         a : in finite_field_t; 
