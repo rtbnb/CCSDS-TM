@@ -59,43 +59,43 @@ begin
       error_mag_o => error_mag_r
     );
     
-    error_locator_poly_r <= (x"78",
-x"28",
-x"3A",
-x"EA",
-x"38",
-x"A5",
+    error_locator_poly_r <= (x"EF",
+x"90",
+x"5B",
+x"B6",
 x"E4",
-x"8D",
-x"11",
-x"5C",
-x"A1",
-x"EA",
-x"7C",
-x"00",
-x"00",
-x"00",
+x"3E",
+x"09",
+x"59",
+x"93",
+x"F4",
+x"E7",
+x"32",
+x"09",
+x"A0",
+x"BF",
+x"A6",
 x"00");
                                                         
     error_mag_poly_r <=   (x"00",
-x"00",
-x"00",
-x"00",
-x"F5",
-x"2E",
-x"7D",
-x"DB",
-x"16",
-x"31",
-x"25",
-x"F5",
-x"DB",
-x"97",
-x"4B",
-x"F5");         
+x"0D",
+x"1A",
+x"85",
+x"DD",
+x"8D",
+x"22",
+x"D5",
+x"AC",
+x"7A",
+x"45",
+x"53",
+x"3E",
+x"2A",
+x"BC",
+x"BA");         
          
-    z_r <=  x"0F";
-    gamma_r <= x"83";
+    z_r <=  x"F1";
+    gamma_r <= x"10";
     clk_r <= not clk_r after 5 ns;
     
     process

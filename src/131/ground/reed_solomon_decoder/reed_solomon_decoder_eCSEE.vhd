@@ -26,6 +26,7 @@ entity reed_solomon_decoder_ecsee is
         
         error_found_o           : out std_logic;
         error_mag_o             : out finite_field_t
+        decoder_fail_o          : out std_logic;
         
     );
 end entity reed_solomon_decoder_ecsee;
@@ -43,6 +44,7 @@ begin
         variable b_out : finite_field_t;
         variable error_mag: finite_field_t;
         variable z_running: finite_field_t;
+        variable error_count: integer range 0 to max_number_of_errors_g*2;
    begin
    
         if reset_i = '0' then
@@ -50,7 +52,8 @@ begin
             error_mag_poly_r <= (others => x"00");
             first_cylce_r <= '0';
             error_found_o <= '0';
-            error_mag_o <= x"00";
+            error_mag_o <= x"00"           
+            decoder_fail_o <= '0';;
             
         elsif rising_edge(clk_i) then
             if epibma_done_i = '1' then
@@ -62,6 +65,7 @@ begin
                 error_mag_o <= x"00";
                 
                 z_running := gamma_i;
+                decoder_fail_o <= '0';
             else 
                 error_mag_o <= x"00";
                 first_cylce_r <= '0';
@@ -101,7 +105,7 @@ begin
                     error_locator_poly_r(i) <= gf_mult(error_locator_poly_r(i), ERROR_LOCATOR_LOOK_UP(i));
                 
                 end loop;
-                b_out:= error_mag_poly_r(1);
+                b_out:= error_mag_poly_r(0);
                 for i in 1 to max_number_of_errors_g-1 loop
                     b_out:= gf_add(b_out, error_mag_poly_r(i));
                     error_mag_poly_r(i) <= gf_mult(error_mag_poly_r(i), ERROR_MAG_LOOK_UP(max_number_of_errors_g-i));
@@ -115,8 +119,18 @@ begin
                     
                     error_found_o <= '1';
                     error_mag_o <= error_mag;
+                    
+                    if error_count <= max_number_of_errors_g+3 then
+                        error_count:= error_count +1;
+                    end if;
                 else
                     error_found_o <= '0';
+                end if;
+                
+                if error_count >= max_number_of_errors_g then
+                    decoder_fail_o <= '1';
+                else
+                    decoder_fail_o <= '0';
                 end if;
                 
                 
