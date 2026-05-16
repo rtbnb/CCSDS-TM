@@ -106,6 +106,24 @@ package finite_field is
                                                             ,"00001000","01110011","10100111","11011100","10010001","11101010"
                                                             ,"00111110","01000101","11110010","10001001","01011101","00100110"
                                                             ,"01101011","00010000","11000100","10111111");
+	
+	constant INVERT_FINITE_FIELD	: finite_field_look_up_t:=( x"00", --1/0 is not defined so it is set here to zero one should check for devision by zero before using look up
+																x"01",x"C3",x"82",x"A2",x"7E",x"41",x"5A",x"51",x"36",x"3F",x"AC",x"E3",x"68",x"2D",x"2A",x"EB",
+																x"9B",x"1B",x"35",x"DC",x"1E",x"56",x"A5",x"B2",x"74",x"34",x"12",x"D5",x"64",x"15",x"DD",x"B6",
+																x"4B",x"8E",x"FB",x"CE",x"E9",x"D9",x"A1",x"6E",x"DB",x"0F",x"2C",x"2B",x"0E",x"91",x"F1",x"59",
+																x"D7",x"3A",x"F4",x"1A",x"13",x"09",x"50",x"A9",x"63",x"32",x"F5",x"C9",x"CC",x"AD",x"0A",x"5B",
+																x"06",x"E6",x"F7",x"47",x"BF",x"BE",x"44",x"67",x"7B",x"B7",x"21",x"AF",x"53",x"93",x"FF",x"37",
+																x"08",x"AE",x"4D",x"C4",x"D1",x"16",x"A4",x"D6",x"30",x"07",x"40",x"8B",x"9D",x"BB",x"8C",x"EF",
+																x"81",x"A8",x"39",x"1D",x"D4",x"7A",x"48",x"0D",x"E2",x"CA",x"B0",x"C7",x"DE",x"28",x"DA",x"97",
+																x"D2",x"F2",x"84",x"19",x"B3",x"B9",x"87",x"A7",x"E4",x"66",x"49",x"95",x"99",x"05",x"A3",x"EE",
+																x"61",x"03",x"C2",x"73",x"F3",x"B8",x"77",x"E0",x"F8",x"9C",x"5C",x"5F",x"BA",x"22",x"FA",x"F0",
+																x"2E",x"FE",x"4E",x"98",x"7C",x"D3",x"70",x"94",x"7D",x"EA",x"11",x"8A",x"5D",x"BC",x"EC",x"D8",
+																x"27",x"04",x"7F",x"57",x"17",x"E5",x"78",x"62",x"38",x"AB",x"AA",x"0B",x"3E",x"52",x"4C",x"6B",
+																x"CB",x"18",x"75",x"C0",x"FD",x"20",x"4A",x"86",x"76",x"8D",x"5E",x"9E",x"ED",x"46",x"45",x"B4",
+																x"FC",x"83",x"02",x"54",x"D0",x"DF",x"6C",x"CD",x"3C",x"6A",x"B1",x"3D",x"C8",x"24",x"E8",x"C5",
+																x"55",x"71",x"96",x"65",x"1C",x"58",x"31",x"A0",x"26",x"6F",x"29",x"14",x"1F",x"6D",x"C6",x"88",
+																x"F9",x"69",x"0C",x"79",x"A6",x"42",x"F6",x"CF",x"25",x"9A",x"10",x"9F",x"BD",x"80",x"60",x"90",
+																x"2F",x"72",x"85",x"33",x"3B",x"E7",x"43",x"89",x"E1",x"8F",x"23",x"C1",x"B5",x"92",x"4F");
 
     constant ERROR_LOCATOR_LOOK_UP : finite_field_error_locator_t := (x"01",x"AD",x"BE",x"3A",
 																			x"3C",x"DC",x"56",x"CA",
@@ -113,7 +131,11 @@ package finite_field is
 																			x"4E",x"44",x"E3",x"FA",
 																			x"D9");
 	
-    
+    constant ERROR_MAG_LOOK_UP : finite_field_error_locator_t := (x"01",x"A4",x"48",x"C1",
+															x"63",x"AF",x"7D",x"B2",
+															x"22",x"27",x"E1",x"38",
+															x"C2",x"21",x"65",x"2B",
+															x"6E");
     function gf_add (
         a : in finite_field_t; 
         b : in finite_field_t
