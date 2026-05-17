@@ -27,7 +27,7 @@ entity synchronization_fifo_axi_stream_out is
         m_axis_aresetn : in  std_logic;
         m_axis_tvalid : out std_logic;
         m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        m_axis_tready : in  std_logic;
+        m_axis_tready : in  std_logic
     );
 end entity synchronization_fifo_axi_stream_out;
 

@@ -36,36 +36,45 @@ architecture behavioral of synchronization_fifo_axi_stream_tb is
     signal wr_en_r    : std_logic := '0';
 
 
-    component design_2_wrapper is
-        port (
-            aclk : in STD_LOGIC;
-            aresetn : in STD_LOGIC;
-            data_i : in STD_LOGIC_VECTOR ( 7 downto 0 );
-            data_o : out STD_LOGIC_VECTOR ( 7 downto 0 );
-            empty : out STD_LOGIC;
-            full : out STD_LOGIC;
-            rd_clk : in STD_LOGIC;
-            rd_en : in STD_LOGIC;
-            wr_clk : in STD_LOGIC;
-            wr_en : in STD_LOGIC
+    component synchronization_fifo_axi_stream_integration is
+        generic (
+            DATA_WIDTH : integer := 8;
+            DEPTH      : integer := 16
         );
-    end component design_2_wrapper;
+        port(
+            internal_clk_i : in std_logic;
+            internal_rst_i : in std_logic;
+
+            -- Input Interface
+            wr_clk_i   : in  std_logic;
+            wr_en_i    : in  std_logic;
+            wr_data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+            full_o     : out std_logic;
+
+            -- Output Interface
+            rd_clk_i   : in  std_logic;
+            rd_en_i    : in  std_logic;
+            rd_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+            empty_o    : out std_logic
+            
+        );
+    end component synchronization_fifo_axi_stream_integration;
 
 
 begin
 
-    dut : design_2_wrapper
+    dut : synchronization_fifo_axi_stream_integration
         port map (
-            aclk => aclk_r,
-            aresetn => aresetn_r,
-            data_i => data_i,
-            data_o => data_o,
-            empty => empty,
-            full => full,
-            rd_clk => rd_clk_r,
-            rd_en => rd_en_r,
-            wr_clk => wr_clk_r,
-            wr_en => wr_en_r
+            internal_clk_i => aclk_r,
+            internal_rst_i => aresetn_r,
+            wr_clk_i => wr_clk_r,
+            wr_en_i => wr_en_r,
+            wr_data_i => data_i,
+            full_o => full,
+            rd_clk_i => rd_clk_r,
+            rd_en_i => rd_en_r,
+            rd_data_o => data_o,
+            empty_o => empty
         );
 
     rd_clk_r <= not rd_clk_r after RD_CLK_PERIOD / 2;
