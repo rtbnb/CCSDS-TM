@@ -18,6 +18,7 @@ package finite_field is
     type finite_field_look_up_t is array (0 to 255) of finite_field_t;
 	type finite_field_error_locator_t is array (0 to 16) of finite_field_t;
 	type finite_field_error_mag_t is array (0 to 15) of finite_field_t;
+	type finite_field_syndrome_t is array (0 to 31) of finite_field_t;
 
     constant DUAL_TO_CONVENTIONAL : finite_field_look_up_t := ("00000000","11001100","10101100","01100000","01111001","10110101"
                                                             ,"11010101","00011001","11110000","00111100","01011100","10010000"
@@ -136,6 +137,14 @@ package finite_field is
 															x"22",x"27",x"E1",x"38",
 															x"C2",x"21",x"65",x"2B",
 															x"6E");
+															
+															
+	constant GEN_POLY_LOOK_UP_PREPOWER : finite_field_syndrome_t := (others => x"01");
+	constant GEN_POLY_LOOK_UP_INVERSE  : finite_field_syndrome_t := (x"1E",x"1D",x"5F",x"95",x"C3",x"1F",x"23",x"19",
+																	x"A7",x"0A",x"0B",x"35",x"73",x"41",x"88",x"9C",
+																	x"8A",x"E0",x"06",x"84",x"13",x"AC",x"3F",x"78",
+																	x"74",x"FB",x"DD",x"02",x"7C",x"8C",x"64",x"15");
+	
     function gf_add (
         a : in finite_field_t; 
         b : in finite_field_t

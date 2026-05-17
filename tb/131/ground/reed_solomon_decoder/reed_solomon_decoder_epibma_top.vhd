@@ -48,14 +48,14 @@ begin
 
     clk_r <= not clk_r after 5 ns;
     
-    process
+    stimuli: process
     begin
         new_poly_r <= '1';
         wait for 15 ns;
         new_poly_r <= '0';
         wait for 360 ns;
         --new_poly_i <= '1';
-    end process;
+    end process stimuli;
 
     
 

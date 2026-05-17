@@ -25,8 +25,8 @@ entity reed_solomon_decoder_ecsee is
         gamma_i                 : in finite_field_t;
         
         error_found_o           : out std_logic;
-        error_mag_o             : out finite_field_t
-        decoder_fail_o          : out std_logic;
+        error_mag_o             : out finite_field_t;
+        decoder_fail_o          : out std_logic
         
     );
 end entity reed_solomon_decoder_ecsee;
@@ -52,8 +52,8 @@ begin
             error_mag_poly_r <= (others => x"00");
             first_cylce_r <= '0';
             error_found_o <= '0';
-            error_mag_o <= x"00"           
-            decoder_fail_o <= '0';;
+            error_mag_o <= x"00";        
+            decoder_fail_o <= '0';
             
         elsif rising_edge(clk_i) then
             if epibma_done_i = '1' then

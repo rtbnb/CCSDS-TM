@@ -98,7 +98,7 @@ x"BA");
     gamma_r <= x"10";
     clk_r <= not clk_r after 5 ns;
     
-    process
+    stimuli: process
     begin
         epibma_done_r <= '1';
         wait for 15 ns;
@@ -106,7 +106,7 @@ x"BA");
         wait for 2550 ns;
         
         
-    end process;
+    end process stimuli;
 
     
 
