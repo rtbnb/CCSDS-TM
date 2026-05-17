@@ -12,72 +12,72 @@ use ieee.std_logic_1164.all;
 
 entity synchronization_fifo_axi_stream is
     generic (
-        data_width_g : integer := 8;
-        depth_g      : integer := 16
+        DATA_WIDTH : integer := 8;
+        DEPTH      : integer := 16
     );
     port (
         -- Input Interface
-        aclk_w_i    : in  std_logic;
-        aresetn_w_i : in  std_logic;
-        tvalid_i  : in  std_logic;
-        tdata_i   : in  std_logic_vector(data_width_g-1 downto 0);
-        tready_o  : out std_logic;
+        s_axis_aclk : in  std_logic;
+        s_axis_aresetn : in  std_logic;
+        s_axis_tvalid : in  std_logic;
+        s_axis_tdata  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        s_axis_tready : out std_logic;
 
         -- Output Interface
-        aclk_r_i    : in  std_logic;
-        aresetn_r_i : in  std_logic;
-        tvalid_o  : out std_logic;
-        tdata_o   : out std_logic_vector(data_width_g-1 downto 0);
-        tready_i  : in  std_logic
+        m_axis_aclk : in  std_logic;
+        m_axis_aresetn : in  std_logic;
+        m_axis_tvalid : out std_logic;
+        m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        m_axis_tready : in  std_logic
     );
 end entity synchronization_fifo_axi_stream;
 
 architecture behavioral of synchronization_fifo_axi_stream is
 
-    type fifo_mem_t is array (0 to depth_g-1) of std_logic_vector(data_width_g-1 downto 0);
+    type fifo_mem_t is array (0 to DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
     signal fifo_mem_r : fifo_mem_t := (others => (others => '0'));
 
-    signal wr_ptr_r : integer range 0 to depth_g-1 := 0;
-    signal rd_ptr_r : integer range 0 to depth_g-1 := 0;
+    signal wr_ptr_r : integer range 0 to DEPTH-1 := 0;
+    signal rd_ptr_r : integer range 0 to DEPTH-1 := 0;
     signal empty_s : std_logic;
     signal full_s  : std_logic;
 
-    signal fifo_data_out_r : std_logic_vector(data_width_g-1 downto 0) := (others => '0');
+    signal fifo_data_out_r : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
 begin
 
     empty_s <= '1' when wr_ptr_r = rd_ptr_r else '0';
-    full_s  <= '1' when ((wr_ptr_r + 1) mod depth_g) = rd_ptr_r else '0';
+    full_s  <= '1' when ((wr_ptr_r + 1) mod DEPTH) = rd_ptr_r else '0';
 
-    tready_o <= not full_s;
+    s_axis_tready <= not full_s;
     
-    process(aclk_w_i)
+    process(s_axis_aclk, s_axis_aresetn)
     begin
-        if aresetn_w_i = '0' then
+        if s_axis_aresetn = '0' then
             -- wr_ptr_r <= 0; -- Reset logic currently not implemented.
-        elsif rising_edge(aclk_w_i) then
-            if tvalid_i = '1' and full_s = '0' then
-                fifo_mem_r(wr_ptr_r) <= tdata_i;
-                wr_ptr_r <= (wr_ptr_r + 1) mod depth_g;
+        elsif rising_edge(s_axis_aclk) then
+            if s_axis_tvalid = '1' and full_s = '0' then
+                fifo_mem_r(wr_ptr_r) <= s_axis_tdata;
+                wr_ptr_r <= (wr_ptr_r + 1) mod DEPTH;
             end if;
         end if;
     end process;
 
-    process(aclk_r_i, aresetn_r_i)
+    process(m_axis_aclk, m_axis_aresetn)
     begin
-        if aresetn_r_i = '0' then
+        if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
             fifo_data_out_r <= (others => '0');
-        elsif rising_edge(aclk_r_i) then
-            if tready_i = '1' and empty_s = '0' then
+        elsif rising_edge(m_axis_aclk) then
+            if m_axis_tready = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
-                rd_ptr_r <= (rd_ptr_r + 1) mod depth_g;
-                tvalid_o <= '1';
+                rd_ptr_r <= (rd_ptr_r + 1) mod DEPTH;
+                m_axis_tvalid <= '1';
             else
-                tvalid_o <= '0';
+                m_axis_tvalid <= '0';
             end if;
         end if;
     end process;
 
-    tdata_o <= fifo_data_out_r;
+    m_axis_tdata <= fifo_data_out_r;
     
 end architecture behavioral;
