@@ -23,11 +23,11 @@ entity synchronization_fifo_axi_stream_out is
         full_o     : out std_logic;
 
         -- Output Interface
-        aclk_i    : in  std_logic;
-        aresetn_i : in  std_logic;
-        tvalid_o  : out std_logic;
-        tdata_o   : out std_logic_vector(data_width_g-1 downto 0);
-        tready_i  : in  std_logic
+        m_axis_aclk : in  std_logic;
+        m_axis_aresetn : in  std_logic;
+        m_axis_tvalid : out std_logic;
+        m_axis_tdata  : out std_logic_vector(data_width_g-1 downto 0);
+        m_axis_tready : in  std_logic;
     );
 end entity synchronization_fifo_axi_stream_out;
 
@@ -59,22 +59,22 @@ begin
         end if;
     end process;
 
-    process(aclk_i, aresetn_i)
+    process(m_axis_aclk, m_axis_aresetn)
     begin
-        if aresetn_i = '0' then
+        if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
             fifo_data_out_r <= (others => '0');
-        elsif rising_edge(aclk_i) then
-            if tready_i = '1' and empty_s = '0' then
+        elsif rising_edge(m_axis_aclk) then
+            if m_axis_tready = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
                 rd_ptr_r <= (rd_ptr_r + 1) mod depth_g;
-                tvalid_o <= '1';
+                m_axis_tvalid <= '1';
             else
-                tvalid_o <= '0';
+                m_axis_tvalid <= '0';
             end if;
         end if;
     end process;
 
-    tdata_o <= fifo_data_out_r;
+    m_axis_tdata <= fifo_data_out_r;
     
 end architecture behavioral;
