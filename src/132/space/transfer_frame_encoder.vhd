@@ -149,7 +149,14 @@ begin
                 state_r <= PRIMARY_HEADER;
             elsif (state_r = PAYLOAD) and out_full_i = '1' and is_oid_frame_r = '0' and vch0_frame_ready_i = '0' then
                         
-                state_r <= LAST_PAYLOAD_BYTE;
+                if (is_oid_frame_r = '1') then
+                    state_r <= PRIMARY_HEADER;
+                    oid_length_counter_r <= 0;
+                    master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
+                    is_oid_frame_r <= not vch_available_s;
+                else 
+                    state_r <= LAST_PAYLOAD_BYTE;
+                end if;
                 oid_length_counter_r <= 0;            
             
             elsif (state_r = PAYLOAD) and out_full_i = '0' then
@@ -164,7 +171,16 @@ begin
                 -- this only gets triggert when the frame is ending
                 if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH -1) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then    
                     
-                    state_r <= LAST_PAYLOAD_BYTE;
+                    if (is_oid_frame_r = '1') then
+                        state_r <= PRIMARY_HEADER;
+                        oid_length_counter_r <= 0;
+                        master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
+                        is_oid_frame_r <= not vch_available_s;
+                    else 
+                        state_r <= LAST_PAYLOAD_BYTE;
+                    end if;
+                    
+                    
                     
                 elsif is_oid_frame_r = '0' then
                     virtual_channel_out_enable_r <= '1';    
@@ -173,7 +189,6 @@ begin
                     state_r <= PRIMARY_HEADER;
                     data_o <= vch0_data_i;
                     master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
-                    oid_length_counter_r <= 0;
                     is_oid_frame_r <= not vch_available_s;
                     virtual_channel_out_enable_r <= '0';
                     
