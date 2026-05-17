@@ -73,7 +73,7 @@ architecture behavioral of transfer_frame_encoder is
 
     constant PRIMARY_HEADER_LENGTH: integer := 6;
     
-    type state_machine_t IS (INITIAL, PRIMARY_HEADER, SECONDARY_HEADER, PAYLOAD, TRAILOR);
+    type state_machine_t IS (INITIAL, PRIMARY_HEADER, SECONDARY_HEADER, PAYLOAD, LAST_PAYLOAD_BYTE, TRAILOR);
     signal state_r: state_machine_t := INITIAL;
     
     signal vch_available_s: std_logic := '0';
@@ -148,10 +148,8 @@ begin
                 is_oid_frame_r <= '1';
                 state_r <= PRIMARY_HEADER;
             elsif (state_r = PAYLOAD) and out_full_i = '1' and is_oid_frame_r = '0' and vch0_frame_ready_i = '0' then
-                is_oid_frame_r <= not vch_available_s;        
-                master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
-                state_r <= PRIMARY_HEADER;
-                virtual_channel_out_enable_r <= '0';
+                        
+                state_r <= LAST_PAYLOAD_BYTE;
                 oid_length_counter_r <= 0;            
             
             elsif (state_r = PAYLOAD) and out_full_i = '0' then
@@ -164,15 +162,21 @@ begin
                 end if;
                 
                 -- this only gets triggert when the frame is ending
-                if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then
-                    is_oid_frame_r <= not vch_available_s;        
-                    master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
-                    state_r <= PRIMARY_HEADER;
-                    virtual_channel_out_enable_r <= '0';
-                    oid_length_counter_r <= 0;
+                if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH -1) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then    
+                    
+                    state_r <= LAST_PAYLOAD_BYTE;
+                    
                 elsif is_oid_frame_r = '0' then
                     virtual_channel_out_enable_r <= '1';    
                 end if;
+            elsif (state_r = LAST_PAYLOAD_BYTE) and out_full_i = '0' then
+                    state_r <= PRIMARY_HEADER;
+                    data_o <= vch0_data_i;
+                    master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
+                    oid_length_counter_r <= 0;
+                    is_oid_frame_r <= not vch_available_s;
+                    virtual_channel_out_enable_r <= '0';
+                    
              
             elsif (state_r = PRIMARY_HEADER) and out_full_i = '0' then
                 out_en_o <= '1'; -- This needs only to be set once
