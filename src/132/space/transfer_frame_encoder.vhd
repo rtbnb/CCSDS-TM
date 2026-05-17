@@ -164,7 +164,7 @@ begin
                 end if;
                 
                 -- this only gets triggert when the frame is ending
-                if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH -1) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then
+                if (is_oid_frame_r = '1' and oid_length_counter_r = OID_PACKET_LENGTH) or (is_oid_frame_r = '0' and vch0_frame_ready_i = '0') then
                     is_oid_frame_r <= not vch_available_s;        
                     master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
                     state_r <= PRIMARY_HEADER;
