@@ -91,11 +91,10 @@ begin
     end process clock;
 
     data_test: process begin
-        wait for CLK_PERIOD;
         if (test_input_ready_s = '1') then
             test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) +1));  
         end if;
-        wait for CLK_PERIOD;
+        wait for 2 * CLK_PERIOD;
     end process data_test;
 
     test: process begin
