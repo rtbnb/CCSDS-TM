@@ -30,11 +30,13 @@ architecture behavioral of reed_solomon_decoder_syndrome_tb is
 
     signal        clk_r                   : std_logic := '0';
     signal        reset_r                 : std_logic := '1';
-    signal        asm_done_r              : std_logic;
+    signal        asm_done_r              : std_logic := '1';
     signal        data_r                  : finite_field_t;
     signal        data_valid_r            : std_logic;
     signal        syndrome_valid_r        : std_logic;
     signal        syndrome_r              : finite_field_syndrome_t;
+    
+    signal        input_value_r           : Integer range 0 to 300 := 1;
     
 begin
 
@@ -49,15 +51,25 @@ begin
       syndrome_o => syndrome_r
     );
            
-    data_r <= x"01";
     clk_r <= not clk_r after 5 ns;
     
     data_valid_stimuli: process
     begin
-        data_valid_r <='1';
-        wait for 10 ns;
-        data_valid_r <='0';
-        wait for 40 ns;
+        if asm_done_r = '0' then
+            input_value_r <= input_value_r +1;
+            data_r <=std_logic_vector(TO_UNSIGNED(input_value_r,8));
+            
+            data_valid_r <='1';
+            wait for 10 ns;
+            data_valid_r <='0';
+            wait for 40 ns;
+            
+            if input_value_r = 255 then
+                input_value_r <= 1;
+            end if;
+        else
+            wait for 10 ns;
+        end if;
     end process data_valid_stimuli;
     
     stimuli: process
