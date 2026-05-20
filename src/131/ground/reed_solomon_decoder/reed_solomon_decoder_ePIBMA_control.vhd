@@ -27,7 +27,8 @@ entity reed_solomon_decoder_epibma_control is
         mc1_o : out std_logic;
         mc2_o : out std_logic_vector(max_number_of_errors_g*2 downto 0);
         mc3_o : out std_logic;
-        epibma_done_o: out std_logic
+        epibma_done_o: out std_logic;
+        z_o             : out finite_field_t
         
     );
 end entity reed_solomon_decoder_epibma_control;
@@ -107,6 +108,8 @@ begin
    mc3_o <= '0' when (reset_i = '0') else
             '1' when (l_b_r = max_number_of_errors_g-1) else
             '0';
+            
+  z_o <= z_r;
           
 
        

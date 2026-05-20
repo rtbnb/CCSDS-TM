@@ -20,10 +20,13 @@ entity reed_solomon_decoder_epibma_top is
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic;
         enable_i            : in std_logic;
+        syndromes_i         : in finite_field_syndrome_t;
         
         epibma_done_o: out std_logic;
         error_locator_poly_o : out finite_field_error_locator_t;
-        error_mag_poly_o : out finite_field_error_mag_t
+        error_mag_poly_o : out finite_field_error_mag_t;
+        z_o             : out finite_field_t;
+        gamma_o         : out finite_field_t
     );
 end entity reed_solomon_decoder_epibma_top;
 
@@ -132,7 +135,8 @@ begin
             mc2_o => mc2_r,
             mc3_o => mc3_r,
             
-            epibma_done_o => epibma_done_o
+            epibma_done_o => epibma_done_o,
+            z_o => z_o
         );
     
   rs_decoder_epibma_pe_gen:for i in 1 to max_number_of_errors_g*2-1 generate
@@ -208,5 +212,20 @@ begin
                                         
     error_mag_poly_o    <= (theta_i_r,  theta_array_r(0), theta_array_r(1), theta_array_r(2), theta_array_r(3), theta_array_r(4),
                                         theta_array_r(5), theta_array_r(6), theta_array_r(7), theta_array_r(8), theta_array_r(9),
-                                        theta_array_r(10), theta_array_r(11), theta_array_r(12), theta_array_r(13), theta_array_r(14));                   
+                                        theta_array_r(10), theta_array_r(11), theta_array_r(12), theta_array_r(13), theta_array_r(14));
+                                        
+  theta_new_array_r <= (syndromes_i(0), syndromes_i(1), syndromes_i(2), syndromes_i(3), 
+                        syndromes_i(4), syndromes_i(5), syndromes_i(6), syndromes_i(7),
+                        syndromes_i(8), syndromes_i(9), syndromes_i(10), syndromes_i(11),
+                        syndromes_i(12), syndromes_i(13), syndromes_i(14), syndromes_i(15),
+                        syndromes_i(16), syndromes_i(17), syndromes_i(18), syndromes_i(19),
+                        syndromes_i(20), syndromes_i(21), syndromes_i(22), syndromes_i(23),
+                        syndromes_i(24), syndromes_i(25), syndromes_i(26), syndromes_i(27),
+                        syndromes_i(28), syndromes_i(29), syndromes_i(30), x"00", 
+                        x"01") when new_poly_i = '1' else
+                        (others => x"00");
+                          
+                                        
+    gamma_o <= gamma_r;                   
 end architecture behavioral;
+
