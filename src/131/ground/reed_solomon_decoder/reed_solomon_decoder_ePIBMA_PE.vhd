@@ -25,7 +25,8 @@ entity reed_solomon_decoder_epibma_pe is
         theta_i : in finite_field_t;
         mc1_i : in std_logic;
         mc2_i : in std_logic;
-        mc3_i : in std_logic; 
+        mc3_i : in std_logic;
+        enable_i : std_logic; 
         
         omega_o : out finite_field_t;
         theta_o : out finite_field_t
@@ -47,24 +48,25 @@ begin
                 theta_r<=new_theta_i;
                 omega_r<=new_omega_i;
             else
-                -- Calculate new Omega value:
-                -- OmegaI * gamma + thetaR * delta
-                omega_r <= gf_add(gf_mult(omega_i, gamma_i),gf_mult(theta_r, delta_i));
-                
-                if mc2_i = '1' then
-                    theta_r <= x"00";
-                else
-                    if mc1_i = '1' then 
-                        theta_r <= omega_i;
+                if enable_i = '1' then
+                    -- Calculate new Omega value:
+                    -- OmegaI * gamma + thetaR * delta
+                    omega_r <= gf_add(gf_mult(omega_i, gamma_i),gf_mult(theta_r, delta_i));
+                    
+                    if mc2_i = '1' then
+                        theta_r <= x"00";
                     else
-                        if mc3_i = '1' then
-                            theta_r <= theta_i;                            
+                        if mc1_i = '1' then 
+                            theta_r <= omega_i;
                         else
-                            theta_r <= theta_r;
+                            if mc3_i = '1' then
+                                theta_r <= theta_i;                            
+                            else
+                                theta_r <= theta_r;
+                            end if;
                         end if;
-                    end if;
-                end if;
-                
+                    end if;                
+                end if;                
             end if;
         end if;
     end process processing_element;

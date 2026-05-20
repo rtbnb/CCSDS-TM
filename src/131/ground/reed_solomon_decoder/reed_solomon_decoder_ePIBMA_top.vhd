@@ -19,6 +19,7 @@ entity reed_solomon_decoder_epibma_top is
         clk_i               : in  std_logic;
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic;
+        enable_i            : in std_logic;
         
         epibma_done_o: out std_logic;
         error_locator_poly_o : out finite_field_error_locator_t;
@@ -123,6 +124,7 @@ begin
             reset_i => reset_i,
             new_poly_i => new_poly_i,
             delta_i => delta_i_r,
+            enable_i => enable_i,
             
             delta_o => delta_o_r,
             gamma_o => gamma_r,
@@ -149,6 +151,7 @@ begin
                 mc1_i => mc1_r,
                 mc2_i => mc2_r(max_number_of_errors_g*2-i),
                 mc3_i => mc3_r,
+                enable_i => enable_i,
                 
                 omega_o => omega_array_r(i-1),
                 theta_o => theta_array_r(i-1)
@@ -170,6 +173,7 @@ begin
                 mc1_i => mc1_r,
                 mc2_i => mc2_r(32),
                 mc3_i => mc3_r,
+                enable_i => enable_i,
                 
                 omega_o => delta_i_r,
                 theta_o => theta_i_r
@@ -190,6 +194,7 @@ begin
                 mc1_i => mc1_r,
                 mc2_i => mc2_r(0),
                 mc3_i => mc3_r,
+                enable_i => enable_i,
                 
                 omega_o => omega_array_r(31),
                 theta_o => theta_array_r(31)

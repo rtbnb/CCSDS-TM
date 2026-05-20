@@ -23,6 +23,7 @@ entity reed_solomon_decoder_ecsee is
         error_mag_poly_i        : in finite_field_error_mag_t;
         z_i                     : in finite_field_t;
         gamma_i                 : in finite_field_t;
+        enable_i                : in std_logic;
         
         error_found_o           : out std_logic;
         error_mag_o             : out finite_field_t;
@@ -67,70 +68,73 @@ begin
                 z_running := gamma_i;
                 decoder_fail_o <= '0';
             else 
-                error_mag_o <= x"00";
-                first_cylce_r <= '0';
-                
-                if first_cylce_r = '1' then
-                    z_running:= gf_mult(z_running, error_locator_poly_r(0));
-                else
-                    z_running:= gf_mult(z_running, z_r);
-                end if;
-                
-                a_odd:=x"00";
-                a_even:=x"00";
-                b_out:=x"00";
-                
-                -- calc a_odd and a_even
-                a_odd := gf_add(a_odd, error_locator_poly_r(1));
-                a_odd := gf_add(a_odd, error_locator_poly_r(3));
-                a_odd := gf_add(a_odd, error_locator_poly_r(5));
-                a_odd := gf_add(a_odd, error_locator_poly_r(7));
-                a_odd := gf_add(a_odd, error_locator_poly_r(9));
-                a_odd := gf_add(a_odd, error_locator_poly_r(11));
-                a_odd := gf_add(a_odd, error_locator_poly_r(13));
-                a_odd := gf_add(a_odd, error_locator_poly_r(15));
-                
-                a_even := gf_add(a_even, error_locator_poly_r(0));
-                a_even := gf_add(a_even, error_locator_poly_r(2));
-                a_even := gf_add(a_even, error_locator_poly_r(4));
-                a_even := gf_add(a_even, error_locator_poly_r(6));
-                a_even := gf_add(a_even, error_locator_poly_r(8));
-                a_even := gf_add(a_even, error_locator_poly_r(10));
-                a_even := gf_add(a_even, error_locator_poly_r(12));
-                a_even := gf_add(a_even, error_locator_poly_r(14));
-                a_even := gf_add(a_even, error_locator_poly_r(16));
-                
-                
-                for i in 0 to max_number_of_errors_g loop
-                    error_locator_poly_r(i) <= gf_mult(error_locator_poly_r(i), ERROR_LOCATOR_LOOK_UP(i));
-                
-                end loop;
-                b_out:= error_mag_poly_r(0);
-                for i in 1 to max_number_of_errors_g-1 loop
-                    b_out:= gf_add(b_out, error_mag_poly_r(i));
-                    error_mag_poly_r(i) <= gf_mult(error_mag_poly_r(i), ERROR_MAG_LOOK_UP(max_number_of_errors_g-i));
-                
-                end loop;
-                
-                if a_odd = a_even then
-                    error_mag := gf_mult(b_out, a_odd);
-                    error_mag := INVERT_FINITE_FIELD(gf_to_int(error_mag));
-                    error_mag := gf_mult(z_running, error_mag); 
+                if enable_i = '1' then
+                    error_mag_o <= x"00";
+                    first_cylce_r <= '0';
                     
-                    error_found_o <= '1';
-                    error_mag_o <= error_mag;
-                    
-                    if error_count <= max_number_of_errors_g+3 then
-                        error_count:= error_count +1;
+                    if first_cylce_r = '1' then
+                        z_running:= gf_mult(z_running, error_locator_poly_r(0));
+                    else
+                        z_running:= gf_mult(z_running, z_r);
                     end if;
-                else
-                    error_found_o <= '0';
-                end if;
+                    
+                    a_odd:=x"00";
+                    a_even:=x"00";
+                    b_out:=x"00";
+                    
+                    -- calc a_odd and a_even
+                    a_odd := gf_add(a_odd, error_locator_poly_r(1));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(3));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(5));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(7));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(9));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(11));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(13));
+                    a_odd := gf_add(a_odd, error_locator_poly_r(15));
+                    
+                    a_even := gf_add(a_even, error_locator_poly_r(0));
+                    a_even := gf_add(a_even, error_locator_poly_r(2));
+                    a_even := gf_add(a_even, error_locator_poly_r(4));
+                    a_even := gf_add(a_even, error_locator_poly_r(6));
+                    a_even := gf_add(a_even, error_locator_poly_r(8));
+                    a_even := gf_add(a_even, error_locator_poly_r(10));
+                    a_even := gf_add(a_even, error_locator_poly_r(12));
+                    a_even := gf_add(a_even, error_locator_poly_r(14));
+                    a_even := gf_add(a_even, error_locator_poly_r(16));
+                    
+                    
+                    for i in 0 to max_number_of_errors_g loop
+                        error_locator_poly_r(i) <= gf_mult(error_locator_poly_r(i), ERROR_LOCATOR_LOOK_UP(i));
+                    
+                    end loop;
+                    b_out:= error_mag_poly_r(0);
+                    for i in 1 to max_number_of_errors_g-1 loop
+                        b_out:= gf_add(b_out, error_mag_poly_r(i));
+                        error_mag_poly_r(i) <= gf_mult(error_mag_poly_r(i), ERROR_MAG_LOOK_UP(max_number_of_errors_g-i));
+                    
+                    end loop;
+                    
+                    if a_odd = a_even then
+                        error_mag := gf_mult(b_out, a_odd);
+                        error_mag := INVERT_FINITE_FIELD(gf_to_int(error_mag));
+                        error_mag := gf_mult(z_running, error_mag); 
+                        
+                        error_found_o <= '1';
+                        error_mag_o <= error_mag;
+                        
+                        if error_count <= max_number_of_errors_g+3 then
+                            error_count:= error_count +1;
+                        end if;
+                    else
+                        error_found_o <= '0';
+                    end if;
+                    
+                    if error_count >= max_number_of_errors_g then
+                        decoder_fail_o <= '1';
+                    else
+                        decoder_fail_o <= '0';
+                    end if;
                 
-                if error_count >= max_number_of_errors_g then
-                    decoder_fail_o <= '1';
-                else
-                    decoder_fail_o <= '0';
                 end if;
                 
                 

@@ -20,6 +20,7 @@ entity reed_solomon_decoder_epibma_control is
         reset_i             : in  std_logic;
         new_poly_i          : in std_logic;
         delta_i : in finite_field_t;
+        enable_i            : in std_logic;
         
         delta_o : out finite_field_t;
         gamma_o : out finite_field_t;
@@ -58,33 +59,36 @@ begin
                 -- Pre compute mc2_o to make sure it has the correct value for first iter
                 mc2_r <= "000000000000000000000000000000100";
                 iter_count_r <= 0;
-                
-            elsif (iter_count_r = max_number_of_errors_g*2-1) then
-                epibma_done_o <= '1';
-                iter_count_r <= iter_count_r + 1;
-            elsif (iter_count_r > max_number_of_errors_g*2-1) then
-                epibma_done_o <= '0';
-                
-            elsif ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) then
-                l_a_r <= l_b_r + 1;
-                l_b_r <= l_a_r;
-                gamma_r <= delta_i;
-                
-                mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
-                iter_count_r <= iter_count_r + 1;
-                z_r <= gf_mult(z_r, ERROR_LOCATOR_LOOK_UP(1));
-            else
-                if (l_b_r = max_number_of_errors_g-1) then
-                    l_b_r <= l_b_r;
-                else
-                    l_b_r <= l_b_r+1;
+            
+            elsif (enable_i = '1') then
+                    
+                if (iter_count_r = max_number_of_errors_g*2-1) then
+                    epibma_done_o <= '1';
+                    iter_count_r <= iter_count_r + 1;
+                elsif (iter_count_r > max_number_of_errors_g*2-1) then
+                    epibma_done_o <= '0';
+                    
+                elsif ((gf_to_int(delta_i) > 0) and (l_a_r <= l_b_r)) then
+                    l_a_r <= l_b_r + 1;
+                    l_b_r <= l_a_r;
+                    gamma_r <= delta_i;
+                    
+                    mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
+                    iter_count_r <= iter_count_r + 1;
                     z_r <= gf_mult(z_r, ERROR_LOCATOR_LOOK_UP(1));
+                else
+                    if (l_b_r = max_number_of_errors_g-1) then
+                        l_b_r <= l_b_r;
+                    else
+                        l_b_r <= l_b_r+1;
+                        z_r <= gf_mult(z_r, ERROR_LOCATOR_LOOK_UP(1));
+                    end if;
+                    gamma_r <= gamma_r;
+                    l_a_r <= l_a_r;
+                    
+                    mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
+                    iter_count_r <= iter_count_r + 1;
                 end if;
-                gamma_r <= gamma_r;
-                l_a_r <= l_a_r;
-                
-                mc2_r <= mc2_r(max_number_of_errors_g*2-1 downto 0) & '0';
-                iter_count_r <= iter_count_r + 1;
             end if;
         end if;
         
