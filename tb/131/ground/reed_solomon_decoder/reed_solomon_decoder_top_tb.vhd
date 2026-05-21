@@ -16,6 +16,20 @@ entity reed_solomon_decoder_top_tb is
 end entity reed_solomon_decoder_top_tb;
 
 architecture behavioral of reed_solomon_decoder_top_tb is
+    component reed_solomon_encoder is
+    port (
+        clk_i   : in std_logic;
+        reset_i : in std_logic;
+        input_byte_i : in std_logic_vector (7 downto 0);
+        fifo_empty_i: in std_logic := '0';
+
+        output_byte_o : out std_logic_vector (7 downto 0) := (others => '0');
+        encoder_done_flag_o : out std_logic := '0';
+        data_valid_o: out std_logic:= '0';
+        read_data_fifo_o    : out std_logic := '0'
+    );
+    end component;
+
     component reed_solomon_decoder_top is
     port (
         clk_i   : in std_logic;
@@ -34,6 +48,8 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     signal        reset_r                 : std_logic := '1';
     signal        asm_done_r              : std_logic := '1';
     signal        data_r                  : finite_field_t;
+    signal        input_decoder_r         : finite_field_t;
+    signal        data_input_r            : finite_field_t;
     signal        data_valid_r            : std_logic;
     
     signal        data_valid_o            : std_logic;
@@ -43,12 +59,25 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
 begin
 
-    dut : reed_solomon_decoder_top
+    dut_enccoder : reed_solomon_encoder
+    port map (
+        clk_i               =>  clk_r,
+        reset_i             =>  reset_r,
+        input_byte_i        =>  data_input_r,
+        fifo_empty_i        =>  '0',
+
+        output_byte_o       =>  data_r,
+        encoder_done_flag_o =>  asm_done_r,
+        data_valid_o        =>  data_valid_r,
+        read_data_fifo_o    =>  open
+    );
+
+    dut_decoder : reed_solomon_decoder_top
     port map (
       clk_i         => clk_r,
       reset_i       => reset_r,
       asm_done_i    => asm_done_r, 
-      input_byte_i => data_r,
+      input_byte_i => input_decoder_r,
       data_valid_i => data_valid_r,
       data_valid_o => data_valid_o,
       output_byte_o => output_byte_r
@@ -60,31 +89,20 @@ begin
     begin
         if asm_done_r = '0' then
             input_value_r <= input_value_r +1;
-            data_r <=std_logic_vector(TO_UNSIGNED(input_value_r,8));
+            data_input_r <=std_logic_vector(TO_UNSIGNED(input_value_r,8));
             
-            data_valid_r <='1';
-            wait for 10 ns;
-            data_valid_r <='0';
-            wait for 40 ns;
+            if (input_value_r = 50) then
+                input_decoder_r <= x"00";
+            else
+                input_decoder_r <= data_r;
+            end if;
             
             if input_value_r = 255 then
                 input_value_r <= 1;
             end if;
-        else
-            wait for 10 ns;
         end if;
+        wait for 10*16 ns; 
     end process data_valid_stimuli;
-    
-    stimuli: process
-    begin
-        asm_done_r <= '1';
-        wait for 100 ns;
-        asm_done_r <= '0';
-        wait for 12780 ns;
-        
-        
-    end process stimuli;
-
     
 
 end architecture;

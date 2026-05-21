@@ -55,6 +55,7 @@ begin
             error_found_o <= '0';
             error_mag_o <= x"00";        
             decoder_fail_o <= '0';
+            error_count:= 0;
             
         elsif rising_edge(clk_i) then
             if epibma_done_i = '1' then
@@ -66,6 +67,7 @@ begin
                 error_mag_o <= x"00";
                 
                 z_running := gamma_i;
+                error_count:= 0;
                 decoder_fail_o <= '0';
             else 
                 if enable_i = '1' then

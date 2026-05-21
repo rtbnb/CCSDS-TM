@@ -41,6 +41,7 @@ architecture behavioral of reed_solomon_decoder_epibma_control is
     signal z_r: finite_field_t;
     signal new_poly_r: std_logic;
     signal iter_count_r : integer range 0 to max_number_of_errors_g*2;
+    signal first_value_r: std_logic;
 begin
     synchronizer: process (clk_i)
     begin
@@ -48,6 +49,7 @@ begin
             --new_poly_r <= '0';
             gamma_r <= x"01";
             epibma_done_o <= '0';
+            first_value_r <= '0';
         elsif rising_edge(clk_i) then
             --new_poly_r <= new_poly_i;
             epibma_done_o <= '0';
@@ -56,12 +58,13 @@ begin
                 l_a_r <= 0;
                 l_b_r <= 0;
                 z_r <= x"01";
+                first_value_r <= '1';
                 
                 -- Pre compute mc2_o to make sure it has the correct value for first iter
                 mc2_r <= "000000000000000000000000000000100";
                 iter_count_r <= 0;
             
-            elsif (enable_i = '1') then
+            elsif (enable_i = '1' and first_value_r = '1') then
                     
                 if (iter_count_r = max_number_of_errors_g*2-1) then
                     epibma_done_o <= '1';

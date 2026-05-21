@@ -125,10 +125,11 @@ begin
                             if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
                                 -- Encoder Message Logic
                                 input_addition:= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
-                                input_addition:= gf_add(
-                                    DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
-                                    finite_field_regs_r(MAX_ERROR_COUNT*2-1)
-                                );
+                                --input_addition:= gf_add(
+                                --    DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
+                                --    finite_field_regs_r(MAX_ERROR_COUNT*2-1)
+                                --);
+                                input_addition:= gf_add(input_byte_i,finite_field_regs_r(MAX_ERROR_COUNT*2-1));
                                 
                                 output_byte_o <= input_byte_i;
                                 data_valid_o <= '1';
@@ -141,9 +142,10 @@ begin
                                 input_addition := "00000000";
                                 
                                 -- Output paritiy check sympols
-                                output_byte_o <= CONVENTIONAL_TO_DUAL(
-                                    gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
-                                    );
+                                --output_byte_o <= CONVENTIONAL_TO_DUAL(
+                                --    gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
+                                --    );
+                                output_byte_o <= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
                                 data_valid_o <= '1';
                                 
                                 read_next_value_r <= '0';

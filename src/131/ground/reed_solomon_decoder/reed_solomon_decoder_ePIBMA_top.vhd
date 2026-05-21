@@ -37,73 +37,9 @@ architecture behavioral of reed_solomon_decoder_epibma_top is
     signal omega_array_r: finite_field_epibma_2_t;
     signal theta_array_r : finite_field_epibma_2_t;
     
-    signal omega_new_array_r: finite_field_epibma_t := (x"CC",
-x"D2",
-x"CF",
-x"90",
-x"05",
-x"C6",
-x"D9",
-x"FA",
-x"E3",
-x"44",
-x"4E",
-x"45",
-x"70",
-x"03",
-x"42",
-x"CA",
-x"56",
-x"DC",
-x"3C",
-x"3A",
-x"BE",
-x"AD",
-x"01",
-x"3E",
-x"46",
-x"32",
-x"C9",
-x"14",
-x"16",
-x"6A",
-x"E6",
-x"82",
-x"01");
+    signal omega_new_array_r: finite_field_epibma_t;
                                                         
-    signal theta_new_array_r: finite_field_epibma_t := (x"CC",
-x"D2",
-x"CF",
-x"90",
-x"05",
-x"C6",
-x"D9",
-x"FA",
-x"E3",
-x"44",
-x"4E",
-x"45",
-x"70",
-x"03",
-x"42",
-x"CA",
-x"56",
-x"DC",
-x"3C",
-x"3A",
-x"BE",
-x"AD",
-x"01",
-x"3E",
-x"46",
-x"32",
-x"C9",
-x"14",
-x"16",
-x"6A",
-x"E6",
-x"00",
-x"01");
+    signal theta_new_array_r: finite_field_epibma_t;
     
     signal mc1_r : std_logic;
     signal mc2_r : std_logic_vector(max_number_of_errors_g*2 downto 0);
@@ -222,6 +158,17 @@ begin
                         syndromes_i(20), syndromes_i(21), syndromes_i(22), syndromes_i(23),
                         syndromes_i(24), syndromes_i(25), syndromes_i(26), syndromes_i(27),
                         syndromes_i(28), syndromes_i(29), syndromes_i(30), x"00", 
+                        x"01") when new_poly_i = '1' else
+                        (others => x"00");
+                        
+  omega_new_array_r <= (syndromes_i(0), syndromes_i(1), syndromes_i(2), syndromes_i(3), 
+                        syndromes_i(4), syndromes_i(5), syndromes_i(6), syndromes_i(7),
+                        syndromes_i(8), syndromes_i(9), syndromes_i(10), syndromes_i(11),
+                        syndromes_i(12), syndromes_i(13), syndromes_i(14), syndromes_i(15),
+                        syndromes_i(16), syndromes_i(17), syndromes_i(18), syndromes_i(19),
+                        syndromes_i(20), syndromes_i(21), syndromes_i(22), syndromes_i(23),
+                        syndromes_i(24), syndromes_i(25), syndromes_i(26), syndromes_i(27),
+                        syndromes_i(28), syndromes_i(29), syndromes_i(30), syndromes_i(31), 
                         x"01") when new_poly_i = '1' else
                         (others => x"00");
                           

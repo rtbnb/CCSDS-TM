@@ -32,19 +32,31 @@ architecture behavioral of reed_solomon_decoder_syndrome is
     signal gen_poly_running_r : finite_field_syndrome_t;
     signal syndromes_r        : finite_field_syndrome_t;
     signal iteration_count_r  : integer range 0 to 255;
+    signal asm_done_r         : std_logic;
+    signal output_data_r      : std_logic;
 begin
 
     syndrome_process: process (clk_i)
+    
     begin
         if reset_i = '0' then
             syndromes_r <= (others => x"00");
             iteration_count_r <= 0;
         elsif rising_edge(clk_i) then
-            if asm_done_i = '1' then
+            if asm_done_r = '1' then
                 syndromes_r <= (others=> x"00");
                 gen_poly_running_r <= GEN_POLY_LOOK_UP_PREPOWER;
                 iteration_count_r <= 0;
-                syndrome_valid_o <= '0';
+                
+                syndrome_o <= syndromes_r;
+                if output_data_r = '1' then
+                    syndrome_valid_o <= '1';
+                    output_data_r <= '0';
+                else
+                    syndrome_valid_o <= '0';
+                    output_data_r <= '0';
+                end if;
+                
             else
                 syndrome_valid_o <= '0';
                 if data_valid_i = '1' then
@@ -58,7 +70,8 @@ begin
                         syndrome_o <= syndromes_r;
                         syndrome_valid_o <= '1';
                     else 
-                        iteration_count_r <= iteration_count_r + 1;                    
+                        iteration_count_r <= iteration_count_r + 1;
+                        output_data_r <= '1';                    
                     end if;
                     
                                       
@@ -67,6 +80,8 @@ begin
         end if;
         
     end process syndrome_process;
+    
+    asm_done_r <= asm_done_i;
 
 
        
