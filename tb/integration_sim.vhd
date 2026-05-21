@@ -18,15 +18,15 @@ architecture behavioral of integration_sim is
     component system_integration_wrapper is
         port (
             ground_clk_i_1 : in std_logic;
-            clk_i_0 : in STD_LOGIC;
-            data_i_0 : in STD_LOGIC_VECTOR ( 7 downto 0 );
-            data_valid_i_0 : in STD_LOGIC;
-            ready_o_0 : out STD_LOGIC;
-            reset_i_0 : in STD_LOGIC;
-            spacecraft_id_i_0 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-            tm_data_field_o_0 : out STD_LOGIC_VECTOR ( 31 downto 0 );
-            tm_data_field_valid_o_0 : out STD_LOGIC;
-            transfer_frame_version_number_i_0 : in STD_LOGIC_VECTOR ( 1 downto 0 )   
+            clk_i_0 : in std_logic;
+            data_i_0 : in std_logic_vector ( 7 downto 0 );
+            data_valid_i_0 : in std_logic;
+            ready_o_0 : out std_logic;
+            reset_i_0 : in std_logic;
+            spacecraft_id_i_0 : in std_logic_vector ( 9 downto 0 );
+            tm_data_field_o_0 : out std_logic_vector ( 31 downto 0 );
+            tm_data_field_valid_o_0 : out std_logic;
+            transfer_frame_version_number_i_0 : in std_logic_vector ( 1 downto 0 )   
         );
     end component system_integration_wrapper;
 
