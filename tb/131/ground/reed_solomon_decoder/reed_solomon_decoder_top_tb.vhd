@@ -91,18 +91,15 @@ begin
             input_value_r <= input_value_r +1;
             data_input_r <=std_logic_vector(TO_UNSIGNED(input_value_r,8));
             
-            if (input_value_r = 50) then
-                input_decoder_r <= x"00";
-            else
-                input_decoder_r <= data_r;
-            end if;
-            
             if input_value_r = 255 then
                 input_value_r <= 1;
             end if;
         end if;
         wait for 10*16 ns; 
     end process data_valid_stimuli;
+    
+    input_decoder_r <= x"00" when input_value_r = 50 else
+                        data_r;
     
 
 end architecture;

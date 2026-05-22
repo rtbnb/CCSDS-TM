@@ -68,7 +68,13 @@ begin
                     
                     if iteration_count_r = 255 then
                         syndrome_o <= syndromes_r;
-                        syndrome_valid_o <= '1';
+                        if output_data_r = '1' then
+                            syndrome_valid_o <= '1';
+                            output_data_r <= '0';
+                        else
+                            syndrome_valid_o <= '0';
+                            output_data_r <= '0';
+                        end if;
                     else 
                         iteration_count_r <= iteration_count_r + 1;
                         output_data_r <= '1';                    
