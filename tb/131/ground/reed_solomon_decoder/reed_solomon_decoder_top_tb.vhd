@@ -10,6 +10,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.uniform;
+use ieee.math_real.floor;
+
 use work.finite_field.all;
 
 entity reed_solomon_decoder_top_tb is
@@ -52,10 +55,13 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     signal        data_input_r            : finite_field_t;
     signal        data_valid_r            : std_logic;
     
-    signal        data_valid_o            : std_logic;
+    signal        data_valid_decoder_r    : std_logic;
     signal        output_byte_r           : std_logic_vector (7 downto 0);        
     
     signal        input_value_r           : Integer range 0 to 300 := 1;
+    signal        sync_fifo_val_r         : std_logic_vector (7 downto 0);
+    signal 
+       reed_solomon_failure_r  : std_logic;
     
 begin
 
@@ -79,8 +85,9 @@ begin
       asm_done_i    => asm_done_r, 
       input_byte_i => input_decoder_r,
       data_valid_i => data_valid_r,
-      data_valid_o => data_valid_o,
-      output_byte_o => output_byte_r
+      data_valid_o => data_valid_decoder_r,
+      output_byte_o => output_byte_r,
+      reed_solomon_failure_o => reed_solomon_failure_r
     );
            
     clk_r <= not clk_r after 5 ns;
@@ -99,7 +106,24 @@ begin
     end process data_valid_stimuli;
     
     input_decoder_r <= x"00" when input_value_r = 50 else
+                       x"00" when input_value_r = 51 else
+                       x"00" when input_value_r = 52 else
+                       x"00" when input_value_r = 53 else
+                       x"00" when input_value_r = 54 else
+                       x"00" when input_value_r = 55 else
+                       x"00" when input_value_r = 56 else
+                       x"00" when input_value_r = 57 else
+                       x"00" when input_value_r = 58 else
+                       x"00" when input_value_r = 59 else
+                       x"00" when input_value_r = 60 else
+                       x"00" when input_value_r = 61 else
+                       x"00" when input_value_r = 62 else
+                       x"00" when input_value_r = 63 else
+                       x"00" when input_value_r = 64 else
                         data_r;
+
+    sync_fifo_val_r <= output_byte_r  when  data_valid_decoder_r = '1' else
+                        sync_fifo_val_r;          
     
 
 end architecture;

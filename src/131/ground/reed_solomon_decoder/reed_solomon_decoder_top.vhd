@@ -29,13 +29,16 @@ entity reed_solomon_decoder_top is
 end entity reed_solomon_decoder_top;
 
 architecture behavioral of reed_solomon_decoder_top is
-    signal synmdrome_valid_r : std_logic;
-    signal syndrome_r       : finite_field_syndrome_t;
-    signal epibma_done_r    : std_logic;
+    signal synmdrome_valid_r    : std_logic;
+    signal syndrome_r           : finite_field_syndrome_t;
+    signal epibma_done_r        : std_logic;
     signal error_locator_poly_r : finite_field_error_locator_t;
     signal error_mag_poly_r     : finite_field_error_mag_t;
     signal z_r                  : finite_field_t;
     signal gamma_r              : finite_field_t;
+    signal error_found_r        : std_logic;
+    signal error_mag_r          : finite_field_t;
+    signal fifo_output_r        : finite_field_t;
     
 begin
 
@@ -47,7 +50,7 @@ begin
             data_valid_i => data_valid_i,
     
             data_valid_o  => data_valid_o,
-            output_byte_o => output_byte_o
+            output_byte_o => fifo_output_r
         );
         
      reed_solomon_decoder_syndrome_inst: entity work.reed_solomon_decoder_syndrome
@@ -86,11 +89,14 @@ begin
             error_mag_poly_i => error_mag_poly_r,
             z_i             => z_r,
             gamma_i         => gamma_r,
-            enable_i        => asm_done_i,
+            enable_i        => data_valid_i,
             
-            error_found_o   => open,
-            error_mag_o     => open,
+            error_found_o   => error_found_r,
+            error_mag_o     => error_mag_r,
             decoder_fail_o  => reed_solomon_failure_o
         );
+        
+     output_byte_o <= gf_add(fifo_output_r, error_mag_r) when error_found_r = '1' else
+                     fifo_output_r;
                     
 end architecture behavioral;
