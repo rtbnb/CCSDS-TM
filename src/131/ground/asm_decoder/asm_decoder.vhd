@@ -50,18 +50,21 @@ begin
         m_axi_tdata         <= 'U';
         m_axi_tvalid        <= '0';
         m_axi_tlast         <= '0';
+        s_axi_tready        <= '0';
         asm_detected_r      <= '0';
         register_full_r     <= 0;
         counter_r           <= 0;
         shift_register_r    <= (others => '0');
         
     elsif rising_edge(clk_i)then 
+        s_axi_tready <= m_axi_tready;
         if s_axi_tvalid = '1' and m_axi_tready = '1' then 
-            -- shift register 
+            -- shift register
             register_full_r     <= register_full_r + 1; 
             m_axi_tdata         <= shift_register_r(32);
             shift_register_r    <= shift_register_r(31 downto 0) & s_axi_tdata;
             
+            s_axi_tready <= '1';
             if register_full_r = 33 then 
             -- only work if shift register is full 
                 register_full_r <= 33;
@@ -90,10 +93,10 @@ begin
                         m_axi_tvalid <= '0';
                     end if; 
                 end if; -- asm detection
-            end if; -- register full check 
+            end if; -- register full check
         end if; -- data valid check
+        
     end if; -- reset logic
 end process; 
-
 
 end behavioral;
