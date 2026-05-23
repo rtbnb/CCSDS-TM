@@ -29,8 +29,13 @@ end entity;
 
 architecture behavioral of reed_solomon_encoder is
     type finite_field_array_t      is array (0 to 31) of finite_field_t;
+    
+    constant MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
+    constant ASM_BYTE_LENGHT : INTEGER := 4; -- A ASM is 32-Bit in lenght 
+    constant MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
+    constant CLOCK_DIVISION : INTEGER := 15; -- Number of Cycles to be waited after a R/S Symbol - 1 (e.g. 16-1 = 15) (To syncronize with lower layers);
 
-    signal clock_devider_count_r : integer range 0 to 258 := 0;
+    signal clock_devider_count_r : integer range 0 to 258 := MESSAGE_LENGHT;
     signal rising_edge_count_r : integer range 0 to 15 := 1;
     signal read_next_value_r : std_logic := '0';
     signal first_value_done_r : std_logic := '0';
@@ -46,18 +51,13 @@ architecture behavioral of reed_solomon_encoder is
                                                         x"61",x"EB",x"0D",x"1E",
                                                         x"10",x"56",x"7F",x"5B"); -- Coefs directly from the CCSDS Standard
     
-    constant MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
-    constant ASM_BYTE_LENGHT : INTEGER := 4; -- A ASM is 32-Bit in lenght 
-    constant MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
-    constant CLOCK_DIVISION : INTEGER := 15; -- Number of Cycles to be waited after a R/S Symbol - 1 (e.g. 16-1 = 15) (To syncronize with lower layers);
-    
     
 begin
     reed_solomon_encoder : process (clk_i)
         variable input_addition : finite_field_t;
     begin
         if reset_i = '0' then
-            clock_devider_count_r <= 0;
+            clock_devider_count_r <= MESSAGE_LENGHT;
             rising_edge_count_r <= 1;
             encoder_done_flag_o <= '0';
             output_byte_o <= "00000000";
@@ -81,7 +81,7 @@ begin
                 
                 if first_value_done_r = '0' then
                     first_value_done_r <= '1';
-                    clock_devider_count_r <= 0;
+                    clock_devider_count_r <= MESSAGE_LENGHT;
             
                 end if;
             end if;

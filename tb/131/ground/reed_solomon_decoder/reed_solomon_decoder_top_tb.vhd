@@ -46,6 +46,8 @@ architecture behavioral of reed_solomon_decoder_top_tb is
 		reed_solomon_failure_o : out std_logic
     );
     end component;
+    
+    type random_index_t is array (0 to 14) of Integer range 0 to 255;
 
     signal        clk_r                   : std_logic := '0';
     signal        reset_r                 : std_logic := '1';
@@ -60,15 +62,15 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
     signal        input_value_r           : Integer range 0 to 300 := 1;
     signal        sync_fifo_val_r         : std_logic_vector (7 downto 0);
-    signal 
-       reed_solomon_failure_r  : std_logic;
+    signal        reed_solomon_failure_r  : std_logic;
+    signal        random_index_r          : random_index_t;
     
 begin
 
     dut_enccoder : reed_solomon_encoder
     port map (
         clk_i               =>  clk_r,
-        reset_i             =>  reset_r,
+        reset_i             =>  reset_r, 
         input_byte_i        =>  data_input_r,
         fifo_empty_i        =>  '0',
 
@@ -105,21 +107,38 @@ begin
         wait for 10*16 ns; 
     end process data_valid_stimuli;
     
-    input_decoder_r <= x"00" when input_value_r = 50 else
-                       x"00" when input_value_r = 51 else
-                       x"00" when input_value_r = 52 else
-                       x"00" when input_value_r = 53 else
-                       x"00" when input_value_r = 54 else
-                       x"00" when input_value_r = 55 else
-                       x"00" when input_value_r = 56 else
-                       x"00" when input_value_r = 57 else
-                       x"00" when input_value_r = 58 else
-                       x"00" when input_value_r = 59 else
-                       x"00" when input_value_r = 60 else
-                       x"00" when input_value_r = 61 else
-                       x"00" when input_value_r = 62 else
-                       x"00" when input_value_r = 63 else
-                       x"00" when input_value_r = 64 else
+    new_random_data: process
+        variable seed1 : positive;
+        variable seed2 : positive;
+        variable x : real;
+        variable y : integer;
+    begin
+        if asm_done_r = '1' then
+            for n in 1 to 14 loop
+              uniform(seed1, seed2, x);
+              --random_index_r(n) <= integer(floor(x * 255));
+              random_index_r(n) <= n+10;
+            end loop;
+        end if;
+        wait for 10 ns;
+    
+    end process new_random_data;
+    
+    input_decoder_r <= x"00" when input_value_r = random_index_r(0) else
+                       x"00" when input_value_r = random_index_r(1) else
+                       x"00" when input_value_r = random_index_r(2) else
+                       x"00" when input_value_r = random_index_r(3) else
+                       x"00" when input_value_r = random_index_r(4) else
+                       x"00" when input_value_r = random_index_r(5) else
+                       x"00" when input_value_r = random_index_r(6) else
+                       x"00" when input_value_r = random_index_r(7) else
+                       x"00" when input_value_r = random_index_r(8) else
+                       x"00" when input_value_r = random_index_r(9) else
+                       x"00" when input_value_r = random_index_r(10) else
+                       x"00" when input_value_r = random_index_r(11) else
+                       x"00" when input_value_r = random_index_r(12) else
+                       x"00" when input_value_r = random_index_r(13) else
+                       x"00" when input_value_r = random_index_r(14) else
                         data_r;
 
     sync_fifo_val_r <= output_byte_r  when  data_valid_decoder_r = '1' else
