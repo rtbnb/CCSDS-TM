@@ -50,10 +50,12 @@ begin
         counter_r       <= 0;
         m_axi_tdata     <= '0';
         m_axi_tvalid    <= '0';
+        m_axi_tlast     <= '0';
         
     elsif rising_edge(clk_i) then
         if s_axi_tvalid = '1' and m_axi_tready = '1' then 
             m_axi_tdata <= s_axi_tdata;
+            m_axi_tlast     <= '0';
             if s_axi_tlast = '1' then 
                 generate_asm <= '1';
                 s_axi_tready <= '0';
@@ -65,6 +67,7 @@ begin
             if counter_r = 31 then 
                 counter_r <= 0;
                 generate_asm <= '0';
+                m_axi_tlast <= '1';
             end if; 
         else 
             m_axi_tvalid <= '0';
