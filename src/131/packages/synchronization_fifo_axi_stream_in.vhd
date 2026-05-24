@@ -53,7 +53,7 @@ begin
     empty_o <= empty_s;
     s_axis_tready <= not full_s;
 
-    process(s_axis_aclk, s_axis_aresetn)
+    write_process : process(s_axis_aclk, s_axis_aresetn)
     begin
         if s_axis_aresetn = '0' then
             -- wr_ptr_r <= 0; -- Reset logic currently not implemented.
@@ -63,9 +63,9 @@ begin
                 wr_ptr_r <= (wr_ptr_r + 1) mod DEPTH;
             end if;
         end if;
-    end process;
+    end process write_process;
 
-    process(rd_clk_i)
+    read_process : process(rd_clk_i)
     begin
         if rising_edge(rd_clk_i) then
             if rd_en_i = '1' and empty_s = '0' then
@@ -73,7 +73,7 @@ begin
                 rd_ptr_r <= (rd_ptr_r + 1) mod DEPTH;
             end if;
         end if;
-    end process;
+    end process read_process;
 
     rd_data_o <= fifo_data_out_r;
     

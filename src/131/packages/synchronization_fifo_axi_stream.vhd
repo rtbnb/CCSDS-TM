@@ -50,7 +50,7 @@ begin
 
     s_axis_tready <= not full_s;
     
-    process(s_axis_aclk, s_axis_aresetn)
+    write_process : process(s_axis_aclk, s_axis_aresetn)
     begin
         if s_axis_aresetn = '0' then
             -- wr_ptr_r <= 0; -- Reset logic currently not implemented.
@@ -60,9 +60,9 @@ begin
                 wr_ptr_r <= (wr_ptr_r + 1) mod DEPTH;
             end if;
         end if;
-    end process;
+    end process write_process;
 
-    process(m_axis_aclk, m_axis_aresetn)
+    read_process : process(m_axis_aclk, m_axis_aresetn)
     begin
         if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
@@ -77,7 +77,7 @@ begin
                 m_axis_tvalid <= '0';
             end if;
         end if;
-    end process;
+    end process read_process;
 
     m_axis_tdata <= fifo_data_out_r;
     
