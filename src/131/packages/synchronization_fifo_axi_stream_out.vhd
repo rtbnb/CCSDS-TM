@@ -64,6 +64,7 @@ begin
         if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
             fifo_data_out_r <= (others => '0');
+            m_axis_tvalid <= '0';
         elsif rising_edge(m_axis_aclk) then
             if m_axis_tready = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
