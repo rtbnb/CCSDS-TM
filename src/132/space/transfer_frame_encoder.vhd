@@ -20,7 +20,6 @@ entity transfer_frame_encoder is
         spacecraft_id_i: in std_logic_vector(9 downto 0);       
         
         -- output interface
-        out_clk_o: out std_logic;
         out_en_o: out std_logic;
         data_o: out std_logic_vector(7 downto 0);
         out_full_i: in std_logic;
@@ -125,7 +124,6 @@ begin
     );
     
     vch_available_s <= vch0_frame_ready_i;
-    out_clk_o <= clk_i;
     with is_oid_frame_r select
         first_header_pointer_s <= "11111111110" when '1',
                                   (others => '0') when others;
