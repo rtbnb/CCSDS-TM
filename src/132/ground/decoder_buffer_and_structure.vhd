@@ -122,7 +122,6 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_valid_o_s: std_logic := '0';
     signal dd_data_fully_read_s: std_logic := '0';
     signal dd_data_i_r: std_logic_vector(7 downto 0);
-    signal dd_clk_s: std_logic;
     signal dd_data_valid_i_r: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
 begin
@@ -150,7 +149,7 @@ begin
         data_valid_o => dd_data_valid_o_s,
         data_fully_read_o => dd_data_fully_read_s,
         data_i => dd_data_i_r,
-        clk_i => dd_clk_s,
+        clk_i => clk_i,
         data_valid_i => dd_data_valid_i_r,
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s
     );
@@ -224,8 +223,6 @@ begin
             end if;
         end if;
     end process output_tm_frame;
-     
-    dd_clk_s <= clk_i;
 
     dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
     tm_data_field_valid_o <= dd_data_valid_o_s;
