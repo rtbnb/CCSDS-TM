@@ -14,7 +14,6 @@ entity empty_to_valid is
     port (
         empty_i: in std_logic;
         data_valid_o: out std_logic;
-        rd_clk_o: out std_logic;
         clk_i: in std_logic
     );
 end entity empty_to_valid;
@@ -28,9 +27,5 @@ begin
             data_valid_o <= not empty_i;
         end if;
     end process delay;
-    
-    with empty_i select
-        rd_clk_o <= clk_i when '0',
-                      '0' when others;
 
 end architecture behavioral;
