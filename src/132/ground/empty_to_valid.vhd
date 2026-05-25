@@ -14,6 +14,7 @@ entity empty_to_valid is
     port (
         empty_i: in std_logic;
         data_valid_o: out std_logic;
+        rd_enb_o: out std_logic;
         clk_i: in std_logic
     );
 end entity empty_to_valid;
@@ -21,6 +22,8 @@ end entity empty_to_valid;
 architecture behavioral of empty_to_valid is
     signal data_available_r: std_logic := '0';
 begin
+    rd_enb_o <= '1';
+
     delay: process(clk_i) is
     begin
         if rising_edge(clk_i) then
