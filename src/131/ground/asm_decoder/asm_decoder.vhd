@@ -23,7 +23,7 @@ entity asm_decoder is
     data_valid_i: in std_logic;
     -- output ports 
     data_o          : out std_logic;
-    data_valid_o    : out std_logic; 
+    data_valid_o    : out std_logic;
     decoder_done_o  : out std_logic 
     );
 end asm_decoder;
@@ -52,6 +52,7 @@ begin
         
     elsif rising_edge(clk_i)then 
         clock_counter_r := clock_counter_r + 1; -- increase clock counter  
+        data_valid_o <= '0';
         if clock_counter_r = clock_divider_g then
             clock_counter_r := 0; -- reset clock counter 
             if data_valid_i = '1' then 
@@ -68,21 +69,22 @@ begin
                             asm_detected_r <= '1'; 
                             data_valid_o <= '0';
                             decoder_done_o <= '1';
-                            data_o <= 'L';
+                            data_o <= 'U';
                         else 
                             data_valid_o <= '1';
+                            decoder_done_o <= '0';
                         end if; 
                     elsif asm_detected_r = '1' then 
                     -- if asm pattern was already detected, delay data valid flag for 32 cycles 
-                        if counter_r = 31 then 
+                        if counter_r = 30 then 
                             counter_r <= 0; 
                             asm_detected_r <= '0'; 
-                            data_valid_o <= '1';
-                            decoder_done_o <= '0';
+                            data_o <= 'U';
                         else
                             counter_r <= counter_r + 1; 
                             asm_detected_r <= '1'; 
                             data_valid_o <= '0';
+                            data_o <= 'U';
                         end if; 
                     end if; -- asm detection
                 end if; -- register full check 

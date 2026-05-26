@@ -56,17 +56,17 @@ begin
     data_input: process
     begin
         -- tf frame version number + spacraft id
-        data_s <= "00000000";
+        data_s <= "00000001";
         data_valid_s <= '1';
         wait for 10ns;
         -- spacecraft id + vc id + ocf flag
-        data_s <= "00000000";
+        data_s <= "00000010";
         wait for 10ns;
         -- master channel frame count
-        data_s <= "00000000";
+        data_s <= "00000011";
         wait for 10ns;
         -- virtual channel frame count
-        data_s <= "00000000";
+        data_s <= "00000100";
         wait for 10ns;
         -- tm data field
         data_s <= "00011000";
@@ -77,24 +77,26 @@ begin
         -- data field 2040 octets
         for i in 0 to 6 loop
             -- packet version number + packet type + sec hdr flag + apid
-            data_s <= "00000000";
+            data_s <= "00000001";
             wait for 10ns;
             -- apid
-            data_s <= "00000000";
+            data_s <= "00000010";
             wait for 10ns;
             -- packet sequence control
-            data_s <= "00000000";
+            data_s <= "00000011";
             wait for 10ns;
             -- packet sequence control
-            data_s <= "00000000";
+            data_s <= "00000100";
             wait for 10ns;
             -- packet data length
-            data_s <= "00000000";
+            data_s <= "00000101";
             wait for 10ns;
             -- packet data length
             data_s <= "11111001"; -- 249
             wait for 10ns;
-            for j in 0 to 250 loop
+            data_s <= x"AB";
+            wait for 10ns;
+            for j in 0 to 249 loop
                 data_s <= std_logic_vector(to_unsigned(j, 8));
                 wait for 10ns;
             end loop;

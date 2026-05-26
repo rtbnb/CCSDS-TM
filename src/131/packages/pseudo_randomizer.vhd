@@ -13,7 +13,8 @@ use ieee.numeric_std.all;
 
 entity pseudo_randomizer is 
     generic(
-        clock_divider_g : integer := 1
+        clock_divider_g : integer := 1;
+        is_ground_g     : boolean := false
         );
     port(
         -- input ports 
@@ -41,7 +42,7 @@ begin
         variable new_element_s      : std_logic;
         variable new_vector_long_s  : std_logic_vector(17 downto 0);
     begin 
-        if reset_i = '0' or encoder_done_i ='1'  then 
+        if reset_i = '0'  then 
             -- reset signals 
             -- check if encoder done, set data valid accordingly 
             if encoder_done_i = '1' then
@@ -57,18 +58,30 @@ begin
             new_element_s               := '0'; 
             new_vector_long_s           := (others => '0');
 
-        elsif rising_edge(clk_i) and data_valid_i = '1' then 
+        elsif rising_edge(clk_i) then 
             -- clock division
             clock_counter_r := clock_counter_r + 1;
-            if clock_counter_r = clock_divider_g then 
-                -- XOR data 
-                data_o <= data_i XOR randomization_sequence_r(0);
-                data_valid_o <= '1';
-                encoder_done_o <= '0';
-                -- generate new element + shift vector 
-                new_element_s := randomization_sequence_r(0) XOR randomization_sequence_r(14);
-                new_vector_long_s := new_element_s & randomization_sequence_r;
-                randomization_sequence_r <= new_vector_long_s(17 downto 1); 
+            if is_ground_g = true then 
+                data_valid_o <= '0';
+            end if; 
+            if clock_counter_r = clock_divider_g then
+                if encoder_done_i ='1' then
+                    encoder_done_o              <= encoder_done_i;
+                    data_o                      <= '0';
+                    data_valid_o <='1';
+                    randomization_sequence_r    <= INIT_SEQUENCE;
+                else
+                    if data_valid_i = '1' then
+                        -- XOR data 
+                        data_o <= data_i XOR randomization_sequence_r(0);
+                        data_valid_o <= '1';
+                        encoder_done_o <= '0';
+                        -- generate new element + shift vector 
+                        new_element_s := randomization_sequence_r(0) XOR randomization_sequence_r(14);
+                        new_vector_long_s := new_element_s & randomization_sequence_r;
+                        randomization_sequence_r <= new_vector_long_s(17 downto 1);
+                    end if;
+                end if;
                 -- reset clock counter 
                 clock_counter_r := 0;
             end if; -- clock divider 

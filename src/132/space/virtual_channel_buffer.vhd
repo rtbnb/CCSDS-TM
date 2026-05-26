@@ -32,7 +32,7 @@ end entity virtual_channel_buffer;
 
 architecture behavioral of virtual_channel_buffer is
     constant BUFFER_SIZE: integer := 2040; -- 2040 bytes maximum TRANSFER FRAME DATA FIELD (ref CCSDS 132.0-B-3 Figure 4.1) and SPC-REQ-7
-    type buffer_mem_t is array (0 to BUFFER_SIZE-1) of std_logic_vector(7 downto 0);
+    type buffer_mem_t is array (0 to BUFFER_SIZE -1) of std_logic_vector(7 downto 0);
     signal data_buffer_r : buffer_mem_t := (others => (others => '0'));
 
     signal write_ptr_r: integer range 0 to BUFFER_SIZE -1 := 0;
@@ -47,19 +47,23 @@ begin
     ready_o <= (not readout_active_r) or pre_loading_active_r;
     frame_ready_o <= readout_active_r;
     
-    data_handling: process(clk_i) 
+    -- preloading is extracted into its own process that reacts on the falling edge to make interaction with this entity more predictable
+    preload_switch: process(clk_i)
     begin
-        if rising_edge(clk_i) then
-            
-            
-            if ((read_ptr_r - write_ptr_r) > 0 and readout_active_r = '1') then
+        if falling_edge(clk_i) then
+            if ((read_ptr_r - write_ptr_r) > 1 and readout_active_r = '1') then
                 pre_loading_active_r <= '1';
             else
                 pre_loading_active_r <= '0';
             end if;
-            
-            
-            if (readout_active_r = '0' and data_valid_i = '1') or (pre_loading_active_r = '1' and (read_ptr_r - write_ptr_r) > 0) then
+        end if;
+        
+    end process preload_switch;
+    
+    data_handling: process(clk_i) 
+    begin
+        if rising_edge(clk_i) then
+            if (readout_active_r = '0' and data_valid_i = '1') or (pre_loading_active_r = '1' and (read_ptr_r - write_ptr_r) > 1) then
                 
                 data_buffer_r(write_ptr_r) <= data_i;
                 write_ptr_r <= write_ptr_r + 1;
