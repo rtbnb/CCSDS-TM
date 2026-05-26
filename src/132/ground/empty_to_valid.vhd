@@ -20,7 +20,6 @@ entity empty_to_valid is
 end entity empty_to_valid;
 
 architecture behavioral of empty_to_valid is
-    signal data_available_r: std_logic := '0';
 begin
     rd_enb_o <= '1';
 
