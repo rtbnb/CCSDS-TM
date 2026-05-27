@@ -24,20 +24,21 @@ end entity ocf_encoder;
 
 architecture behavioral of ocf_encoder is
 begin
-    -- When OCF(0) is 0 -> Type One Report in Accordance with CCSDS 232
-    -- When OCF(0) is 1 -> Type Two Report
-        -- When OCF(0) = 1 and OCF(1) = 0 -> Project Specific Content inside OCF
-        -- When OCF(0) = 1 and OCF(1) = 1 -> SDLS FSR Report in Accordance with CCSDS 355.1
+    -- When encoded_ocf_o(0) is 0 -> Type One Report in Accordance with CCSDS 232
+    -- When encoded_ocf_o(0) is 1 -> Type Two Report
+        -- When encoded_ocf_o(0) = 1 and encoded_ocf_o(1) = 0 -> Project Specific Content inside OCF
+        -- When encoded_ocf_o(0) = 1 and encoded_ocf_o(1) = 1 -> SDLS FSR Report in Accordance with CCSDS 355.1
     
     encoded_ocf_o(0) <= ocf_type_i;
     
     encoded_ocf_o(1) <= (sdls_fsr_report_i xor project_specific_report_i) and not project_specific_report_i;
-    encoded_ocf_o(31 downto 1) <= (others => '0');
+    encoded_ocf_o(31 downto 2) <= (others => '0');
     
     ocf_valid_o <= 
         not (sdls_fsr_report_i and  project_specific_report_i) and 
         not (not ocf_type_i and sdls_fsr_report_i) and
-        not (not ocf_type_i and project_specific_report_i);
+        not (not ocf_type_i and project_specific_report_i) and
+        not (ocf_type_i and not (sdls_fsr_report_i or project_specific_report_i));
     
     
 end architecture behavioral;
