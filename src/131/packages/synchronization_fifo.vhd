@@ -48,7 +48,7 @@ begin
     empty_o <= empty_s;
     full_o  <= full_s;
 
-    process(wr_clk_i)
+    write_process : process(wr_clk_i)
     begin
         if rising_edge(wr_clk_i) then
             if wr_en_i = '1' and full_s = '0' then
@@ -56,9 +56,9 @@ begin
                 wr_ptr_r <= (wr_ptr_r + 1) mod depth_g;
             end if;
         end if;
-    end process;
+    end process write_process;
 
-    process(rd_clk_i)
+    read_process : process(rd_clk_i)
     begin
         if rising_edge(rd_clk_i) then
             if rd_en_i = '1' and empty_s = '0' then
@@ -66,7 +66,7 @@ begin
                 rd_ptr_r <= (rd_ptr_r + 1) mod depth_g;
             end if;
         end if;
-    end process;
+    end process read_process;
 
     rd_data_o <= fifo_data_out_r;
     
