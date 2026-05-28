@@ -18,12 +18,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library dec_viterbi;
-use dec_viterbi.pkg_param.all;
-use dec_viterbi.pkg_param_derived.all;
-use dec_viterbi.pkg_types.all;
-use dec_viterbi.pkg_components.all;
-use dec_viterbi.pkg_trellis.all;
+library xil_defaultlib;
+use xil_defaultlib.pkg_param.all;
+use xil_defaultlib.pkg_param_derived.all;
+use xil_defaultlib.pkg_types.all;
+use xil_defaultlib.pkg_components.all;
+use xil_defaultlib.pkg_trellis.all;
 
 
 entity dec_viterbi is

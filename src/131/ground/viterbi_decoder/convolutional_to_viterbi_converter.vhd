@@ -15,7 +15,7 @@ entity convolutional_to_viterbi_converter is
 
     generic (
         ACQUISITION_LENGTH_g : integer := 96; -- Number of convolutional encoded bits to acquire before processing (Should be 6x the constraint length of the convolutional encoder)
-        WINDOW_SIZE_g : integer := 250; -- Size of the sliding window for processing convolutional data (Should be at least 6x the constraint length of the convolutional encoder to ensure proper decoding)
+        WINDOW_SIZE_g : integer := 100; -- Size of the sliding window for processing convolutional data (Should be at least 6x the constraint length of the convolutional encoder to ensure proper decoding)
         INVERT_MASK_g : std_logic_vector(1 downto 0) := "10" -- Mask to invert output bits, '1' means invert. CCSDS standard uses "01" to invert the second output bit.
     );
 
