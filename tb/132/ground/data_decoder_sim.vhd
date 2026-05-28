@@ -46,14 +46,17 @@ end component data_decoder;
     signal data_valid_i_s: std_logic := '0';
     signal tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
 
-    type space_packet_t is array (0 to MAX_SPACE_PACKET_SIZE_OCTET - 1) of std_logic_vector(7 downto 0);
+    type space_packet_t is array (MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 0) of std_logic_vector(7 downto 0);
     signal max_size_space_packet_s: space_packet_t := (others => (others => '0'));
+    signal max_size_idle_space_packet_s: space_packet_t := (others => (others => '0'));
 
     -- data input process
     signal wr_ptr: integer := 0;
     
     -- validation process
     signal test_data_ptr: integer := 0;
+    type test_data_state_t is (max_size_space_packet, max_size_idle_space_packet);
+    signal test_data_state: test_data_state_t := max_size_space_packet;
 begin
 
 EUT: data_decoder port map (
@@ -78,38 +81,65 @@ end process clk;
     max_size_space_packet_s(2) <= x"00";
     max_size_space_packet_s(3) <= x"00";
     max_size_space_packet_s(4) <= x"f9"; -- 249 Data Octets
-    --max_size_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
+    max_size_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
+
+    max_size_idle_space_packet_s(0) <= "11110000";
+    max_size_idle_space_packet_s(1) <= x"FF";
+    max_size_idle_space_packet_s(2) <= x"00";
+    max_size_idle_space_packet_s(3) <= x"00";
+    max_size_idle_space_packet_s(4) <= x"f9"; -- 249 Data Octets
+    max_size_idle_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
 
 
 data_input: process is
 begin
-    wait for CLK_PERIOD;
-    data_i_s <= max_size_space_packet_s(wr_ptr);
-    data_valid_i_s <= '1';
-    wr_ptr <= wr_ptr + 1;
-    if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
-        wr_ptr <= 0;
-    end if;
-    wait for CLK_PERIOD;
+    case test_data_state is
+        when max_size_space_packet =>
+            wait for CLK_PERIOD;
+            data_i_s <= max_size_space_packet_s(wr_ptr);
+            data_valid_i_s <= '1';
+            wr_ptr <= wr_ptr + 1;
+            if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                wr_ptr <= 0;
+                test_data_state <= max_size_idle_space_packet;
+            end if;
+            wait for CLK_PERIOD;
+        when max_size_idle_space_packet =>
+            wait for CLK_PERIOD;
+            data_i_s <= max_size_idle_space_packet_s(wr_ptr);
+            data_valid_i_s <= '1';
+            wr_ptr <= wr_ptr + 1;
+            if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                wr_ptr <= 0;
+                test_data_state <= max_size_space_packet;
+            end if;
+            wait for CLK_PERIOD;
+    end case;
 end process data_input;
 
 validate_output: process is
 begin
     wait for CLK_PERIOD;
-    if data_valid_o_s = '1' then
-        assert (data_o_s(7 downto 0) = max_size_space_packet_s(test_data_ptr + 0))
-        report "output not matching input Space Packet index 0" severity failure;
-        assert (data_o_s(15 downto 8) = max_size_space_packet_s(test_data_ptr + 1))
-        report "output not matching input Space Packet index 1" severity failure;
-        assert (data_o_s(23 downto 16) = max_size_space_packet_s(test_data_ptr + 2))
-        report "output not matching input Space Packet index 2" severity failure;
-        assert (data_o_s(31 downto 24) = max_size_space_packet_s(test_data_ptr + 3))
-        report "output not matching input Space Packet index 3" severity failure;
-        test_data_ptr <= test_data_ptr + 4;
-        if test_data_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 4 then
-            test_data_ptr <= 0;
-        end if;
-    end if;
+    case test_data_state is
+        when max_size_space_packet =>
+            if data_valid_o_s = '1' then
+                assert (data_o_s(7 downto 0) = max_size_space_packet_s(test_data_ptr + 0))
+                report "output not matching input Space Packet index 0" severity failure;
+                assert (data_o_s(15 downto 8) = max_size_space_packet_s(test_data_ptr + 1))
+                report "output not matching input Space Packet index 1" severity failure;
+                assert (data_o_s(23 downto 16) = max_size_space_packet_s(test_data_ptr + 2))
+                report "output not matching input Space Packet index 2" severity failure;
+                assert (data_o_s(31 downto 24) = max_size_space_packet_s(test_data_ptr + 3))
+                report "output not matching input Space Packet index 3" severity failure;
+                test_data_ptr <= test_data_ptr + 4;
+                if test_data_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 4 then
+                    test_data_ptr <= 0;
+                end if;
+            end if;
+        when max_size_idle_space_packet =>
+            assert (data_valid_o_s = '0')
+            report "Idle Space Packet not discarded! GND-132-S012-REQ-6" severity error;
+    end case;
     wait for CLK_PERIOD;
 end process validate_output;
 
