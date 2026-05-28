@@ -38,12 +38,11 @@ architecture behavioral of virtual_channel_buffer_sim is
             data_i: in std_logic_vector(7 downto 0);
             data_valid_i: in std_logic;
             ready_o: out std_logic;
-    
+
             -- output interface
             frame_ready_o: out std_logic;
-            frame_select_i: in std_logic; -- this signal signals the virtual channel that it will be read out
-            data_out_en_i: in std_logic; -- this signal tells the virtual channel that the next byte can be send
-            data_o: out std_logic_vector(7 downto 0) := (others => '0');
+            data_out_en_i: in std_logic;
+            data_o: out std_logic_vector(7 downto 0);
             virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
             first_header_pointer_o: out std_logic_vector(10 downto 0)
         );
@@ -63,7 +62,6 @@ architecture behavioral of virtual_channel_buffer_sim is
 
     signal frame_ready_o_s: std_logic;
     signal data_out_en_i_s: std_logic := '0';
-    signal frame_select_i_s: std_logic := '0';
     signal data_o_s: std_logic_vector(7 downto 0);
     signal virtual_channel_frame_count_s: std_logic_vector(7 downto 0);
     signal first_header_pointer_s: std_logic_vector(10 downto 0);
@@ -100,7 +98,6 @@ begin
         ready_o => ready_o_s,
         frame_ready_o => frame_ready_o_s,
         data_out_en_i => data_out_en_i_s,
-        frame_select_i => frame_select_i_s,
         data_o => data_o_s,
         virtual_channel_frame_count_o => virtual_channel_frame_count_s,
         first_header_pointer_o => first_header_pointer_s
@@ -115,21 +112,17 @@ begin
         next_valid_s <= '1';
         wait for 15ns;
         data_valid_i_s <= '1';
-        
-        wait;
-        
-    end process general_settings;
-
-    read_out: process begin
+        wait for CLK_PERIOD; 
         wait until frame_ready_o_s = '1'; -- time for the buffer to fill up
-        wait for CLK_PERIOD;
-        frame_select_i_s <= '1';
-        wait for CLK_PERIOD;
+        wait for CLK_PERIOD; 
+        data_valid_i_s <= '1';
+        data_out_en_i_s <= '1';
+        wait for CLK_PERIOD * 10;
+        data_out_en_i_s <= '0';
+        wait for CLK_PERIOD * 10;
         data_out_en_i_s <= '1';
         
-        wait;
-        
-    end process read_out;
+    end process general_settings;
 
     clock: process begin
         clk_s <= not clk_s;
