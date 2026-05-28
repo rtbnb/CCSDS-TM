@@ -42,7 +42,7 @@ package pkg_param is
 	--           DAB  : [91,121,101,91]
 	--           WiMAX: [91,121,117]
 	--
-	constant PARITY_POLYNOMIALS   : t_parity := (121,91);
+	constant PARITY_POLYNOMIALS   : t_parity := (8#171#,8#133#);
 
 
 	--
@@ -61,18 +61,18 @@ package pkg_param is
 	-- Set bit width of LLR input
 	-- Recommended values: 3 or 4
 	--
-	constant BW_LLR_INPUT : natural := 4;
+	constant BW_LLR_INPUT : natural := 2;
 
 	--
 	-- Set the maximum window length which shall be allowed at runtime.
 	-- Recommended: at least 6 * constraint length
 	--
-	constant MAX_WINDOW_LENGTH : natural := 96;
+	constant MAX_WINDOW_LENGTH : natural := 500;
 
 	--
 	-- Set to 'true' if distributed RAM shall be used
 	-- Set to 'false' if block RAM shall be used
 	--
-	constant DISTRIBUTED_RAM : boolean := true;
+	constant DISTRIBUTED_RAM : boolean := false;
 
 end package pkg_param;

@@ -17,9 +17,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library dec_viterbi;
-use dec_viterbi.pkg_param.all;
-use dec_viterbi.pkg_param_derived.all;
+library xil_defaultlib;
+use xil_defaultlib.pkg_param.all;
+use xil_defaultlib.pkg_param_derived.all;
 
 package pkg_types is
 

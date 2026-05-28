@@ -15,8 +15,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
-library dec_viterbi;
-use dec_viterbi.pkg_helper.all;
+library xil_defaultlib;
+use xil_defaultlib.pkg_helper.all;
 
 
 entity generic_sp_ram is

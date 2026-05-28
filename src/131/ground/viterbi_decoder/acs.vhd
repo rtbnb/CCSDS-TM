@@ -17,11 +17,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library dec_viterbi;
-use dec_viterbi.pkg_param.all;
-use dec_viterbi.pkg_param_derived.all;
-use dec_viterbi.pkg_types.all;
-use dec_viterbi.pkg_helper.all;
+library xil_defaultlib;
+use xil_defaultlib.pkg_param.all;
+use xil_defaultlib.pkg_param_derived.all;
+use xil_defaultlib.pkg_types.all;
+use xil_defaultlib.pkg_helper.all;
 
 
 entity acs is
