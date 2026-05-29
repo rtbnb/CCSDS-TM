@@ -26,7 +26,7 @@ entity reed_solomon_decoder_epibma_pe is
         mc1_i : in std_logic;
         mc2_i : in std_logic;
         mc3_i : in std_logic;
-        enable_i : std_logic; 
+        enable_i : in std_logic; 
         
         omega_o : out finite_field_t;
         theta_o : out finite_field_t
