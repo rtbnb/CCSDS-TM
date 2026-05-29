@@ -29,16 +29,17 @@ entity reed_solomon_decoder_top is
 end entity reed_solomon_decoder_top;
 
 architecture behavioral of reed_solomon_decoder_top is
-    signal synmdrome_valid_r    : std_logic;
-    signal syndrome_r           : finite_field_syndrome_t;
-    signal epibma_done_r        : std_logic;
-    signal error_locator_poly_r : finite_field_error_locator_t;
-    signal error_mag_poly_r     : finite_field_error_mag_t;
-    signal z_r                  : finite_field_t;
-    signal gamma_r              : finite_field_t;
-    signal error_found_r        : std_logic;
-    signal error_mag_r          : finite_field_t;
-    signal fifo_output_r        : finite_field_t;
+    signal synmdrome_valid_r        : std_logic;
+    signal syndrome_r               : finite_field_syndrome_t;
+    signal epibma_done_r            : std_logic;
+    signal error_locator_poly_r     : finite_field_error_locator_t;
+    signal error_mag_poly_r         : finite_field_error_mag_t;
+    signal z_r                      : finite_field_t;
+    signal gamma_r                  : finite_field_t;
+    signal error_found_r            : std_logic;
+    signal error_mag_r              : finite_field_t;
+    signal fifo_output_r            : finite_field_t;
+    signal error_locator_poly_len_r : integer range 0 to max_number_of_errors_g;
     
 begin
 
@@ -77,7 +78,8 @@ begin
             
             epibma_done_o => epibma_done_r,
             error_locator_poly_o => error_locator_poly_r,
-            error_mag_poly_o => error_mag_poly_r
+            error_mag_poly_o => error_mag_poly_r,
+            error_locator_poly_len_o => error_locator_poly_len_r
         );
      
      reed_solomon_decoder_ecsee_inst: entity work.reed_solomon_decoder_ecsee
@@ -93,7 +95,8 @@ begin
             
             error_found_o   => error_found_r,
             error_mag_o     => error_mag_r,
-            decoder_fail_o  => reed_solomon_failure_o
+            decoder_fail_o  => reed_solomon_failure_o,
+            err_locator_poly_len_i => error_locator_poly_len_r
         );
         
      output_byte_o <= gf_add(fifo_output_r, error_mag_r) when error_found_r = '1' else

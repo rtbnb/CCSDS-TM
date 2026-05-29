@@ -28,7 +28,8 @@ entity reed_solomon_decoder_epibma_control is
         mc2_o : out std_logic_vector(max_number_of_errors_g*2 downto 0);
         mc3_o : out std_logic;
         epibma_done_o: out std_logic;
-        z_o             : out finite_field_t
+        z_o             : out finite_field_t;
+        error_locator_poly_len_o : out integer range 0 to max_number_of_errors_g
         
     );
 end entity reed_solomon_decoder_epibma_control;
@@ -113,6 +114,8 @@ begin
             '0';
             
   z_o <= z_r;
+  
+  error_locator_poly_len_o <= l_a_r;
           
 
        
