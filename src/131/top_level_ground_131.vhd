@@ -35,7 +35,8 @@ signal pr_decoder_done_s    : std_logic := '0';
 
 -- width converter signal 
 signal wc_output_byte_s         : std_logic_vector (7 downto 0) := (others => '0');
-signal wc_data_valid_s          : std_logic := '0'; 
+signal wc_data_valid_s          : std_logic := '0';
+signal wc_data_valid_in_s       : std_logic := '0';
 signal wc_asm_done_s            : std_logic := '0';
 
 
@@ -98,7 +99,7 @@ width_converter_1_to_8_inst : entity work.width_converter_1_to_8
         clk_i           => clk_i,  
         reset_i         => reset_i,
         input_bit_i     => pr_data_s,
-        data_valid_i    => ((not pr_decoder_done_s) and pr_data_valid_s),
+        data_valid_i    => wc_data_valid_in_s,
         asm_done_i      => pr_decoder_done_s,
         -- outputs 
         output_byte_o   => wc_output_byte_s,
@@ -120,5 +121,9 @@ reed_solomon_decoder_inst : entity work.reed_solomon_decoder_top
         output_byte_o   => output_byte_o,
         reed_solomon_failure_o  => decoder_failure_o
     );
+    
+    --this logic fixes warning that there shall not be function calls inside of a port map
+    --that why this signal is set outside of the portmap and then mapped indireclty (see width_converter_1_to_8_inst)
+    wc_data_valid_in_s <= ((not pr_decoder_done_s) and pr_data_valid_s);
     
 end top_level;
