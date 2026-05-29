@@ -14,8 +14,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity asm_encoder is
     generic(
-        --asm_pattern_g   : std_logic_vector(31 downto 0) := x"1ACFFC1D"
-        asm_pattern_g   : std_logic_vector(31 downto 0) := x"FFFFFFFF"
+        asm_pattern_g   : std_logic_vector(31 downto 0) := x"1ACFFC1D"
+        -- asm_pattern_g   : std_logic_vector(31 downto 0) := x"FFFFFFFF" -- uncomment for debug purposes 
     );
     port (
         -- input 
@@ -73,6 +73,7 @@ begin
         s_tready    <=  m_axi_tready;
         m_tvalid    <= '0';
         
+        -- valid data on m_axi
         if m_axi_datavalid = '1' then
             m_tvalid        <= '0';
             m_axi_tlast     <= '0';
@@ -86,7 +87,8 @@ begin
                     generate_asm    <= '0';
                 end if; -- counter logic 
             end if; -- asm counter 
-            
+        
+        -- valid data on s_axi     
         elsif generate_asm = '1' then 
             m_tvalid        <= '1';
             s_tready        <= '0';

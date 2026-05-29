@@ -12,7 +12,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity asm_decoder is
     generic (
-        asm_pattern_g   : std_logic_vector(31 downto 0) := x"1ACFFC1D"
+        asm_pattern_g   : std_logic_vector(31 downto 0) := x"1ACFFC1D"; 
+        frame_length_g  : integer := 255
     );
     port( 
         -- input ports 
@@ -35,68 +36,93 @@ end asm_decoder;
 
 architecture behavioral of asm_decoder is
 
-    signal shift_register_r : std_logic_vector(32 downto 0) := (others => '0'); 
-    signal counter_r        : integer range 0 to 33 := 0;
-    signal register_full_r  : integer range 0 to 33 := 0;
-    signal asm_detected_r   : std_logic := '0'; 
+-- shift register to detect asm in 
+signal shift_register_r : std_logic_vector(32 downto 0) := (others => '0');     
+-- counter 
+signal counter_r        : integer range 0 to frame_length_g := 0;
+-- flags for datavalid state 
+signal s_axi_datavalid  : std_logic := '0';
+signal m_axi_datavalid  : std_logic := '0';
+-- additional signals 
+signal m_tvalid         : std_logic := '0';
+signal s_tready         : std_logic := '0';
+signal detect_asm_r     : std_logic := '0';
+signal asm_detected_r   : std_logic := '0'; 
+signal register_full_r  : std_logic := '0';
 
 begin
+
+-- asynchronous assignments 
+s_axi_datavalid     <= s_tready and s_axi_tvalid;
+m_axi_datavalid     <= m_axi_tready and m_tvalid;
+m_axi_tvalid        <= m_tvalid;
+s_axi_tready        <= s_tready;
 
 check_for_asm: process(clk_i, reset_i)
   
 begin 
     if reset_i = '0' then 
         -- reset all variables and signals 
-        m_axi_tdata         <= 'U';
-        m_axi_tvalid        <= '0';
-        m_axi_tlast         <= '0';
-        s_axi_tready        <= '0';
-        asm_detected_r      <= '0';
-        register_full_r     <= 0;
         counter_r           <= 0;
-        shift_register_r    <= (others => '0');
+        register_full_r     <= '0'; 
+        m_tvalid            <= '0'; 
+        s_tready            <= '0'; 
         
-    elsif rising_edge(clk_i)then 
-        s_axi_tready <= m_axi_tready;
-        if s_axi_tvalid = '1' and m_axi_tready = '1' then 
-            -- shift register
-            register_full_r     <= register_full_r + 1; 
-            m_axi_tdata         <= shift_register_r(32);
-            shift_register_r    <= shift_register_r(31 downto 0) & s_axi_tdata;
+    elsif rising_edge(clk_i)then
+        s_tready <= m_axi_tready;
+        -- valid data on m_axi
+        if m_axi_datavalid = '1' then
+            m_tvalid        <= '0';
+            m_axi_tlast     <= '0';
+            counter_r       <= counter_r + 1;
+                       
+            -- switch to detect asm after frame length           
+            if counter_r = frame_length_g + 31 then 
+                detect_asm_r    <= '1'; 
+                counter_r       <= 0; 
+            end if;      
             
-            s_axi_tready <= '1';
-            if register_full_r = 33 then 
-            -- only work if shift register is full 
-                register_full_r <= 33;
-                
-                -- check if asm patter detected 
-                if asm_detected_r = '0' then 
-                    if shift_register_r(31 downto 0) = asm_pattern_g then
-                        asm_detected_r <= '1'; 
-                       -- m_axi_tvalid <= '0';
-                        m_axi_tlast <= '1';
-                       -- m_axi_tdata <= 'U';
+        -- valid data on s_axi     
+        elsif s_axi_datavalid = '1' then 
+            s_tready    <= '0'; 
+            -- shift data into register 
+            shift_register_r    <= shift_register_r(31 downto 0) & s_axi_tdata;
+            if register_full_r = '1' then 
+                if detect_asm_r = '1' then 
+                    if asm_detected_r = '0' then 
+                        -- check for asm pattern in shift register 
+                        if (shift_register_r(31 downto 0) = asm_pattern_g) then 
+                            asm_detected_r  <= '1'; 
+                            m_axi_tlast     <= '1';
+                            m_tvalid        <= '1';
+                            counter_r       <= 0;
+                        else 
+                        -- if asm is too late 
+                            m_axi_tdata <= shift_register_r(32); 
+                            m_tvalid    <= '1';      
+                        end if;  -- check shift register = asm  
                     else 
-                        m_axi_tvalid <= '1';
-                    end if; 
-                    
-                elsif asm_detected_r = '1' then 
-                -- if asm pattern was already detected, delay data valid flag for 32 cycles 
-                    if counter_r = 31 then 
-                        counter_r <= 0; 
-                        asm_detected_r <= '0'; 
-                        --m_axi_tvalid <= '1';
-                        m_axi_tlast <= '0';
-                    else
-                        counter_r <= counter_r + 1; 
-                        asm_detected_r <= '1'; 
-                        m_axi_tvalid <= '0';
-                    end if; 
-                end if; -- asm detection
-            end if; -- register full check
-        end if; -- data valid check
-        
+                        counter_r   <= counter_r + 1; 
+                        m_tvalid    <= '0';
+                        if counter_r = 32 then 
+                            asm_detected_r  <= '0';
+                            detect_asm_r    <= '0';
+                        end if;     
+                    end if; -- detected asm        
+                else 
+                    m_axi_tdata <= shift_register_r(32); 
+                    m_tvalid    <= '1';      
+                end if; -- detect asm 
+            else 
+                counter_r <= counter_r + 1;
+                -- logic to check if register is filled, only necessary after reset
+                if counter_r = 31 then 
+                    register_full_r <= '1';     
+                end if;
+            end if; -- register full check 
+        end if; -- valid data check 
     end if; -- reset logic
+    
 end process; 
 
 end behavioral;
