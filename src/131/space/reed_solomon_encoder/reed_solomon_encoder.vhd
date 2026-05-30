@@ -74,7 +74,7 @@ begin
             
             -- Check if R/S Requieres new data if so produce rising edge on read fifo line to enable fifo reading
             if rising_edge_count_r = CLOCK_DIVISION-2 then
-                if read_next_value_r = '1' or first_value_done_r = '0' then
+                if read_next_value_r = '1' then
                     read_data_fifo_o <= '1';
                     fifo_empty_r <= fifo_empty_i;
                 end if;
