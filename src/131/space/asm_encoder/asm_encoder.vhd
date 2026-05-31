@@ -71,7 +71,6 @@ begin
     elsif rising_edge(clk_i) then
         -- reset data valid flags 
         s_tready    <=  m_axi_tready;
-        m_tvalid    <= '0';
         
         -- valid data on m_axi
         if m_axi_datavalid = '1' then

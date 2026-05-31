@@ -116,7 +116,7 @@ begin
             else 
                 counter_r <= counter_r + 1;
                 -- logic to check if register is filled, only necessary after reset
-                if counter_r = 31 then 
+                if counter_r = 32 then 
                     register_full_r <= '1';     
                 end if;
             end if; -- register full check 
