@@ -57,7 +57,7 @@ begin
             new_vector_long_s           := (others => '0');
 
         elsif rising_edge(clk_i) then
-        
+          s_tready        <= m_axi_tready;
           -- reset data valid flags 
             if m_axi_datavalid = '1' then
                 m_tvalid        <= '0';
@@ -77,6 +77,8 @@ begin
                     m_axi_tlast <= '1'; 
                     randomization_sequence_r <= INIT_SEQUENCE;
                 end if;
+                
+                s_tready <= '0';
             end if;
         end if; -- rising edge logic 
     end process generate_randomization;
@@ -85,8 +87,7 @@ begin
     
     s_axi_datavalid     <= s_tready and s_axi_tvalid;
     m_axi_datavalid     <= m_axi_tready and m_tvalid;
-    
-    s_tready            <= m_axi_tready;
+   
     m_axi_tvalid        <= m_tvalid;
     s_axi_tready        <= s_tready;
 
