@@ -80,7 +80,7 @@ begin
     empty_o <= empty_s;
     full_o  <= full_s;
 
-    process(wr_clk_i)
+    write_process : process(wr_clk_i)
         variable expander_counter_v : integer range 0 to RATIO-1 := RATIO - 1;
     begin
         if rising_edge(wr_clk_i) then
@@ -99,9 +99,9 @@ begin
                 end if;
             end if;
         end if;
-    end process;
+    end process write_process;
 
-    process(rd_clk_i)
+    read_process : process(rd_clk_i)
         variable expander_counter_v : integer range 0 to RATIO-1 := RATIO - 1;  
     begin
         if rising_edge(rd_clk_i) then
@@ -122,7 +122,7 @@ begin
 
             end if;
         end if;
-    end process;
+    end process read_process;
 
     rd_data_o <= fifo_data_out_r;
     

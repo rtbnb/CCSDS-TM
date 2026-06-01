@@ -27,7 +27,7 @@ architecture behavioral of reed_solomon_decoder_fifo is
     CONSTANT ITERATIONS_FOR_SYNDROME : integer := 255;
     CONSTANT ITERATIONS_FOR_ERROR_POLY : integer := 32;
     CONSTANT ITERATIONS_FOR_CHIEN_SEARCH : integer := 255;
-    CONSTANT FIFO_LENGHT : integer := ITERATIONS_FOR_SYNDROME+ITERATIONS_FOR_ERROR_POLY+ITERATIONS_FOR_CHIEN_SEARCH - 1;
+    CONSTANT FIFO_LENGHT : integer := ITERATIONS_FOR_SYNDROME+ITERATIONS_FOR_ERROR_POLY - 1;
     
     CONSTANT MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
     CONSTANT MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable

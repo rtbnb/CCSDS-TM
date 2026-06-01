@@ -29,8 +29,13 @@ end entity;
 
 architecture behavioral of reed_solomon_encoder is
     type finite_field_array_t      is array (0 to 31) of finite_field_t;
+    
+    constant MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
+    constant ASM_BYTE_LENGHT : INTEGER := 4; -- A ASM is 32-Bit in lenght 
+    constant MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
+    constant CLOCK_DIVISION : INTEGER := 15; -- Number of Cycles to be waited after a R/S Symbol - 1 (e.g. 16-1 = 15) (To syncronize with lower layers);
 
-    signal clock_devider_count_r : integer range 0 to 258 := 0;
+    signal clock_devider_count_r : integer range 0 to 258 := MESSAGE_LENGHT;
     signal rising_edge_count_r : integer range 0 to 15 := 1;
     signal read_next_value_r : std_logic := '0';
     signal first_value_done_r : std_logic := '0';
@@ -46,18 +51,13 @@ architecture behavioral of reed_solomon_encoder is
                                                         x"61",x"EB",x"0D",x"1E",
                                                         x"10",x"56",x"7F",x"5B"); -- Coefs directly from the CCSDS Standard
     
-    constant MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
-    constant ASM_BYTE_LENGHT : INTEGER := 4; -- A ASM is 32-Bit in lenght 
-    constant MESSAGE_LENGHT : INTEGER := 255; -- Lenght of a R/S Code block where 223 data is user data and 2*16 is Parity check symbols
-    constant CLOCK_DIVISION : INTEGER := 15; -- Number of Cycles to be waited after a R/S Symbol - 1 (e.g. 16-1 = 15) (To syncronize with lower layers);
-    
     
 begin
     reed_solomon_encoder : process (clk_i)
         variable input_addition : finite_field_t;
     begin
         if reset_i = '0' then
-            clock_devider_count_r <= 0;
+            clock_devider_count_r <= MESSAGE_LENGHT;
             rising_edge_count_r <= 1;
             encoder_done_flag_o <= '0';
             output_byte_o <= "00000000";
@@ -74,14 +74,14 @@ begin
             
             -- Check if R/S Requieres new data if so produce rising edge on read fifo line to enable fifo reading
             if rising_edge_count_r = CLOCK_DIVISION-2 then
-                if read_next_value_r = '1' or first_value_done_r = '0' then
+                if read_next_value_r = '1' then
                     read_data_fifo_o <= '1';
                     fifo_empty_r <= fifo_empty_i;
                 end if;
                 
                 if first_value_done_r = '0' then
                     first_value_done_r <= '1';
-                    clock_devider_count_r <= 0;
+                    clock_devider_count_r <= MESSAGE_LENGHT;
             
                 end if;
             end if;
@@ -125,10 +125,11 @@ begin
                             if clock_devider_count_r < MESSAGE_LENGHT-2*MAX_ERROR_COUNT then
                                 -- Encoder Message Logic
                                 input_addition:= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
-                                input_addition:= gf_add(
-                                    DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
-                                    finite_field_regs_r(MAX_ERROR_COUNT*2-1)
-                                );
+                                --input_addition:= gf_add(
+                                --    DUAL_TO_CONVENTIONAL(to_integer(unsigned(input_byte_i))),
+                                --    finite_field_regs_r(MAX_ERROR_COUNT*2-1)
+                                --);
+                                input_addition:= gf_add(input_byte_i,finite_field_regs_r(MAX_ERROR_COUNT*2-1));
                                 
                                 output_byte_o <= input_byte_i;
                                 data_valid_o <= '1';
@@ -141,9 +142,10 @@ begin
                                 input_addition := "00000000";
                                 
                                 -- Output paritiy check sympols
-                                output_byte_o <= CONVENTIONAL_TO_DUAL(
-                                    gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
-                                    );
+                                --output_byte_o <= CONVENTIONAL_TO_DUAL(
+                                --    gf_to_int(finite_field_regs_r(MAX_ERROR_COUNT*2-1))
+                                --    );
+                                output_byte_o <= finite_field_regs_r(MAX_ERROR_COUNT*2-1);
                                 data_valid_o <= '1';
                                 
                                 read_next_value_r <= '0';
