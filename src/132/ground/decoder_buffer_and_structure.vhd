@@ -164,7 +164,6 @@ begin
     begin
         if (reset_i = '0') then 
             tm_frame_buffer_counter_r <= 0;
-            tm_frame_buffer_r <= (others => (others => '0'));
         else
             if rising_edge(clk_i) then
                 if data_valid_i = '1' then
