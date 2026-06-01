@@ -23,7 +23,8 @@ entity virtual_channel_buffer is
 
         -- output interface
         frame_ready_o: out std_logic;
-        data_out_en_i: in std_logic;
+        frame_select_i: in std_logic; -- this signal signals the virtual channel that it will be read out
+        data_out_en_i: in std_logic; -- this signal tells the virtual channel that the next byte can be send
         data_o: out std_logic_vector(7 downto 0) := (others => '0');
         virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
         first_header_pointer_o: out std_logic_vector(10 downto 0)
@@ -63,8 +64,6 @@ architecture behavioral of virtual_channel_buffer is
     
     -- space packet decoding signals
     signal space_packet_write_ptr_r: integer range 0 to SPACE_PACKET_MAX_SIZE -1 := 0;
-    signal remaining_octets_in_space_package_r: integer range 0 to SPACE_PACKET_MAX_DATA_SIZE -1 := 0;
-    signal space_packet_data_length: integer range 0 to SPACE_PACKET_MAX_DATA_SIZE -1 := 0;
     
     -- virtual channel signals
     signal internal_first_header_pointer_r: std_logic_vector(10 downto 0) := (others => '0');
@@ -73,9 +72,13 @@ architecture behavioral of virtual_channel_buffer is
     signal frame_write_ptr_r: integer range 0 to FRAME_DATA_BUFFER_SIZE -1 := 0;
     signal frame_read_ptr_r: integer range 0 to FRAME_DATA_BUFFER_SIZE -1 := 0;
     
+    signal frame_ready_r: std_logic := '0';
+    signal had_one_full_frame_r: std_logic := '0';
+    signal readout_active_r: std_logic := '0';
+    
     signal pre_loading_active_r: std_logic := '0';
     
-    signal readout_active_r: std_logic := '0';
+    
 
 begin
     space_packet_decoder_inst: space_packet_decoder
@@ -88,7 +91,7 @@ begin
     first_header_pointer_o <= external_first_header_pointer_r;
     
     ready_o <= (not readout_active_r) or pre_loading_active_r;
-    frame_ready_o <= readout_active_r;
+    frame_ready_o <= frame_ready_r;
     
     -- preloading is extracted into its own process that reacts on the falling edge to make interaction with this entity more predictable
     preload_switch: process(clk_i)
@@ -106,9 +109,12 @@ begin
     space_package_ingestion: process(clk_i)
     begin
         if rising_edge(clk_i) and reset_i = '1' then
+            if readout_active_r = '1' and frame_ready_r = '1' then
+                frame_ready_r <= '0';    
+            end if;
+        
             if space_packet_decoding_state_r = RESET then
                 space_packet_write_ptr_r <= 0;
-                remaining_octets_in_space_package_r <= 0; 
                 frame_write_ptr_r <= 0;
                 
                 space_packet_decoding_state_r <= WORKING;
@@ -121,37 +127,50 @@ begin
                     space_packet_write_ptr_r <= space_packet_write_ptr_r + 1;
                     frame_write_ptr_r <= frame_write_ptr_r + 1;
                     if first_header_pointer_set_r = '0' then
-                        internal_first_header_pointer_r <= (others => '0');    
+                        internal_first_header_pointer_r <= std_logic_vector(to_unsigned(frame_write_ptr_r, internal_first_header_pointer_r'length));
+                        first_header_pointer_set_r <= '1';    
                     end if;
                 else
                     space_packet_header_buffer_r <= (others => '0');                
                 end if;
                 
-            elsif space_packet_decoding_state_r = WORKING and data_valid_i = '1' then
-                frame_data_buffer_r(frame_write_ptr_r) <= data_i;    
-                frame_write_ptr_r <= frame_write_ptr_r + 1;
-                
-                space_packet_write_ptr_r <= space_packet_write_ptr_r + 1;
-                
-                if space_packet_write_ptr_r < SPACE_PACKET_PRIMARY_HEADER_SIZE then
-                    space_packet_header_buffer_r((space_packet_write_ptr_r * 8) +7 downto (space_packet_write_ptr_r * 8)) <= data_i;
-                end if;                   
-
+            elsif space_packet_decoding_state_r = WORKING then
+            
+                if (frame_ready_r = '0' or (frame_read_ptr_r - frame_write_ptr_r) > 1) and data_valid_i = '1' then
+                    frame_data_buffer_r(frame_write_ptr_r) <= data_i;    
+                    frame_write_ptr_r <= frame_write_ptr_r + 1;
+                    
+                    space_packet_write_ptr_r <= space_packet_write_ptr_r + 1;
+                    if space_packet_write_ptr_r < SPACE_PACKET_PRIMARY_HEADER_SIZE then
+                        space_packet_header_buffer_r((space_packet_write_ptr_r * 8) +7 downto (space_packet_write_ptr_r * 8)) <= data_i;
+                    end if;
+                    
+                    if space_packet_write_ptr_r = 0 and first_header_pointer_set_r = '0' then
+                        internal_first_header_pointer_r <= std_logic_vector(to_unsigned(frame_write_ptr_r, internal_first_header_pointer_r'length));
+                        first_header_pointer_set_r <= '1';                      
+                    end if;
+                    
+                end if;
+            
                 if space_packet_write_ptr_r > SPACE_PACKET_PRIMARY_HEADER_SIZE and space_packet_write_ptr_r = space_packet_size_s -1 then
                     space_packet_write_ptr_r <= 0;
                 end if;
                 
                 if frame_write_ptr_r = FRAME_DATA_BUFFER_SIZE -1 then
-                    space_packet_decoding_state_r <= FULL_PACKET; 
+                    frame_ready_r <= '1';
+                    had_one_full_frame_r <= '1';
+                    external_first_header_pointer_r <= internal_first_header_pointer_r;
+                    frame_write_ptr_r <= 0;
+                    first_header_pointer_set_r <= '0';
                 end if;
             
             elsif space_packet_decoding_state_r = FULL_PACKET and data_valid_i = '1' then
-                            
+                                
             end if;
         elsif reset_i = '0' then
             space_packet_write_ptr_r <= 0;
-            remaining_octets_in_space_package_r <= 0;
             space_packet_header_buffer_r <= (others => '0');
+            frame_write_ptr_r <= 0;
                   
             space_packet_decoding_state_r <= RESET;
         end if;
@@ -163,30 +182,52 @@ begin
     
     data_handling: process(clk_i) 
     begin
-        if rising_edge(clk_i) then
-            if (readout_active_r = '0' and data_valid_i = '1') or (pre_loading_active_r = '1' and (frame_read_ptr_r - frame_write_ptr_r) > 1) then
+        if rising_edge(clk_i) and reset_i = '1' then
+            if frame_ready_r = '1' and readout_active_r = '0' and frame_select_i = '1' then
+                readout_active_r <= '1';
+                
+                if data_out_en_i = '1' then
+                    data_o <= frame_data_buffer_r(frame_read_ptr_r);
+                    frame_read_ptr_r <= frame_read_ptr_r + 1;
+                end if;
+                
+            end if;
+            
+            if readout_active_r = '1' then
+                data_o <= frame_data_buffer_r(frame_read_ptr_r);
+                frame_read_ptr_r <= frame_read_ptr_r + 1;
+                
+                if frame_read_ptr_r = FRAME_DATA_BUFFER_SIZE -1 then
+                    readout_active_r <= '0';
+                    frame_read_ptr_r <= 0;
+                end if;   
+            end if;
+        
+        
+ --           if (readout_active_r = '0' and data_valid_i = '1') or (pre_loading_active_r = '1' and (frame_read_ptr_r - frame_write_ptr_r) > 1) then
                 
                 --data_buffer_r(frame_write_ptr_r) <= data_i;
                 --frame_write_ptr_r <= frame_write_ptr_r + 1;
 
-                if (frame_write_ptr_r = FRAME_DATA_BUFFER_SIZE -1) then
+--                if (frame_write_ptr_r = FRAME_DATA_BUFFER_SIZE -1) then
                     --frame_write_ptr_r <= 0;
-                    readout_active_r <= '1';
-                end if;
+--                    readout_active_r <= '1';
+--                end if;
                 
-            end if;
+--            end if;
 
-            if (readout_active_r = '1' and data_out_en_i = '1') then
-                frame_read_ptr_r <= frame_read_ptr_r + 1; 
-                data_o <= frame_data_buffer_r(frame_read_ptr_r);
+--            if (readout_active_r = '1' and data_out_en_i = '1') then
+--                frame_read_ptr_r <= frame_read_ptr_r + 1; 
+--                data_o <= frame_data_buffer_r(frame_read_ptr_r);
                 
-                if (frame_read_ptr_r = FRAME_DATA_BUFFER_SIZE -1) then
-                    frame_read_ptr_r <= 0;
-                    readout_active_r <= '0';
-                end if;
+--                if (frame_read_ptr_r = FRAME_DATA_BUFFER_SIZE -1) then
+--                    frame_read_ptr_r <= 0;
+--                    readout_active_r <= '0';
+--                end if;
 
-            end if;
-
+--            end if;
+        elsif reset_i = '0' then
+            frame_read_ptr_r <= 0;    
         end if;
 
 
