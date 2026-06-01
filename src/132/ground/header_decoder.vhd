@@ -12,6 +12,7 @@ use ieee.numeric_std.all;
 
 entity header_decoder is
     port (
+        reset_i: in std_logic;
         header_data_i: in std_logic_vector(47 downto 0);
         is_oid_flag_o: out std_logic;
         transfer_frame_version_number_o: out std_logic_vector(1 downto 0);
