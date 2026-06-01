@@ -248,7 +248,11 @@ begin
     end process output_tm_frame;
 
     dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
-    tm_data_field_valid_o <= dd_data_valid_o_s;
-    tm_data_field_o <= dd_data_o_s;
+    tm_data_field_valid_o <= 
+        '0' when reset_i = '0' 
+        else dd_data_valid_o_s;
+    tm_data_field_o <= 
+        x"00000000" when reset_i = '0' 
+        else dd_data_o_s;
 
 end architecture behavioral;

@@ -15,18 +15,25 @@ entity empty_to_valid is
         empty_i: in std_logic;
         data_valid_o: out std_logic;
         rd_enb_o: out std_logic;
-        clk_i: in std_logic
+        clk_i: in std_logic;
+        reset_i: in std_logic
     );
 end entity empty_to_valid;
 
 architecture behavioral of empty_to_valid is
 begin
-    rd_enb_o <= '1';
+    rd_enb_o <= 
+        '0' when reset_i = '0'
+        else '1';
 
     delay: process(clk_i) is
     begin
-        if rising_edge(clk_i) then
-            data_valid_o <= not empty_i;
+        if (reset_i = '0') then
+            data_valid_o <= '0';
+        else
+            if rising_edge(clk_i) then
+                data_valid_o <= not empty_i;
+            end if;
         end if;
     end process delay;
 

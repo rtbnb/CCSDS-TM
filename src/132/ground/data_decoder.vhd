@@ -156,6 +156,8 @@ begin
         end if;
     end process data_output;
 
-    data_o <= data_buffer_r;
+    data_o <= 
+        x"00000000" when reset_i = '0' 
+        else data_buffer_r;
 
 end architecture behavioral;

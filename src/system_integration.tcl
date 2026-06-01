@@ -327,10 +327,10 @@ proc create_root_design { parentCell } {
   [get_bd_pins virtual_channel_buff_0/clk_i]
   connect_bd_net -net clk_i_1_1  [get_bd_ports ground_clk_i_1] \
   [get_bd_pins ccsds_131_ground_0/clk_i] \
-  [get_bd_pins empty_to_valid_0/clk_i] \
   [get_bd_pins synchronization_fifo_1/wr_clk_i] \
   [get_bd_pins synchronization_fifo_1/rd_clk_i] \
-  [get_bd_pins decoder_buffer_and_s_0/clk_i]
+  [get_bd_pins decoder_buffer_and_s_0/clk_i] \
+  [get_bd_pins empty_to_valid_0/clk_i]
   connect_bd_net -net data_i_0_1  [get_bd_ports data_i_0] \
   [get_bd_pins virtual_channel_buff_0/data_i]
   connect_bd_net -net data_valid_i_0_1  [get_bd_ports data_valid_i_0] \
@@ -348,7 +348,8 @@ proc create_root_design { parentCell } {
   [get_bd_pins ccsds_131_space_0/reset_i] \
   [get_bd_pins transfer_frame_encod_0/reset_i] \
   [get_bd_pins virtual_channel_buff_0/reset_i] \
-  [get_bd_pins decoder_buffer_and_s_0/reset_i]
+  [get_bd_pins decoder_buffer_and_s_0/reset_i] \
+  [get_bd_pins empty_to_valid_0/reset_i]
   connect_bd_net -net spacecraft_id_i_0_1  [get_bd_ports spacecraft_id_i_0] \
   [get_bd_pins transfer_frame_encod_0/spacecraft_id_i]
   connect_bd_net -net synchronization_fifo_0_empty_o  [get_bd_pins synchronization_fifo_0/empty_o] \
