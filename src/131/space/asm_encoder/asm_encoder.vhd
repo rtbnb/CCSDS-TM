@@ -95,6 +95,7 @@ begin
             
         elsif s_axi_datavalid = '1' then 
             m_tvalid        <= '1';
+            s_tready        <= '0';
             m_axi_tdata     <= s_axi_tdata;
             if s_axi_tlast = '1' then
                 generate_asm <= '1';     
