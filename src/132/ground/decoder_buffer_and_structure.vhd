@@ -164,6 +164,7 @@ begin
     begin
         if (reset_i = '0') then 
             tm_frame_buffer_counter_r <= 0;
+            -- it is intentional, that the tm_frame_buffer_r is not cleared on reset, because the block ram can not be reseted. Reset behavior is achieved by resetting the tm_frame_buffer_counter_r and tm_frame_data_index_r.
         else
             if rising_edge(clk_i) then
                 if data_valid_i = '1' then
