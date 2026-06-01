@@ -92,6 +92,7 @@ begin
                     if asm_detected_r = '0' then 
                         -- check for asm pattern in shift register 
                         if (shift_register_r(31 downto 0) = asm_pattern_g) then 
+                            m_axi_tdata <= shift_register_r(32); 
                             asm_detected_r  <= '1'; 
                             m_axi_tlast     <= '1';
                             m_tvalid        <= '1';
