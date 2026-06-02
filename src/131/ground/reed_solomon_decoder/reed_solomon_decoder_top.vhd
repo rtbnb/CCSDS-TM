@@ -139,8 +139,8 @@ begin
             err_locator_poly_len_i => error_locator_poly_len_r
         );
         
-     rs_output_byte_r <= gf_add(fifo_output_r, error_mag_r) when error_found_r = '1' else
-                     fifo_output_r;
+     rs_output_byte_r <= gf_add(fifo_output_r, error_mag_r) when error_found_r = '1' and fifo_data_valid_r = '1' else
+                     fifo_output_r when fifo_data_valid_r = '1';
                      
      rs_data_valid_out_r <= fifo_data_valid_r;
                      
