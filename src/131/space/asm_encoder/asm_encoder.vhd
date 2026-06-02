@@ -14,8 +14,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity asm_encoder is
     generic(
-        asm_pattern_g   : std_logic_vector(31 downto 0) := x"1ACFFC1D"
-        -- asm_pattern_g   : std_logic_vector(31 downto 0) := x"FFFFFFFF" -- uncomment for debug purposes 
+        ASM_PATTERN   : std_logic_vector(31 downto 0) := x"1ACFFC1D"
     );
     port (
         -- input 
@@ -41,21 +40,21 @@ architecture behavioral of asm_encoder is
 -- counter 
 signal counter_r        : integer range 0 to 32 := 0;
 -- flags for datavalid state 
-signal s_axi_datavalid  : std_logic := '0';
-signal m_axi_datavalid  : std_logic := '0';
+signal s_axi_datavalid_r  : std_logic := '0';
+signal m_axi_datavalid_r  : std_logic := '0';
 -- additional signals 
-signal m_tvalid         : std_logic := '0';
-signal s_tready         : std_logic := '0';
-signal generate_asm     : std_logic := '0';
+signal m_tvalid_r         : std_logic := '0';
+signal s_tready_r         : std_logic := '0';
+signal generate_asm_r     : std_logic := '0';
 
 
 begin
 
 -- asynchronous assignments 
-s_axi_datavalid     <= s_tready and s_axi_tvalid;
-m_axi_datavalid     <= m_axi_tready and m_tvalid;
-m_axi_tvalid        <= m_tvalid;
-s_axi_tready        <= s_tready;
+s_axi_datavalid_r     <= s_tready_r and s_axi_tvalid;
+m_axi_datavalid_r     <= m_axi_tready and m_tvalid_r;
+m_axi_tvalid          <= m_tvalid_r;
+s_axi_tready          <= s_tready_r;
 
 
 
@@ -65,40 +64,40 @@ begin
         -- reset counter 
         counter_r       <= 0;
         -- reset axi signals 
-        m_tvalid        <= '0';
-        s_tready        <= '0';
+        m_tvalid_r        <= '0';
+        s_tready_r        <= '0';
         
     elsif rising_edge(clk_i) then
         -- reset data valid flags 
-        s_tready    <=  m_axi_tready;
+        s_tready_r    <=  m_axi_tready;
         
         -- valid data on m_axi
-        if m_axi_datavalid = '1' then
-            m_tvalid        <= '0';
-            m_axi_tlast     <= '0';
+        if m_axi_datavalid_r = '1' then
+            m_tvalid_r        <= '0';
+            m_axi_tlast      <= '0';
             
-            if generate_asm = '1' then 
+            if generate_asm_r = '1' then 
                 counter_r <= counter_r + 1;
-                s_tready    <='0';
+                s_tready_r    <='0';
                 -- check if entire asm is generated 
                 if counter_r = 32 then 
                     counter_r       <= 0;
-                    generate_asm    <= '0';
+                    generate_asm_r    <= '0';
                 end if; -- counter logic 
             end if; -- asm counter 
         
         -- valid data on s_axi     
-        elsif generate_asm = '1' then 
-            m_tvalid        <= '1';
-            s_tready        <= '0';
-            m_axi_tdata     <= asm_pattern_g(32-counter_r); 
+        elsif generate_asm_r = '1' then 
+            m_tvalid_r        <= '1';
+            s_tready_r        <= '0';
+            m_axi_tdata     <= ASM_PATTERN(32-counter_r); 
             
-        elsif s_axi_datavalid = '1' then 
-            m_tvalid        <= '1';
-            s_tready        <= '0';
+        elsif s_axi_datavalid_r = '1' then 
+            m_tvalid_r        <= '1';
+            s_tready_r        <= '0';
             m_axi_tdata     <= s_axi_tdata;
             if s_axi_tlast = '1' then
-                generate_asm <= '1';     
+                generate_asm_r <= '1';     
             end if; -- tlast check 
         end if;  -- data valid checks        
     end if; -- reset & rising edge logic

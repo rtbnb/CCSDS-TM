@@ -35,11 +35,11 @@ architecture behavioral of pseudo_randomizer_entity is
     constant INIT_SEQUENCE          : std_logic_vector(16 downto 0) := "11000111000111000"; 
     signal randomization_sequence_r : std_logic_vector(16 downto 0) := INIT_SEQUENCE;
 
-    signal s_axi_datavalid : std_logic := '0';
-    signal m_axi_datavalid : std_logic := '0';
+    signal s_axi_datavalid_r : std_logic := '0';
+    signal m_axi_datavalid_r : std_logic := '0';
     
-    signal m_tvalid : std_logic := '0';
-    signal s_tready : std_logic := '0';
+    signal m_tvalid_r : std_logic := '0';
+    signal s_tready_r : std_logic := '0';
 
 begin 
 
@@ -50,23 +50,23 @@ begin
     begin 
         if reset_i = '0' then 
             -- reset signals  
-            m_tvalid                    <= '0';
+            m_tvalid_r                  <= '0';
             randomization_sequence_r    <= INIT_SEQUENCE;
             -- reset variables  
             new_element_s               := '0'; 
             new_vector_long_s           := (others => '0');
 
         elsif rising_edge(clk_i) then
-          s_tready        <= m_axi_tready;
+          s_tready_r    <= m_axi_tready;
           -- reset data valid flags 
-            if m_axi_datavalid = '1' then
-                m_tvalid        <= '0';
+            if m_axi_datavalid_r = '1' then
+                m_tvalid_r      <= '0';
                 m_axi_tlast     <= '0';
                 
-            elsif s_axi_datavalid = '1' then 
+            elsif s_axi_datavalid_r = '1' then 
                 -- XOR data 
                 m_axi_tdata     <= s_axi_tdata XOR randomization_sequence_r(0);
-                m_tvalid        <= '1';
+                m_tvalid_r      <= '1';
                 
                 -- generate new element + shift vector 
                 new_element_s := randomization_sequence_r(0) XOR randomization_sequence_r(14);
@@ -78,17 +78,17 @@ begin
                     randomization_sequence_r <= INIT_SEQUENCE;
                 end if;
                 
-                s_tready <= '0';
+                s_tready_r <= '0';
             end if;
         end if; -- rising edge logic 
     end process generate_randomization;
 
     -- asynchronous assignments 
     
-    s_axi_datavalid     <= s_tready and s_axi_tvalid;
-    m_axi_datavalid     <= m_axi_tready and m_tvalid;
+    s_axi_datavalid_r     <= s_tready_r and s_axi_tvalid;
+    m_axi_datavalid_r     <= m_axi_tready and m_tvalid_r;
    
-    m_axi_tvalid        <= m_tvalid;
-    s_axi_tready        <= s_tready;
+    m_axi_tvalid        <= m_tvalid_r;
+    s_axi_tready        <= s_tready_r;
 
 end architecture behavioral;
