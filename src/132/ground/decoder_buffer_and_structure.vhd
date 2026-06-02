@@ -147,7 +147,7 @@ architecture behavioral of decoder_buffer_and_structure is
     constant OCF_SIZE_OCTETS: integer := 4 * 8;
 
     -- frame error control field (fecf) handling
-    constant FECF_SIZE_OCTETS: integer := 2 * 8
+    constant FECF_SIZE_OCTETS: integer := 2 * 8;
 
 begin
     HD: header_decoder port map (
