@@ -6,13 +6,14 @@ use ieee.std_logic_1164.all;
 entity ccsds_131_ground is
 port(
     -- inputs 
-    clk_i           : in std_logic; 
-    reset_i         : in std_logic;  
-    data_i          : in std_logic;
-    data_valid_i    : in std_logic;
+    clk_i               : in std_logic; 
+    reset_i             : in std_logic;  
+    data_i              : in std_logic;
+    data_valid_i        : in std_logic;
     -- outputs 
-    output_byte_o   : out std_logic_vector(7 downto 0); 
-    data_valid_o    : out std_logic
+    output_byte_o       : out std_logic_vector(7 downto 0); 
+    data_valid_o        : out std_logic;
+    decoder_failure_o   : out std_logic 
 );
 end ccsds_131_ground; 
 
@@ -34,7 +35,9 @@ signal pr_decoder_done_s    : std_logic := '0';
 
 -- width converter signal 
 signal wc_output_byte_s         : std_logic_vector (7 downto 0) := (others => '0');
-signal wc_data_valid_s          : std_logic := '0'; 
+signal wc_data_valid_s          : std_logic := '0';
+signal wc_data_valid_in_s       : std_logic := '0';
+signal wc_asm_done_s            : std_logic := '0';
 
 
 begin 
@@ -96,23 +99,31 @@ width_converter_1_to_8_inst : entity work.width_converter_1_to_8
         clk_i           => clk_i,  
         reset_i         => reset_i,
         input_bit_i     => pr_data_s,
-        data_valid_i    => ((not pr_decoder_done_s) and pr_data_valid_s),
+        data_valid_i    => wc_data_valid_in_s,
+        asm_done_i      => pr_decoder_done_s,
         -- outputs 
         output_byte_o   => wc_output_byte_s,
-        data_valid_o    => wc_data_valid_s
+        data_valid_o    => wc_data_valid_s,
+        asm_done_o      => wc_asm_done_s
     );
 
 -- reed solomon decoder 
-reed_solomon_decoder_inst : entity work.reed_solomon_decoder_fifo
+reed_solomon_decoder_inst : entity work.reed_solomon_decoder_top
     port map(
         -- inputs
         clk_i           => clk_i,
         reset_i         => reset_i,
         input_byte_i    => wc_output_byte_s,
         data_valid_i    => wc_data_valid_s,
+        asm_done_i      => wc_asm_done_s,
         -- outputs
         data_valid_o    => data_valid_o,
-        output_byte_o   => output_byte_o
+        output_byte_o   => output_byte_o,
+        reed_solomon_failure_o  => decoder_failure_o
     );
+    
+    --this logic fixes warning that there shall not be function calls inside of a port map
+    --that why this signal is set outside of the portmap and then mapped indireclty (see width_converter_1_to_8_inst)
+    wc_data_valid_in_s <= ((not pr_decoder_done_s) and pr_data_valid_s);
     
 end top_level;

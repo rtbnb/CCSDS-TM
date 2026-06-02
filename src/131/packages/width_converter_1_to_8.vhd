@@ -16,12 +16,14 @@ entity width_converter_1_to_8 is
         reset_i : in std_logic;
         input_bit_i : in std_logic;
         data_valid_i : in std_logic;
+        asm_done_i   : in std_logic;
 
         output_byte_o : out std_logic_vector (7 downto 0);
-        data_valid_o : out std_logic
+        data_valid_o : out std_logic;
+        asm_done_o   : out std_logic
     
     );
-end entity;
+end entity width_converter_1_to_8;
 
 
 architecture behavioral of width_converter_1_to_8 is
@@ -42,6 +44,7 @@ begin
             output_byte_o <= "00000000";
             clock_devider_count_r <= 0;
             val_count_r <= '0';
+            asm_done_o <= '0';
 
         elsif rising_edge(clk_i) then
            data_valid_o <= '0';
@@ -64,6 +67,8 @@ begin
                 clock_devider_count_r <= clock_devider_count_r + 1; 
                 data_valid_r <= '1';
             end if;
+            
+            asm_done_o <= asm_done_i;
          
         
             

@@ -26,7 +26,8 @@ entity reed_solomon_decoder_epibma_top is
         error_locator_poly_o : out finite_field_error_locator_t;
         error_mag_poly_o : out finite_field_error_mag_t;
         z_o             : out finite_field_t;
-        gamma_o         : out finite_field_t
+        gamma_o         : out finite_field_t;
+        error_locator_poly_len_o : out integer range 0 to max_number_of_errors_g
     );
 end entity reed_solomon_decoder_epibma_top;
 
@@ -72,7 +73,8 @@ begin
             mc3_o => mc3_r,
             
             epibma_done_o => epibma_done_o,
-            z_o => z_o
+            z_o => z_o,
+            error_locator_poly_len_o => error_locator_poly_len_o
         );
     
   rs_decoder_epibma_pe_gen:for i in 1 to max_number_of_errors_g*2-1 generate
