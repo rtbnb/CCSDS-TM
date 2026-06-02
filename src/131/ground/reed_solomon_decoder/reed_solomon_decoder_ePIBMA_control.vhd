@@ -4,6 +4,7 @@
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : The control unit for the systolic Enhanced Parallel Inversionless B-M Algorithm (ePIBMA) archiecture of the R/R decoder
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

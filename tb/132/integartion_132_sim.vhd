@@ -4,6 +4,7 @@
 -- Author : Robin Eilers, Nico Tunkowski
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for the integration between the transfer frame encoder and the virtual channel buffer
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;

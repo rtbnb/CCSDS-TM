@@ -4,6 +4,7 @@
 -- Author : Lukas Reil 
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for a FIFO to synchronize between two clock domains with AXI Stream
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

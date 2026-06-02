@@ -4,6 +4,7 @@
 -- Author : Lukas Reil 
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for a generic FIFO to synchronize between two clock domains with width conversion
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

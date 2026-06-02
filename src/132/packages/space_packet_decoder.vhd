@@ -4,6 +4,7 @@
 -- Author : Robin Eilers
 -- Project Name : HW/SW Project TM
 -- Description : CCSDS 133.0-B-2 Space Packet Primary Header Decoder
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

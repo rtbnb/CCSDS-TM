@@ -4,6 +4,7 @@
 -- Author : Robin Eilers
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for the transfer frame encoder implementation
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;

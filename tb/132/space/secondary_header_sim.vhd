@@ -4,6 +4,7 @@
 -- Author : Nico Tunkowski
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for secondary_header_encoder implementation
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;
