@@ -26,12 +26,17 @@ entity transfer_frame_encoder is
         out_full_i: in std_logic;
 	   
         -- input interface
-	   
+	    virtual_channel_select_o: out std_logic_vector(2 downto 0) := (others => '0');
+	    
         -- virtual channel 0
         vch0_frame_ready_i: in std_logic;
         vch0_data_en_o: out std_logic := '0';
         vch0_data_i: in std_logic_vector(7 downto 0);
-        vch0_virtual_channel_frame_count_i: in std_logic_vector(7 downto 0)
+        vch0_virtual_channel_frame_count_i: in std_logic_vector(7 downto 0);
+        vch0_first_header_pointer_i: in std_logic_vector(10 downto 0);
+	    vch0_end_of_frame_i: in std_logic;
+	    vch0_has_ocf: in std_logic;
+	    vch0_has_fecf: in std_logic;
 	   
 	);
 end entity transfer_frame_encoder;
@@ -73,10 +78,16 @@ architecture behavioral of transfer_frame_encoder is
 
     constant PRIMARY_HEADER_LENGTH: integer := 6;
     
-    type state_machine_t IS (INITIAL, PRIMARY_HEADER, SECONDARY_HEADER, PAYLOAD, LAST_PAYLOAD_BYTE, TRAILOR);
+    type state_machine_t IS (INITIAL, PRIMARY_HEADER, SECONDARY_HEADER, PAYLOAD, LAST_PAYLOAD_BYTE, OCF, FECF);
     signal state_r: state_machine_t := INITIAL;
     
+    --virtual buffer combination signals
     signal vch_available_s: std_logic := '0';
+    signal vch_first_header_pointer_s: std_logic_vector(10 downto 0);
+    signal vch_has_ocf_s: std_logic;
+    signal vch_has_fecf_s: std_logic;
+    signal vch_virtual_channel_frame_count_s: integer range 0 to 10;
+    
     signal virtual_channel_id_r: std_logic_vector(2 downto 0) := (others => '0');
     signal virtual_channel_frame_count_r: std_logic_vector(7 downto 0) := (others => '0');
     signal master_channel_frame_count_r: std_logic_vector(7 downto 0) := (others => '0');
@@ -125,6 +136,7 @@ begin
     );
     
     vch_available_s <= vch0_frame_ready_i;
+    
     with is_oid_frame_r select
         first_header_pointer_s <= "11111111110" when '1',
                                   (others => '0') when others;

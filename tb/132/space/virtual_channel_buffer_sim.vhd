@@ -30,7 +30,10 @@ architecture behavioral of virtual_channel_buffer_sim is
     end component space_packet_encoder;
 
     component virtual_channel_buffer is
-        port (
+        generic(
+           virtual_channel: integer range 0 to 7
+        );
+        port(
             clk_i: in std_logic;
             reset_i: in std_logic;
         
@@ -41,11 +44,13 @@ architecture behavioral of virtual_channel_buffer_sim is
     
             -- output interface
             frame_ready_o: out std_logic;
-            frame_select_i: in std_logic; -- this signal signals the virtual channel that it will be read out
+            virtual_channel_select_i: in std_logic_vector(2 downto 0); -- this signal signals the virtual channel that it will be read out
             data_out_en_i: in std_logic; -- this signal tells the virtual channel that the next byte can be send
             data_o: out std_logic_vector(7 downto 0) := (others => '0');
             virtual_channel_frame_count_o: out std_logic_vector(7 downto 0);
-            first_header_pointer_o: out std_logic_vector(10 downto 0)
+            master_channel_frame_count_trigger_o: out std_logic;
+            first_header_pointer_o: out std_logic_vector(10 downto 0);
+            end_of_frame_o: out std_logic      
         );
     end component virtual_channel_buffer;
 
@@ -53,7 +58,9 @@ architecture behavioral of virtual_channel_buffer_sim is
     constant SPACE_PACKET_HEADER_SIZE: integer := 6;
     constant SPACE_PACKET_SIZE: integer := 256;
     constant SPACE_PACKET_DATA_SIZE: integer := 200; -- This is the size that is used inside the simulation as the space package size
-
+    
+    
+    -- DUT Signals
     signal clk_s: std_logic := '0';
     signal reset_s: std_logic := '0';
 
@@ -63,10 +70,12 @@ architecture behavioral of virtual_channel_buffer_sim is
 
     signal frame_ready_o_s: std_logic;
     signal data_out_en_i_s: std_logic := '0';
-    signal frame_select_i_s: std_logic := '0';
     signal data_o_s: std_logic_vector(7 downto 0);
     signal virtual_channel_frame_count_s: std_logic_vector(7 downto 0);
     signal first_header_pointer_s: std_logic_vector(10 downto 0);
+    signal virtual_channel_select_i_s: std_logic_vector(2 downto 0);
+    signal master_channel_frame_count_trigger_o_s: std_logic;
+    signal end_of_frame_o_s: std_logic;
     
     
     -- space packet header encoder signals
@@ -92,6 +101,9 @@ begin
 
 
     dut : virtual_channel_buffer
+    generic map(
+        virtual_channel => 1    
+    )
     port map(
         clk_i => clk_s,
         reset_i => reset_s,
@@ -99,15 +111,18 @@ begin
         data_valid_i => data_valid_i_s,
         ready_o => ready_o_s,
         frame_ready_o => frame_ready_o_s,
+        virtual_channel_select_i => virtual_channel_select_i_s,
         data_out_en_i => data_out_en_i_s,
-        frame_select_i => frame_select_i_s,
         data_o => data_o_s,
         virtual_channel_frame_count_o => virtual_channel_frame_count_s,
-        first_header_pointer_o => first_header_pointer_s
+        first_header_pointer_o => first_header_pointer_s,
+        master_channel_frame_count_trigger_o => master_channel_frame_count_trigger_o_s,
+        end_of_frame_o => end_of_frame_o_s
     );
     
     general_settings: process begin
         reset_s <= '0';
+        
         wait for 10ns;
         reset_s <= '1';
         
@@ -123,8 +138,13 @@ begin
     read_out: process begin
         wait until frame_ready_o_s = '1'; -- time for the buffer to fill up
         wait for CLK_PERIOD;
-        frame_select_i_s <= '1';
+        virtual_channel_select_i_s <= std_logic_vector(to_unsigned(1, virtual_channel_select_i_s'length));
         wait for CLK_PERIOD;
+        data_out_en_i_s <= '1';
+        
+        wait for 10 * CLK_PERIOD;
+        data_out_en_i_s <= '0';
+        wait for 10 * CLK_PERIOD;
         data_out_en_i_s <= '1';
         
         wait;
