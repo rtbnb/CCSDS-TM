@@ -23,6 +23,7 @@ entity reed_solomon_decoder_ecsee is
         error_mag_poly_i        : in finite_field_error_mag_t;
         z_i                     : in finite_field_t;
         gamma_i                 : in finite_field_t;
+        err_locator_poly_len_i  : in integer range 0 to max_number_of_errors_g;
         enable_i                : in std_logic;
         
         error_found_o           : out std_logic;
@@ -37,7 +38,7 @@ architecture behavioral of reed_solomon_decoder_ecsee is
     signal error_mag_poly_r : finite_field_error_mag_t;
     signal first_cylce_r : std_logic;
     signal z_r              : finite_field_t;
-    
+    signal err_locator_poly_len_r : integer range 0 to max_number_of_errors_g;
 begin
    chien_search: process (clk_i)
         variable a_odd : finite_field_t;
@@ -65,11 +66,18 @@ begin
                 error_found_o <= '0';
                 z_r <= z_i;
                 error_mag_o <= x"00";
+                err_locator_poly_len_r <= err_locator_poly_len_i;
+                
+                if error_count < err_locator_poly_len_r then
+                    decoder_fail_o <= '1';
+                else
+                    decoder_fail_o <= '0';
+                end if;
                 
                 z_running := gamma_i;
                 error_count:= 0;
+            else
                 decoder_fail_o <= '0';
-            else 
                 if enable_i = '1' then
                     error_mag_o <= x"00";
                     first_cylce_r <= '0';

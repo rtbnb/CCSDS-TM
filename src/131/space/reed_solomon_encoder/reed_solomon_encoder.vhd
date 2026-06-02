@@ -25,7 +25,7 @@ entity reed_solomon_encoder is
         read_data_fifo_o    : out std_logic := '0'
     
     );
-end entity;
+end entity reed_solomon_encoder;
 
 architecture behavioral of reed_solomon_encoder is
     type finite_field_array_t      is array (0 to 31) of finite_field_t;
