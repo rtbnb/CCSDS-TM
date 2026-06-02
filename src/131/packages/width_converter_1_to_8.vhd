@@ -23,7 +23,7 @@ entity width_converter_1_to_8 is
         asm_done_o   : out std_logic
     
     );
-end entity;
+end entity width_converter_1_to_8;
 
 
 architecture behavioral of width_converter_1_to_8 is

@@ -23,7 +23,7 @@ entity width_converter_8_to_1 is
         encoder_done_o : out std_logic
     
     );
-end entity;
+end entity width_converter_8_to_1;
 
 
 architecture behavioral of width_converter_8_to_1 is
