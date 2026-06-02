@@ -109,8 +109,8 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
     signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
-    type output_state_t is (output_idle, output_packet_data);
-    signal output_state_r: output_state_t := output_idle;
+    type output_state_t is (output_idle, output_packet_data, operational_control_field);
+    signal output_state_r: output_state_t := output_packet_data;
     signal input_data_valid_r: std_logic := '0';
 
     -- header decoder
@@ -138,6 +138,13 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
     signal dd_new_frame_s: std_logic := '0';
     signal dd_err_s: std_logic := '0';
+
+    -- trailer handling
+    signal trailer_size_s: integer := 0;
+
+    -- operational control field (ocf) handling
+    constant OCF_SIZE_OCTETS: integer := 4 * 8;
+
 begin
     HD: header_decoder port map (
         reset_i => reset_i,
@@ -233,6 +240,10 @@ begin
         false when is_oid_flag_s = '1' else
         false;
 
+    trailer_size_s <=
+        OCF_SIZE_OCTETS when ocf_flag_s = '1' else
+        0;
+
     -- to not send half space packets to output you can compare the needed octets (Packet header size) against the remaining length of the tm transfer frame
     -- 1 Tick Reset time required
     output_tm_frame: process(clk_i) is
@@ -266,7 +277,7 @@ begin
                             dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
                             dd_data_valid_i_r <= '1';
                             tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
-                            if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
+                            if tm_frame_data_field_index_r = (TM_FRAME_DATA_FIELD_SIZE_OCTET - trailer_size_s) - 1 then
                                 tm_frame_data_field_index_r <= 0;
                                 tm_frame_data_finished_output_r <= true;
                                 output_state_r <= output_idle;
