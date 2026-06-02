@@ -21,7 +21,7 @@ entity reed_solomon_decoder_fifo is
         output_byte_o : out std_logic_vector (7 downto 0)
         
     );
-end entity;
+end entity reed_solomon_decoder_fifo;
 
 architecture behavioral of reed_solomon_decoder_fifo is
     CONSTANT ITERATIONS_FOR_SYNDROME : integer := 255;
