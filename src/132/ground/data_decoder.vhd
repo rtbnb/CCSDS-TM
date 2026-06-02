@@ -30,6 +30,7 @@ entity data_decoder is
         clk_i: in std_logic; -- "8 Bit" x4 clock
         data_valid_i: in std_logic := '0';
         tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+        new_frame_i: in std_logic := '0';
         reset_i: in std_logic
     );
 end entity data_decoder;
@@ -64,6 +65,9 @@ architecture behavioral of data_decoder is
     signal packet_data_size_octet_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
     signal packet_input_valid_s: boolean := false;
     signal packet_input_en_r: boolean := true;
+    signal packet_length_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
+    signal first_header_point_packet_size_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
+    signal use_first_header_pointer_size_s: boolean := false;
 
     -- data output
     signal packet_output_en_r: boolean := false;
@@ -79,7 +83,7 @@ architecture behavioral of data_decoder is
     signal application_process_identifier_s: std_logic_vector(10 downto 0);
     signal sequence_flags_s: std_logic_vector(1 downto 0);
     signal packet_sequence_count_s: std_logic_vector(13 downto 0);
-    signal packet_length_s: std_logic_vector(15 downto 0);
+    signal header_packet_length_s: std_logic_vector(15 downto 0);
     signal header_data_s: std_logic_vector(47 downto 0);
     
 begin
@@ -92,7 +96,7 @@ begin
         application_process_identifier_o => application_process_identifier_s,
         sequence_flags_o => sequence_flags_s,
         packet_sequence_count_o => packet_sequence_count_s,
-        packet_length_o => packet_length_s
+        packet_length_o => header_packet_length_s
     );
 
     packet_input_valid_s <= 
@@ -119,6 +123,17 @@ begin
                     when packet_header =>
                         rdy_o <= '1';
                         if data_valid_i = '1' then
+                            use_first_header_pointer_size_s <= false;
+                            if new_frame_i = '1' then
+                                if to_integer(unsigned(tm_frame_first_header_pointer_i)) = 0 then
+                                    packet_state_r <= packet_header;
+                                else
+                                    -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
+                                    first_header_point_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
+                                    use_first_header_pointer_size_s <= true;
+                                    packet_state_r <= packet_data;
+                                end if;
+                            end if;
                             input_octet_counter_r <= input_octet_counter_r + 1;
                             packet_output_en_r <= false;
                             packet_data_r(input_octet_counter_r) <= data_i;
@@ -134,6 +149,16 @@ begin
                     when packet_data =>
                         rdy_o <= '1';
                         if data_valid_i = '1' then
+                            if new_frame_i = '1' then
+                                -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
+                                if to_integer(unsigned(tm_frame_first_header_pointer_i)) = ((PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - input_octet_counter_r) then
+                                    packet_state_r <= packet_data;
+                                else
+                                    first_header_point_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
+                                    use_first_header_pointer_size_s <= true;
+                                    packet_state_r <= packet_idle;
+                                end if;
+                            end if;
                             input_octet_counter_r <= input_octet_counter_r + 1;
                             packet_data_r(input_octet_counter_r) <= data_i;
                             if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
@@ -184,10 +209,13 @@ begin
         end if;
     end process input_data;
 
+    packet_length_s <= 
+        to_integer(unsigned(header_packet_length_s)) + 1 when use_first_header_pointer_size_s = false else -- packet length in header is packet data size - 1, so add 1 to get actual packet data size
+        first_header_point_packet_size_s;
     packet_size_calculation: process(packet_length_s)
     begin
-        if to_integer(unsigned(packet_length_s)) < PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET then
-            packet_data_size_octet_s <= to_integer(unsigned(packet_length_s)) + 1;
+        if packet_length_s < PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET then
+            packet_data_size_octet_s <= packet_length_s;
             packet_header_err_o <= '0';
         else
             packet_data_size_octet_s <= PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET;

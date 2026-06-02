@@ -87,6 +87,7 @@ architecture behavioral of decoder_buffer_and_structure is
             clk_i: in std_logic; -- "8 Bit" x4 clock
             data_valid_i: in std_logic := '0';
             tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+            new_frame_i: in std_logic := '0';
             reset_i: in std_logic
         );
     end component data_decoder;
@@ -135,6 +136,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_i_r: std_logic_vector(7 downto 0);
     signal dd_data_valid_i_r: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
+    signal dd_new_frame_s: std_logic := '0';
     signal dd_err_s: std_logic := '0';
 begin
     HD: header_decoder port map (
@@ -167,6 +169,7 @@ begin
         clk_i => clk_i,
         data_valid_i => dd_data_valid_i_r,
         tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s,
+        new_frame_i => dd_new_frame_s,
         reset_i => reset_i
     );
 
@@ -239,11 +242,25 @@ begin
             tm_frame_data_finished_output_r <= false;
             tm_frame_data_field_index_r <= 0;
             output_state_r <= output_packet_data;
+            dd_tm_frame_first_header_pointer_s <= (others => '0');
+            dd_new_frame_s <= '0';
         else
             if rising_edge(clk_i) then
+                dd_new_frame_s <= '0';
                 case output_state_r is
                     when output_packet_data =>
                         if tm_frame_data_enable_output_s then
+                            if tm_frame_data_field_index_r = 0 then
+                                if synch_flag_s = '0' then
+                                    dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
+                                    dd_new_frame_s <= '1';
+                                else
+                                    dd_tm_frame_first_header_pointer_s <= (others => '0');
+                                    dd_new_frame_s <= '0';
+                                end if;
+                            else
+                                dd_new_frame_s <= '0';
+                            end if;
                             dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
                             dd_data_valid_i_r <= '1';
                             tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
