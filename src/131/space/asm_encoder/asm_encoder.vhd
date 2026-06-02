@@ -53,6 +53,7 @@ begin
 -- asynchronous assignments 
 s_axi_datavalid_r     <= s_tready_r and s_axi_tvalid;
 m_axi_datavalid_r     <= m_axi_tready and m_tvalid_r;
+
 m_axi_tvalid          <= m_tvalid_r;
 s_axi_tready          <= s_tready_r;
 
