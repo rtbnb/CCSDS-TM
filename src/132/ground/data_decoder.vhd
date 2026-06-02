@@ -23,6 +23,8 @@ entity data_decoder is
         data_fully_read_o: out std_logic := '0';
         rdy_o: out std_logic := '1';
 
+        packet_header_err_o: out std_logic := '0';
+
         -- inputs
         data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
@@ -134,6 +136,9 @@ begin
                         if data_valid_i = '1' then
                             input_octet_counter_r <= input_octet_counter_r + 1;
                             packet_data_r(input_octet_counter_r) <= data_i;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
+                                rdy_o <= '0';
+                            end if;
                             if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
                                 rdy_o <= '0';
                                 packet_state_r <= packet_output;
@@ -145,7 +150,11 @@ begin
                         rdy_o <= '1';
                         if data_valid_i = '1' then
                             input_octet_counter_r <= input_octet_counter_r + 1;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
+                                rdy_o <= '0';
+                            end if;
                             if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                                rdy_o <= '0';
                                 packet_state_r <= packet_header;
                                 input_octet_counter_r <= 0;
                                 packet_output_en_r <= false;
@@ -175,7 +184,16 @@ begin
         end if;
     end process input_data;
 
-    packet_data_size_octet_s <= to_integer(unsigned(packet_length_s)) + 1;
+    packet_size_calculation: process(packet_length_s)
+    begin
+        if to_integer(unsigned(packet_length_s)) < PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET then
+            packet_data_size_octet_s <= to_integer(unsigned(packet_length_s)) + 1;
+            packet_header_err_o <= '0';
+        else
+            packet_data_size_octet_s <= PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET;
+            packet_header_err_o <= '1';
+        end if;
+    end process packet_size_calculation;
 
     data_o <= 
         x"00000000" when reset_i = '0' 

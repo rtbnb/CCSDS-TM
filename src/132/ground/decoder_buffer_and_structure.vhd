@@ -80,6 +80,8 @@ architecture behavioral of decoder_buffer_and_structure is
             data_fully_read_o: out std_logic := '0';
             rdy_o: out std_logic := '0';
 
+            packet_header_err_o: out std_logic := '0';
+
             -- inputs
             data_i: in std_logic_vector(7 downto 0);
             clk_i: in std_logic; -- "8 Bit" x4 clock
@@ -133,6 +135,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_i_r: std_logic_vector(7 downto 0);
     signal dd_data_valid_i_r: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
+    signal dd_err_s: std_logic := '0';
 begin
     HD: header_decoder port map (
         reset_i => reset_i,
@@ -159,6 +162,7 @@ begin
         data_valid_o => dd_data_valid_o_s,
         data_fully_read_o => dd_data_fully_read_s,
         rdy_o => dd_rd_o_s,
+        packet_header_err_o => dd_err_s,
         data_i => dd_data_i_r,
         clk_i => clk_i,
         data_valid_i => dd_data_valid_i_r,
