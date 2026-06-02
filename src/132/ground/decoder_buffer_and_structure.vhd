@@ -13,7 +13,8 @@ use ieee.numeric_std.all;
 
 entity decoder_buffer_and_structure is
     generic (
-        tm_frame_size_octet_g: integer := 2046
+        tm_frame_size_octet_g: integer := 2046;
+        fecf_enb_g: boolean := false
     );
     port (
         -- inputs
@@ -145,6 +146,9 @@ architecture behavioral of decoder_buffer_and_structure is
     -- operational control field (ocf) handling
     constant OCF_SIZE_OCTETS: integer := 4 * 8;
 
+    -- frame error control field (fecf) handling
+    constant FECF_SIZE_OCTETS: integer := 2 * 8
+
 begin
     HD: header_decoder port map (
         reset_i => reset_i,
@@ -241,6 +245,8 @@ begin
         false;
 
     trailer_size_s <=
+        OCF_SIZE_OCTETS + FECF_SIZE_OCTETS when ocf_flag_s = '1' and fecf_enb_g else
+        FECF_SIZE_OCTETS when fecf_enb_g else
         OCF_SIZE_OCTETS when ocf_flag_s = '1' else
         0;
 
