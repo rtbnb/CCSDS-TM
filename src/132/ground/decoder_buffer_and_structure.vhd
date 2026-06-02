@@ -109,7 +109,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
     signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
-    type output_state_t is (output_idle, output_packet_data, operational_control_field);
+    type output_state_t is (output_idle, output_packet_data);
     signal output_state_r: output_state_t := output_packet_data;
     signal input_data_valid_r: std_logic := '0';
 
