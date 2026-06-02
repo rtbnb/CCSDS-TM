@@ -73,6 +73,7 @@ begin
     
         elsif rising_edge(clk_i) then 
           rs_asm_done_o <= asm_done_r;
+          asm_done_r <= '0';
           fifo_data_valid_r <= fifo_data_valid_r or rs_data_valid_out_i;
           --rs_data_valid_in_o <= '0';
     

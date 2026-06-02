@@ -73,6 +73,7 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
     
     
+    
     -- axi inputs to encoder
     signal encoder_s_axi_tvalid_r    :  std_logic; 
     signal encoder_s_axi_tready_r    :  std_logic;
@@ -150,6 +151,7 @@ begin
         for i in 0 to 255 loop
             wait until encoder_s_axi_tready_r = '1';
             encoder_s_axi_tdata_r   <= std_logic_vector(to_unsigned(i, 8));
+            input_value_r <= i;
             encoder_s_axi_tvalid_r  <= '1';
             wait until encoder_s_axi_tready_r = '0';
             encoder_s_axi_tvalid_r <= '0';
@@ -164,7 +166,7 @@ begin
         variable x : real;
         variable y : integer;
     begin
-        if encoder_s_axi_tlast_r = '1' then
+        if encoder_m_axi_tlast_r = '1' then
             -- between 0 and 17 erros
             uniform(seed1, seed2, x);
             y := integer(floor(x * 17));
