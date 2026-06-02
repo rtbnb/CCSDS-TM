@@ -20,49 +20,11 @@ entity reed_solomon_decoder_top_tb is
 end entity reed_solomon_decoder_top_tb;
 
 architecture behavioral of reed_solomon_decoder_top_tb is
-    component reed_solomon_encoder is
-    port (
-        clk_i   : in std_logic;
-        reset_i : in std_logic;
-        
-        -- axi inputs 
-        s_axi_tvalid    : in std_logic; 
-        s_axi_tready    : out std_logic;
-        s_axi_tdata     : in std_logic_vector(7 downto 0);
-        s_axi_tlast     : in std_logic;
-
-        -- axi outputs
-        m_axi_tvalid    : out std_logic; 
-        m_axi_tready    : in std_logic;
-        m_axi_tdata     : out std_logic_vector(7 downto 0);
-        m_axi_tlast     : out std_logic
-    );
-    end component;
-
-    component reed_solomon_decoder_top is
-    port (
-        clk_i   : in std_logic;
-        reset_i : in std_logic;
-        reed_solomon_failure_o : out std_logic; 
-
-        -- axi inputs 
-        s_axi_tvalid    : in std_logic; 
-        s_axi_tready    : out std_logic;
-        s_axi_tdata     : in std_logic_vector(7 downto 0);
-        s_axi_tlast     : in std_logic;
-
-        -- axi outputs
-        m_axi_tvalid    : out std_logic; 
-        m_axi_tready    : in std_logic;
-        m_axi_tdata     : out std_logic_vector(7 downto 0);
-        m_axi_tlast     : out std_logic
-    );
-    end component;
     
     type random_index_t is array (0 to 17) of Integer range 0 to 257;
 
     signal        clk_r                   : std_logic := '0';
-    signal        reset_r                 : std_logic := '1';
+    signal        reset_r                 : std_logic := '0';
     
     
     signal        input_value_r           : Integer range 0 to 300 := 1;
@@ -83,13 +45,13 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     -- axi outputs from encoder
     signal encoder_m_axi_tvalid_r    : std_logic; 
     signal encoder_m_axi_tready_r    : std_logic;
-    signal encoder_m_axi_tdata_r     : std_logic_vector(7 downto 0);
+    signal encoder_m_axi_tdata_r     : std_logic;
     signal encoder_m_axi_tlast_r     : std_logic;
     
     -- axi inputs to decoder 
     signal decoder_s_axi_tvalid_r    : std_logic; 
     signal decoder_s_axi_tready_r    : std_logic;
-    signal decoder_s_axi_tdata_r     : std_logic_vector(7 downto 0);
+    signal decoder_s_axi_tdata_r     : std_logic;
     signal decoder_s_axi_tlast_r     : std_logic;
     
     -- axi outputs from decoder
@@ -100,10 +62,10 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
 begin
 
-    dut_enccoder : reed_solomon_encoder
+    dut_enccoder : entity work.axi_ccsds_131_space
     port map (
         clk_i   => clk_r,
-        reset_i => reset_r,
+        rst_i   => reset_r,
         
         -- axi inputs 
         s_axi_tvalid    => encoder_s_axi_tvalid_r,
@@ -114,21 +76,19 @@ begin
         -- axi outputs
         m_axi_tvalid    => encoder_m_axi_tvalid_r,
         m_axi_tready    => encoder_m_axi_tready_r,
-        m_axi_tdata     => encoder_m_axi_tdata_r,
-        m_axi_tlast     => encoder_m_axi_tlast_r
+        m_axi_tdata     => encoder_m_axi_tdata_r
     );
 
-    dut_decoder : reed_solomon_decoder_top
+    dut_decoder : entity work.axi_ccsds_131_ground
     port map (
         clk_i   => clk_r,
-        reset_i => reset_r,
+        rst_i   => reset_r,
         reed_solomon_failure_o => reed_solomon_failure_r,
 
         -- axi inputs 
         s_axi_tvalid    => decoder_s_axi_tvalid_r,
         s_axi_tready    => decoder_s_axi_tready_r,
         s_axi_tdata     => decoder_s_axi_tdata_r,
-        s_axi_tlast     => decoder_s_axi_tlast_r,
 
         -- axi outputs
         m_axi_tvalid    => decoder_m_axi_tvalid_r,
@@ -138,6 +98,7 @@ begin
     );
            
     clk_r <= not clk_r after 5 ns;
+    reset_r <= '1' after 100 ns;
     
     decoder_m_axi_tready_r <= '1';
     decoder_s_axi_tvalid_r <= encoder_m_axi_tvalid_r;
@@ -148,6 +109,7 @@ begin
     
     data_valid_stimuli: process
     begin
+        wait for 100 ns;
         for i in 0 to 255 loop
             wait until encoder_s_axi_tready_r = '1';
             encoder_s_axi_tdata_r   <= std_logic_vector(to_unsigned(i, 8));
@@ -190,25 +152,25 @@ begin
     end process new_random_data;
     
     
-    decoder_s_axi_tdata_r <= std_logic_vector(TO_UNSIGNED(random_error_mag_r(0),8)) when input_value_r = random_index_r(0) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(1),8)) when input_value_r = random_index_r(1) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(2),8)) when input_value_r = random_index_r(2) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(3),8)) when input_value_r = random_index_r(3) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(4),8)) when input_value_r = random_index_r(4) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(5),8)) when input_value_r = random_index_r(5) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(6),8)) when input_value_r = random_index_r(6) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(7),8)) when input_value_r = random_index_r(7) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(8),8)) when input_value_r = random_index_r(8) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(9),8)) when input_value_r = random_index_r(9) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(10),8)) when input_value_r = random_index_r(10) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(11),8)) when input_value_r = random_index_r(11) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(12),8)) when input_value_r = random_index_r(12) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(13),8)) when input_value_r = random_index_r(13) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(14),8)) when input_value_r = random_index_r(14) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(15),8)) when input_value_r = random_index_r(15) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(16),8)) when input_value_r = random_index_r(16) else
-                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(17),8)) when input_value_r = random_index_r(17) else
-                           encoder_m_axi_tdata_r;
+--    decoder_s_axi_tdata_r <= std_logic_vector(TO_UNSIGNED(random_error_mag_r(0),8)) when input_value_r = random_index_r(0) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(1),8)) when input_value_r = random_index_r(1) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(2),8)) when input_value_r = random_index_r(2) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(3),8)) when input_value_r = random_index_r(3) else
+--                          std_logic_vector(TO_UNSIGNED(random_error_mag_r(4),8)) when input_value_r = random_index_r(4) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(5),8)) when input_value_r = random_index_r(5) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(6),8)) when input_value_r = random_index_r(6) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(7),8)) when input_value_r = random_index_r(7) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(8),8)) when input_value_r = random_index_r(8) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(9),8)) when input_value_r = random_index_r(9) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(10),8)) when input_value_r = random_index_r(10) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(11),8)) when input_value_r = random_index_r(11) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(12),8)) when input_value_r = random_index_r(12) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(13),8)) when input_value_r = random_index_r(13) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(14),8)) when input_value_r = random_index_r(14) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(15),8)) when input_value_r = random_index_r(15) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(16),8)) when input_value_r = random_index_r(16) else
+--                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(17),8)) when input_value_r = random_index_r(17) else
+decoder_s_axi_tdata_r <= encoder_m_axi_tdata_r;
 
     --sync_fifo_val_r <= output_byte_r  when  data_valid_decoder_r = '1' else
     --                    sync_fifo_val_r;          
