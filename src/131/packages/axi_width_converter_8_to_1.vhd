@@ -68,11 +68,12 @@ elsif rising_edge(clk_i) then
         m_axi_tlast <= '0';
         if output_data_r = '1' then 
            s_tready_r <= '0';
+           counter_r <= counter_r + 1; 
         end if; 
         
+        
     elsif output_data_r = '1' then 
-    -- output bits 
-        counter_r <= counter_r + 1; 
+    -- output bits
         m_axi_tdata <= data_register_r (8-counter_r-1);
         m_tvalid_r <= '1';
         s_tready_r <= '0';
@@ -88,6 +89,8 @@ elsif rising_edge(clk_i) then
         s_tready_r                  <= '0';
         output_data_r               <= '1'; 
         m_tlast                     <= s_axi_tlast;
+        m_axi_tdata                 <= s_axi_tdata (8-counter_r-1);
+        m_tvalid_r <= '1';
     end if;   
 end if; 
 
