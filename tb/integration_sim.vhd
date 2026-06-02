@@ -55,9 +55,23 @@ architecture behavioral of integration_sim is
 
     -- automatic testbench
     constant WORDS_PER_FRAME: integer := 510;
+    constant MAX_SPACE_PACKET_SIZE_OCTET: integer := 256;
+
+    type space_packet_t is array (MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 0) of std_logic_vector(7 downto 0);
+    signal max_size_space_packet_s: space_packet_t := (others => (others => '0'));
+    signal max_size_idle_space_packet_s: space_packet_t := (others => (others => '0'));
     
     signal output_word_counter_r: integer := 0;
     signal test_output_data_s: std_logic_vector(7 downto 0) := (others => '0');
+
+    -- data input process
+    signal wr_ptr: integer := 0;
+
+    -- validation process
+    signal test_data_ptr: integer := 0;
+    type test_data_state_t is (max_size_space_packet, max_size_idle_space_packet);
+    signal test_data_state: test_data_state_t := max_size_space_packet;
+    signal validate_data_state: test_data_state_t := max_size_space_packet;
 
 begin
     DBF: system_integration_wrapper port map (
@@ -72,10 +86,24 @@ begin
         transfer_frame_version_number_i_0 => transfer_frame_version_number_s,
         spacecraft_id_i_0 => spacecraft_id_s
     );
+
+    max_size_space_packet_s(0) <= "00010000";
+    max_size_space_packet_s(1) <= x"00";
+    max_size_space_packet_s(2) <= x"00";
+    max_size_space_packet_s(3) <= x"00";
+    max_size_space_packet_s(4) <= x"f9"; -- 249 Data Octets
+    max_size_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
+
+    max_size_idle_space_packet_s(0) <= "11110000";
+    max_size_idle_space_packet_s(1) <= x"FF";
+    max_size_idle_space_packet_s(2) <= x"00";
+    max_size_idle_space_packet_s(3) <= x"00";
+    max_size_idle_space_packet_s(4) <= x"f9"; -- 249 Data Octets
+    max_size_idle_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
+
     
     general_settings: process begin
         reset_s <= '1';
-        test_input_valid_s <= '1';
         transfer_frame_version_number_s <= "11";
         spacecraft_id_s <= "0000000001";
         wait;
@@ -91,35 +119,57 @@ begin
         wait for CLK_PERIOD;
     end process clock;
 
-    data_test: process begin
-        if (test_input_ready_s = '1') then
-            test_input_data_s <= std_logic_vector((unsigned(test_input_data_s) +1));  
-        end if;
+    data_input: process is
+    begin
+        --wait for CLK_PERIOD;
+        if test_input_ready_s = '1' then
+            case test_data_state is
+                when max_size_space_packet =>
+                    test_input_data_s <= max_size_space_packet_s(wr_ptr);
+                    test_input_valid_s <= '1';
+                    wr_ptr <= wr_ptr + 1;
+                    if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                        wr_ptr <= 0;
+                        test_data_state <= max_size_idle_space_packet;
+                    end if;
+                when max_size_idle_space_packet =>
+                    test_input_data_s <= max_size_idle_space_packet_s(wr_ptr);
+                    test_input_valid_s <= '1';
+                    wr_ptr <= wr_ptr + 1;
+                    if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                        wr_ptr <= 0;
+                        test_data_state <= max_size_space_packet;
+                    end if;
+            end case;
+        else
+            test_input_valid_s <= '0';
+        end if;    
         wait for 2 * CLK_PERIOD;
-    end process data_test;
+    end process data_input;
 
-    test: process begin
+    validate_output: process is
+    begin
         wait for GND_CLK_PERIOD;
-        if tm_data_field_valid_s = '1' then
-            output_word_counter_r <= output_word_counter_r + 1;
-            if output_word_counter_r = WORDS_PER_FRAME then
-                output_word_counter_r <= 0;
-            end if;
-            assert (tm_data_field_s(7 downto 0) = test_output_data_s) 
-            report "mismatching output data first octet" severity error;
-            
-            assert (tm_data_field_s(15 downto 8) = std_logic_vector((unsigned(test_output_data_s) + 1))) 
-            report "mismatching output data second octet" severity error;
-            
-            assert (tm_data_field_s(23 downto 16) = std_logic_vector((unsigned(test_output_data_s) + 2))) 
-            report "mismatching output data third octet" severity error;
-            
-            assert (tm_data_field_s(31 downto 24) = std_logic_vector((unsigned(test_output_data_s) + 3))) 
-            report "mismatching output data fourth octet" severity error;
-            
-            test_output_data_s <= std_logic_vector((unsigned(test_output_data_s) + 4));
-            
-        end if;
+        case validate_data_state is
+            when max_size_space_packet =>
+                if tm_data_field_valid_s = '1' then
+                    assert (tm_data_field_s(7 downto 0) = max_size_space_packet_s(test_data_ptr + 0))
+                    report "output not matching input Space Packet index 0" severity failure;
+                    assert (tm_data_field_s(15 downto 8) = max_size_space_packet_s(test_data_ptr + 1))
+                    report "output not matching input Space Packet index 1" severity failure;
+                    assert (tm_data_field_s(23 downto 16) = max_size_space_packet_s(test_data_ptr + 2))
+                    report "output not matching input Space Packet index 2" severity failure;
+                    assert (tm_data_field_s(31 downto 24) = max_size_space_packet_s(test_data_ptr + 3))
+                    report "output not matching input Space Packet index 3" severity failure;
+                    test_data_ptr <= test_data_ptr + 4;
+                    if test_data_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 4 then
+                        test_data_ptr <= 0;
+                        validate_data_state <= max_size_space_packet;
+                    end if;
+                end if;
+            when others =>
+                validate_data_state <= max_size_space_packet;
+        end case;
         wait for GND_CLK_PERIOD;
-    end process test;
+    end process validate_output;
 end architecture behavioral;
