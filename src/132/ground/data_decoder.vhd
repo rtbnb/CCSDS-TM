@@ -21,6 +21,7 @@ entity data_decoder is
         data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
         data_valid_o: out std_logic := '0';
         data_fully_read_o: out std_logic := '0';
+        rdy_o: out std_logic := '1';
 
         -- inputs
         data_i: in std_logic_vector(7 downto 0);
@@ -32,130 +33,149 @@ entity data_decoder is
 end entity data_decoder;
 
 architecture behavioral of data_decoder is
+    component space_packet_decoder is
+        port (
+            header_data_i: in std_logic_vector(47 downto 0);
+            packet_version_number_o: out std_logic_vector(2 downto 0);
+            packet_type_o: out std_logic;
+            secondary_header_flag_o: out std_logic;
+            application_process_identifier_o: out std_logic_vector(10 downto 0);
+            sequence_flags_o: out std_logic_vector(1 downto 0);
+            packet_sequence_count_o: out std_logic_vector(13 downto 0);
+            packet_length_o: out std_logic_vector(15 downto 0)
+        );
+    end component space_packet_decoder;
+    
     -- constants
     constant OUTPUT_DATA_SIZE_OCTET: integer := 4;
-    constant INPUT_DATA_SIZE_OCTET: integer := 2;
     constant PACKET_MAX_SIZE_OCTET: integer := 256;
     constant PACKET_HEADER_SIZE_OCTET: integer := 6;
 
     -- data
-    type packet_state_t is (packet_id_low, packet_id_high, packet_sequence_control_low, packet_sequence_control_high, packet_len_low, packet_len_high, data);
-    signal packet_state_r: packet_state_t := packet_id_low;
-    signal packet_header_r: std_logic_vector((PACKET_HEADER_SIZE_OCTET * 8) - 1 downto 0) := (others => '0');
-    
-    
-    type deserialization_state_t is (data_first_octet, data_second_octet, data_third_octet, data_fourth_octet, data_first_octet_previous_add);
-    signal state_r: deserialization_state_t := data_first_octet;
-    signal data_buffer_r: std_logic_vector(31 downto 0);
-    signal packet_data_len_r: std_logic_vector(15 downto 0);
-    signal packet_last_cycle_valid_r: std_logic := '1';
-    signal packet_valid_r: std_logic := '0';
+    type packet_state_t is (packet_header, packet_data, packet_idle, packet_output);
+    signal packet_state_r: packet_state_t := packet_header;
+    type packet_t is array (PACKET_MAX_SIZE_OCTET - 1 downto 0) of std_logic_vector(7 downto 0);
+    signal packet_data_r: packet_t := (others => (others => '0'));
 
-    signal packet_apid_r: std_logic_vector(10 downto 0);
-    signal packet_apid_valid_r: std_logic := '0';
+    -- data input
+    signal input_octet_counter_r: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
+    signal packet_data_size_octet_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
+    signal packet_input_valid_s: boolean := false;
+    signal packet_input_en_r: boolean := true;
 
-    signal previous_octet_r: std_logic_vector(7 downto 0);
-    signal previous_octet_from_fourth_r: std_logic_vector(7 downto 0);
+    -- data output
+    signal packet_output_en_r: boolean := false;
+    signal output_octet_counter_r: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
+    signal output_word_octet_counter_r: integer range 0 to OUTPUT_DATA_SIZE_OCTET - 1 := 0;
+    signal data_buffer_r: std_logic_vector(OUTPUT_DATA_SIZE_OCTET * 8 - 1 downto 0) := (others => '0');
+    signal outputing_packet_r: boolean := false;
 
-    signal tm_data_field_octet_counter_r: integer range 0 to tm_frame_data_size_octet_g - 1 := 0;
-    signal is_packet_extraction_r: std_logic := '0';
-
-    function packet_length_int(packet_len: std_logic_vector(15 downto 0)) return integer is
-        variable packet_len_int: integer range 1 to PACKET_MAX_SIZE_OCTET;
-    begin
-        packet_len_int := to_integer(unsigned(packet_len));
-        return packet_len_int;
-    end function;
+    -- space packet decoder
+    signal packet_version_number_s: std_logic_vector(2 downto 0);
+    signal packet_type_s: std_logic;
+    signal secondary_header_flag_s: std_logic;
+    signal application_process_identifier_s: std_logic_vector(10 downto 0);
+    signal sequence_flags_s: std_logic_vector(1 downto 0);
+    signal packet_sequence_count_s: std_logic_vector(13 downto 0);
+    signal packet_length_s: std_logic_vector(15 downto 0);
+    signal header_data_s: std_logic_vector(47 downto 0);
     
 begin
-    packet_header: process(clk_i)
-    variable packet_data_field_octet_counter: integer range 0 to PACKET_MAX_SIZE_OCTET - 1 := 0;
+
+    space_packet_decoder_inst: space_packet_decoder port map (
+        header_data_i => header_data_s,
+        packet_version_number_o => packet_version_number_s,
+        packet_type_o => packet_type_s,
+        secondary_header_flag_o => secondary_header_flag_s,
+        application_process_identifier_o => application_process_identifier_s,
+        sequence_flags_o => sequence_flags_s,
+        packet_sequence_count_o => packet_sequence_count_s,
+        packet_length_o => packet_length_s
+    );
+
+    packet_input_valid_s <= 
+        true when (data_valid_i = '1') and (packet_input_en_r = true) else
+        false;
+
+    header_data_s(7 downto 0) <= packet_data_r(0);
+    header_data_s(15 downto 8) <= packet_data_r(1);
+    header_data_s(23 downto 16) <= packet_data_r(2);
+    header_data_s(31 downto 24) <= packet_data_r(3);
+    header_data_s(39 downto 32) <= packet_data_r(4);
+    header_data_s(47 downto 40) <= packet_data_r(5);
+
+    input_data: process(clk_i) is
     begin
         if (reset_i = '0') then
-            tm_data_field_octet_counter_r <= 0;
-            packet_state_r <= packet_id_low;
-            packet_apid_valid_r <= '0';
+            input_octet_counter_r <= 0;
+            packet_state_r <= packet_header;
+            packet_output_en_r <= false;
         else
             if rising_edge(clk_i) then
-                if data_valid_i = '1' then
-                    tm_data_field_octet_counter_r <= tm_data_field_octet_counter_r + 1;
-                    case packet_state_r is
-                        when packet_id_low =>
-                            if tm_data_field_octet_counter_r >= to_integer(unsigned(tm_frame_first_header_pointer_i)) then
-                                packet_apid_valid_r <= '0';
-                                packet_apid_r(2 downto 0) <= data_i(7 downto 5);
-                                previous_octet_r <= data_i;
-                                packet_state_r <= packet_id_high;
-                                packet_apid_valid_r <= '1';
+                data_valid_o <= '0';
+                case packet_state_r is
+                    when packet_header =>
+                        rdy_o <= '1';
+                        if data_valid_i = '1' then
+                            input_octet_counter_r <= input_octet_counter_r + 1;
+                            packet_output_en_r <= false;
+                            packet_data_r(input_octet_counter_r) <= data_i;
+                            if input_octet_counter_r = PACKET_HEADER_SIZE_OCTET - 1 then
+                                if application_process_identifier_s = "11111111111" then
+                                    -- idle packet, do not extract data, wait for next packet header
+                                    packet_state_r <= packet_idle;
+                                else
+                                    packet_state_r <= packet_data;
+                                end if;
                             end if;
-                        when packet_id_high =>
-                            packet_apid_r(10 downto 3) <= data_i;
-                            packet_state_r <= packet_sequence_control_low;
-                        when packet_sequence_control_low =>
-                            packet_state_r <= packet_sequence_control_high;
-                        when packet_sequence_control_high =>
-                            packet_state_r <= packet_len_low;
-                        when packet_len_low =>
-                            packet_data_len_r(15 downto 8) <= data_i;
-                            packet_state_r <= packet_len_high;
-                        when packet_len_high =>
-                            packet_data_len_r(7 downto 0) <= data_i;
-                            packet_state_r <= data;
-                        when data =>
-                            if (packet_length_int(packet_len => packet_data_len_r) - packet_data_field_octet_counter) = INPUT_DATA_SIZE_OCTET then
-                                packet_state_r <= packet_id_low;
-                                packet_data_field_octet_counter := 0;
-                            else
-                                packet_data_field_octet_counter := packet_data_field_octet_counter + 1;
-                                packet_state_r <= data;
+                        end if;
+                    when packet_data =>
+                        rdy_o <= '1';
+                        if data_valid_i = '1' then
+                            input_octet_counter_r <= input_octet_counter_r + 1;
+                            packet_data_r(input_octet_counter_r) <= data_i;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                                rdy_o <= '0';
+                                packet_state_r <= packet_output;
+                                input_octet_counter_r <= 0;
+                                packet_output_en_r <= true;
                             end if;
-                    end case;
-                    if tm_data_field_octet_counter_r = tm_frame_data_size_octet_g - 1 then 
-                        tm_data_field_octet_counter_r <= 0;
-                    end if;
-                end if;
-            end if;
-        end if;
-    end process packet_header;
-
-    packet_valid_r <= '0' when (packet_apid_valid_r = '1') and (packet_apid_r = "11111111111") else
-                      '1' when (packet_apid_valid_r = '1') else
-                      '0';
-
-    data_output: process(clk_i, packet_valid_r, packet_last_cycle_valid_r)
-    begin
-        if (reset_i = '0') then
-            state_r <= data_first_octet;
-            data_valid_o <= '0';
-        else
-            if rising_edge(clk_i) then
-                if (data_valid_i = '1') then
-                    case state_r is
-                        when data_first_octet =>
-                            data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= data_i;
-                            state_r <= data_second_octet;
-                        when data_second_octet =>
-                            data_buffer_r(15 downto 8) <= data_i;
-                            state_r <= data_third_octet;
-                        when data_third_octet =>
-                            data_buffer_r(23 downto 16) <= data_i;
-                            state_r <= data_fourth_octet;
-                        when data_fourth_octet =>
+                        end if;
+                    when packet_idle =>
+                        rdy_o <= '1';
+                        if data_valid_i = '1' then
+                            input_octet_counter_r <= input_octet_counter_r + 1;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                                packet_state_r <= packet_header;
+                                input_octet_counter_r <= 0;
+                                packet_output_en_r <= false;
+                            end if;
+                        end if;
+                    when packet_output =>
+                        rdy_o <= '0';
+                        data_buffer_r((output_word_octet_counter_r * 8) + 7 downto (output_word_octet_counter_r * 8)) <= packet_data_r(output_octet_counter_r);
+                        -- count packet buffer octets
+                        if output_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                            -- finished outputting packet, wait for next packet
+                            packet_state_r <= packet_header;
+                            output_octet_counter_r <= 0;
+                        else
+                            output_octet_counter_r <= output_octet_counter_r + 1;
+                        end if;
+                        -- count output buffer octets
+                        if output_word_octet_counter_r = OUTPUT_DATA_SIZE_OCTET - 1 then
+                            output_word_octet_counter_r <= 0;
                             data_valid_o <= '1';
-                            data_buffer_r(31 downto 24) <= data_i;
-                            state_r <= data_first_octet;
-                        when data_first_octet_previous_add =>
+                        else
+                            output_word_octet_counter_r <= output_word_octet_counter_r + 1;
                             data_valid_o <= '0';
-                            data_buffer_r(7 downto 0) <= data_i;
-                            state_r <= data_second_octet;
-                    end case;
-                else
-                    data_valid_o <= '0';
-                end if;
+                        end if;
+                end case;
             end if;
         end if;
-    end process data_output;
+    end process input_data;
+
+    packet_data_size_octet_s <= to_integer(unsigned(packet_length_s)) + 1;
 
     data_o <= 
         x"00000000" when reset_i = '0' 

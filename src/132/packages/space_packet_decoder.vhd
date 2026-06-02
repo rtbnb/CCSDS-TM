@@ -27,7 +27,7 @@ end entity space_packet_decoder;
 architecture behavioral of space_packet_decoder is
 begin
     packet_version_number_o <= header_data_i(2 downto 0); -- bits 2 - 0
-    packet_type_o <= header_data_i(3); -- bit 4 
+    packet_type_o <= header_data_i(3); -- bit 4
     secondary_header_flag_o <= header_data_i(4); -- bit 5
     application_process_identifier_o <= header_data_i(15 downto 5);
     sequence_flags_o <= header_data_i(17 downto 16);

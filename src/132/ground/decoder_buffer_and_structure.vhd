@@ -18,13 +18,14 @@ entity decoder_buffer_and_structure is
     port (
         -- inputs
         data_i: std_logic_vector(7 downto 0);
-        data_valid_i: std_logic;
         clk_i: std_logic;
         reset_i: std_logic;
+        fifo_empty_i: std_logic;
 
         -- outputs
         tm_data_field_o: out std_logic_vector(31 downto 0);
-        tm_data_field_valid_o: out std_logic
+        tm_data_field_valid_o: out std_logic;
+        rdy_o: out std_logic := '0'
     );
 end entity decoder_buffer_and_structure;
 
@@ -77,6 +78,7 @@ architecture behavioral of decoder_buffer_and_structure is
             data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
             data_valid_o: out std_logic := '0';
             data_fully_read_o: out std_logic := '0';
+            rdy_o: out std_logic := '0';
 
             -- inputs
             data_i: in std_logic_vector(7 downto 0);
@@ -96,7 +98,6 @@ architecture behavioral of decoder_buffer_and_structure is
     -- TM Frame buffer
     type buffer_mem_t is array (0 to TM_FRAME_BUFFER_SIZE_OCTET - 1) of std_logic_vector(7 downto 0);
     signal tm_frame_buffer_r: buffer_mem_t := (others => (others => '0'));
-    signal tm_frame_buffer_counter_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal next_tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal tm_frame_data_field_start_index_s: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1;
@@ -105,6 +106,9 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
     signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
+    type output_state_t is (output_packet_data);
+    signal output_state_r: output_state_t := output_packet_data;
+    signal input_data_valid_r: std_logic := '0';
 
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
@@ -125,6 +129,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal dd_data_o_s: std_logic_vector(31 downto 0);
     signal dd_data_valid_o_s: std_logic := '0';
     signal dd_data_fully_read_s: std_logic := '0';
+    signal dd_rd_o_s: std_logic := '0';
     signal dd_data_i_r: std_logic_vector(7 downto 0);
     signal dd_data_valid_i_r: std_logic := '0';
     signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
@@ -153,6 +158,7 @@ begin
         data_o => dd_data_o_s,
         data_valid_o => dd_data_valid_o_s,
         data_fully_read_o => dd_data_fully_read_s,
+        rdy_o => dd_rd_o_s,
         data_i => dd_data_i_r,
         clk_i => clk_i,
         data_valid_i => dd_data_valid_i_r,
@@ -160,28 +166,20 @@ begin
         reset_i => reset_i
     );
 
-    -- input TM Frame to Buffer
-    input_tm_frame: process(clk_i) is
+    input_valid: process(clk_i) is
     begin
-        if (reset_i = '0') then 
-            tm_frame_buffer_counter_r <= 0;
-            -- it is intentional, that the tm_frame_buffer_r is not cleared on reset, because the block ram can not be reseted. Reset behavior is achieved by resetting the tm_frame_buffer_counter_r and tm_frame_data_index_r.
+        if (reset_i = '0') then
+            input_data_valid_r <= '0';
         else
             if rising_edge(clk_i) then
-                if data_valid_i = '1' then
-                    tm_frame_buffer_r(tm_frame_buffer_counter_r) <= data_i;
-                    tm_frame_buffer_counter_r <= tm_frame_buffer_counter_r + 1;
-                    if tm_frame_buffer_counter_r = TM_FRAME_BUFFER_SIZE_OCTET - 1 then
-                        tm_frame_buffer_counter_r <= 0;
-                    end if;
-                end if;
+                input_data_valid_r <= not fifo_empty_i;
             end if;
         end if;
-    end process input_tm_frame;
+    end process input_valid;
 
     tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
 
-    tm_frame_input_count: process(clk_i) is
+    tm_frame_header_decode: process(clk_i) is
     begin
         if (reset_i = '0') then
             tm_frame_data_valid_r <= false;
@@ -193,7 +191,8 @@ begin
                 if tm_frame_data_finished_output_r then
                     tm_frame_data_valid_r <= false;
                 end if;
-                if data_valid_i = '1' then
+                if input_data_valid_r = '1' then
+                    tm_frame_buffer_r(tm_frame_octet_counter_r) <= data_i;
                     tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                     if tm_frame_octet_counter_r = TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1 then
                         -- finished buffering full frame
@@ -205,7 +204,7 @@ begin
                         header_data_r(39 downto 32) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 4) mod TM_FRAME_BUFFER_SIZE_OCTET));
                         header_data_r(47 downto 40) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 5) mod TM_FRAME_BUFFER_SIZE_OCTET));
                         -- set control signals
-                        next_tm_frame_buffer_start_index_r <= (tm_frame_buffer_counter_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET;
+                        next_tm_frame_buffer_start_index_r <= (tm_frame_octet_counter_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET;
                         tm_frame_buffer_start_index_r <= next_tm_frame_buffer_start_index_r;
                         tm_frame_octet_counter_r <= 0;
                         tm_frame_data_valid_r <= true;
@@ -213,12 +212,17 @@ begin
                 end if;
             end if;
         end if;
-    end process tm_frame_input_count;
+    end process tm_frame_header_decode;
+
+    rdy_o <=
+        '0' when reset_i = '0' else
+        '1' when dd_rd_o_s = '1' else
+        '0';
 
 
     tm_frame_data_enable_output_s <= 
         false when reset_i = '0' else
-        true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' else
+        true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' and dd_rd_o_s = '1' else
         false when is_oid_flag_s = '1' else
         false;
 
@@ -230,20 +234,25 @@ begin
             dd_data_valid_i_r <= '0';
             tm_frame_data_finished_output_r <= false;
             tm_frame_data_field_index_r <= 0;
+            output_state_r <= output_packet_data;
         else
             if rising_edge(clk_i) then
-                if tm_frame_data_enable_output_s then
-                    dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
-                    dd_data_valid_i_r <= '1';
-                    tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
-                    if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-                        tm_frame_data_field_index_r <= 0;
-                        tm_frame_data_finished_output_r <= true;
-                    end if;
-                else
-                    dd_data_valid_i_r <= '0';
-                    tm_frame_data_finished_output_r <= false;
-                end if;
+                case output_state_r is
+                    when output_packet_data =>
+                        if tm_frame_data_enable_output_s then
+                            dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
+                            dd_data_valid_i_r <= '1';
+                            tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
+                            if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
+                                tm_frame_data_field_index_r <= 0;
+                                tm_frame_data_finished_output_r <= true;
+                                output_state_r <= output_packet_data;
+                            end if;
+                        else
+                            dd_data_valid_i_r <= '0';
+                            tm_frame_data_finished_output_r <= false;
+                        end if;
+                end case;
             end if;
         end if;
     end process output_tm_frame;
