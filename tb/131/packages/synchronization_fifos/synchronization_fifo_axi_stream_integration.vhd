@@ -4,6 +4,7 @@
 -- Author : Lukas Reil 
 -- Project Name : HW/SW Project TM
 -- Description : Integration of the synchronization FIFOs with AXI Stream as input and output interface.
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

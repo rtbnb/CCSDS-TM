@@ -4,6 +4,7 @@
 -- Author : Robin Eilers, Nico Tunkowski
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for the integration of 132 encoder > 131 encoder > 131 decoder > 132 decoder
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;

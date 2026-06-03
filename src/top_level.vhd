@@ -1,3 +1,5 @@
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;

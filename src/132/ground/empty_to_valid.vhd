@@ -4,6 +4,7 @@
 -- Author : Nico Tunkowski
 -- Project Name : HW/SW Project TM
 -- Description : Empty to Valid Flag Converter
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;
