@@ -14,7 +14,7 @@ use ieee.numeric_std.all;
 entity master_channel_demultiplexer is
     generic (
         -- create this generic for every master channel
-        master_channel_1_id_g: std_logic_vector(11 downto 0);
+        master_channel_1_id_g: std_logic_vector(11 downto 0) := "000000000000"
     );
     port (
         -- inputs
@@ -22,13 +22,22 @@ entity master_channel_demultiplexer is
         clk_i: in std_logic;
         data_valid_i: in std_logic;
         reset_i: in std_logic;
+        rdy_vc1_i: in std_logic;
 
         master_channel_id_i: in std_logic_vector(11 downto 0);
 
+        virtual_channel_id_i: in std_logic_vector(2 downto 0);
+        new_frame_i: in std_logic;
+        first_header_pointer_i: in std_logic_vector(10 downto 0);
+
         -- outputs
         -- create these outputs for every master channel
-        data_mc_1_o: out std_logic_vector(7 downto 0);
-        data_valid_mc_1_o: out std_logic
+        data_mc1_o: out std_logic_vector(7 downto 0);
+        data_valid_mc1_o: out std_logic;
+        virtual_channel_id_mc1_o: out std_logic_vector(2 downto 0);
+        new_frame_mc1_o: out std_logic;
+        first_header_pointer_mc1_o: out std_logic_vector(10 downto 0);
+        rdy_o: out std_logic
     );
 
 end entity master_channel_demultiplexer;
@@ -37,22 +46,19 @@ architecture behavioral of master_channel_demultiplexer is
 
 begin
 
-    demultiplexer: process is
-    begin
-        if reset_i = '0' then
-            data_valid_o <= 0;
-            data_mc_1_o <= x"00";
-        else
-            case master_channel_id_i
-                -- create this case for every master channel
-                when master_channel_1_id_g =>
-                    data_mc_1_o <= data_i;
-                    data_valid_mc_1_o <= data_valid_i;
-                when others =>
-                    data_valid_o <= 0;
-                    data_mc_1_o <= x"00";
-            end case;
-        end if;
-    end process demultiplexer;
+    rdy_o <= rdy_vc1_i;
+    first_header_pointer_mc1_o <= first_header_pointer_i;
+    new_frame_mc1_o <= new_frame_i;
+    virtual_channel_id_mc1_o <= virtual_channel_id_i;
+
+    -- for every master channel
+    data_valid_mc1_o <= 
+        '0' when reset_i = '0' else
+        data_valid_i when master_channel_1_id_g = master_channel_id_i else
+        '0';
+    data_mc1_o <= 
+        x"00" when reset_i = '0' else  
+        data_i when master_channel_1_id_g = master_channel_id_i else
+        x"00";
 
 end architecture behavioral;

@@ -14,7 +14,7 @@ use ieee.numeric_std.all;
 entity virtual_channel_demultiplexer is
     generic (
         -- create this generic for every master channel
-        virtual_channel_1_id_g: std_logic_vector(2 downto 0);
+        virtual_channel_1_id_g: std_logic_vector(2 downto 0) := "000"
     );
     port (
         -- inputs
@@ -24,11 +24,20 @@ entity virtual_channel_demultiplexer is
         reset_i: in std_logic;
 
         virtual_channel_id_i: in std_logic_vector(2 downto 0);
+        new_frame_i: in std_logic;
+        first_header_pointer_i: in std_logic_vector(10 downto 0);
+
+        -- data decoder ready input
+        rdy_vc1_i: in std_logic;
 
         -- outputs
-        -- create these outputs for every master channel
-        data_mc_1_o: out std_logic_vector(7 downto 0);
-        data_valid_mc_1_o: out std_logic
+        -- create these outputs for every virtual channel
+        data_vc_1_o: out std_logic_vector(7 downto 0);
+        data_valid_vc_1_o: out std_logic;
+        new_frame_vc1_o: out std_logic;
+        first_header_pointer_vc1_o: out std_logic_vector(10 downto 0);
+
+        rdy_o: out std_logic := '0'
     );
 
 end entity virtual_channel_demultiplexer;
@@ -37,22 +46,19 @@ architecture behavioral of virtual_channel_demultiplexer is
 
 begin
 
-    demultiplexer: process is
-    begin
-        if reset_i = '0' then
-            data_valid_o <= 0;
-            data_mc_1_o <= x"00";
-        else
-            case virtual_channel_id_i
-                -- create this case for every master channel
-                when virtual_channel_1_id_g =>
-                    data_mc_1_o <= data_i;
-                    data_valid_mc_1_o <= data_valid_i;
-                when others =>
-                    data_valid_o <= 0;
-                    data_mc_1_o <= x"00";
-            end case;
-        end if;
-    end process demultiplexer;
+    rdy_o <= rdy_vc1_i;
+
+    new_frame_vc1_o <= new_frame_i;
+    first_header_pointer_vc1_o <= first_header_pointer_i;
+
+    data_valid_vc_1_o <=
+        '0' when reset_i = '0' else
+        data_valid_i when virtual_channel_id_i = virtual_channel_1_id_g else
+        '0';
+    data_vc_1_o <= 
+        x"00" when reset_i = '0' else    
+        data_i when virtual_channel_id_i = virtual_channel_1_id_g else
+        x"00";
+
 
 end architecture behavioral;

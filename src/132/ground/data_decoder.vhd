@@ -18,7 +18,7 @@ entity data_decoder is
 
     port (
         -- outputs
-        data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
+        data_o: out std_logic_vector(31 downto 0) := x"00000000"; -- to axi stream entity
         data_valid_o: out std_logic := '0';
         data_fully_read_o: out std_logic := '0';
         rdy_o: out std_logic := '1';

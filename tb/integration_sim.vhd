@@ -25,8 +25,8 @@ architecture behavioral of integration_sim is
             ready_o_0 : out std_logic;
             reset_i_0 : in std_logic;
             spacecraft_id_i_0 : in std_logic_vector ( 9 downto 0 );
-            tm_data_field_o_0 : out std_logic_vector ( 31 downto 0 );
-            tm_data_field_valid_o_0 : out std_logic;
+            tm_data_field_vc1_o_0 : out std_logic_vector ( 31 downto 0 );
+            tm_data_field_valid_vc1_o_0 : out std_logic;
             transfer_frame_version_number_i_0 : in std_logic_vector ( 1 downto 0 )   
         );
     end component system_integration_wrapper;
@@ -81,8 +81,8 @@ begin
         clk_i_0 => clk_s,
         ready_o_0 => test_input_ready_s,
         reset_i_0 => reset_s,
-        tm_data_field_o_0 => tm_data_field_s,
-        tm_data_field_valid_o_0 => tm_data_field_valid_s,
+        tm_data_field_vc1_o_0 => tm_data_field_s,
+        tm_data_field_valid_vc1_o_0 => tm_data_field_valid_s,
         transfer_frame_version_number_i_0 => transfer_frame_version_number_s,
         spacecraft_id_i_0 => spacecraft_id_s
     );
@@ -112,8 +112,8 @@ begin
     
     general_settings: process begin
         reset_s <= '1';
-        transfer_frame_version_number_s <= "11";
-        spacecraft_id_s <= "0000000001";
+        transfer_frame_version_number_s <= "00";
+        spacecraft_id_s <= "0000000000";
         wait;
     end process general_settings;
 
