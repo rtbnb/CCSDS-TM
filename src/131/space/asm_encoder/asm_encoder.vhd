@@ -84,6 +84,7 @@ begin
                 if counter_r = 32 then 
                     counter_r       <= 0;
                     generate_asm_r    <= '0';
+                    s_tready_r    <=  m_axi_tready;
                 end if; -- counter logic 
             end if; -- asm counter 
         
