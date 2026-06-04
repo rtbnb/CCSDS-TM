@@ -109,8 +109,8 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
     signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
-    type output_state_t is (output_packet_data);
-    signal output_state_r: output_state_t := output_packet_data;
+    type output_state_t is (output_idle, output_packet_data);
+    signal output_state_r: output_state_t := output_idle;
     signal input_data_valid_r: std_logic := '0';
 
     -- header decoder
@@ -241,33 +241,35 @@ begin
             dd_data_valid_i_r <= '0';
             tm_frame_data_finished_output_r <= false;
             tm_frame_data_field_index_r <= 0;
-            output_state_r <= output_packet_data;
+            output_state_r <= output_idle;
             dd_tm_frame_first_header_pointer_s <= (others => '0');
             dd_new_frame_s <= '0';
         else
             if rising_edge(clk_i) then
                 dd_new_frame_s <= '0';
                 case output_state_r is
-                    when output_packet_data =>
+                    when output_idle =>
+                        dd_data_valid_i_r <= '0';
+                        tm_frame_data_finished_output_r <= false;
                         if tm_frame_data_enable_output_s then
-                            if tm_frame_data_field_index_r = 0 then
-                                if synch_flag_s = '0' then
-                                    dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
-                                    dd_new_frame_s <= '1';
-                                else
-                                    dd_tm_frame_first_header_pointer_s <= (others => '0');
-                                    dd_new_frame_s <= '0';
-                                end if;
+                            if synch_flag_s = '0' then
+                                dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
+                                dd_new_frame_s <= '1';
                             else
+                                dd_tm_frame_first_header_pointer_s <= (others => '0');
                                 dd_new_frame_s <= '0';
                             end if;
+                            output_state_r <= output_packet_data;
+                        end if;
+                    when output_packet_data =>
+                        if tm_frame_data_enable_output_s then
                             dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
                             dd_data_valid_i_r <= '1';
                             tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
                             if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
                                 tm_frame_data_field_index_r <= 0;
                                 tm_frame_data_finished_output_r <= true;
-                                output_state_r <= output_packet_data;
+                                output_state_r <= output_idle;
                             end if;
                         else
                             dd_data_valid_i_r <= '0';
@@ -278,7 +280,7 @@ begin
         end if;
     end process output_tm_frame;
 
-    dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
+    --dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
     tm_data_field_valid_o <= 
         '0' when reset_i = '0' 
         else dd_data_valid_o_s;
