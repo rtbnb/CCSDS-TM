@@ -83,6 +83,7 @@ elsif rising_edge(clk_i) then
            output_data_r <= '0';
            counter_r <= 0;
            m_axi_tlast <= m_tlast;
+           s_tready_r      <= m_axi_tready;
         end if; 
         
     elsif s_axi_datavalid_r = '1' then 
@@ -92,7 +93,7 @@ elsif rising_edge(clk_i) then
         output_data_r               <= '1'; 
         m_tlast                     <= s_axi_tlast;
         m_axi_tdata                 <= s_axi_tdata (8-counter_r-1);
-        m_tvalid_r <= '1';
+        m_tvalid_r                  <= '1';
         
         
     end if;   
