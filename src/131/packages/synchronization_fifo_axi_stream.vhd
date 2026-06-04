@@ -28,7 +28,8 @@ entity synchronization_fifo_axi_stream is
         m_axis_aresetn : in  std_logic;
         m_axis_tvalid : out std_logic;
         m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        m_axis_tready : in  std_logic
+        m_axis_tready : in  std_logic;
+        m_axis_tlast  : out std_logic
     );
 end entity synchronization_fifo_axi_stream;
 
@@ -80,5 +81,6 @@ begin
     end process read_process;
 
     m_axis_tdata <= fifo_data_out_r;
+    m_axis_tlast <= '1';
     
 end architecture behavioral;
