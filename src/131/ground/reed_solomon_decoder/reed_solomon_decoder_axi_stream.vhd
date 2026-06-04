@@ -68,7 +68,7 @@ begin
             s_tready_s <= '0';
             m_axi_tdata <= x"00";
             m_axi_tlast     <= '0';
-            asm_done_r <= '0';
+            asm_done_r <= '1';
             fifo_data_valid_r <= '0';
     
         elsif rising_edge(clk_i) then 
