@@ -28,26 +28,32 @@ component data_decoder is
         data_fully_read_o: out std_logic := '0';
         rdy_o: out std_logic := '1';
 
+        packet_header_err_o: out std_logic := '0';
+
         -- inputs
         data_i: in std_logic_vector(7 downto 0);
         clk_i: in std_logic; -- "8 Bit" x4 clock
         data_valid_i: in std_logic := '0';
         tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
+        new_frame_i: in std_logic := '0';
         reset_i: in std_logic
 	);
 end component data_decoder;
 
     constant MAX_SPACE_PACKET_SIZE_OCTET: integer := 256;
+    constant SPACE_PACKET_HEADER_SIZE: integer := 6;
     constant CLK_PERIOD: time := 5 ns;
 
     signal rdy_s: std_logic;
     signal data_o_s: std_logic_vector(31 downto 0) := (others => '0');
     signal data_valid_o_s: std_logic := '0';
     signal data_fully_read_s: std_logic := '0';
+    signal packet_header_err_s: std_logic := '0';
     signal data_i_s: std_logic_vector(7 downto 0) := (others => '0');
     signal clk_s: std_logic := '0';
     signal data_valid_i_s: std_logic := '0';
     signal tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
+    signal new_frame_s: std_logic := '0';
     signal reset_s: std_logic := '1';
 
     type space_packet_t is array (MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 0) of std_logic_vector(7 downto 0);
@@ -59,7 +65,7 @@ end component data_decoder;
     
     -- validation process
     signal test_data_ptr: integer := 0;
-    type test_data_state_t is (max_size_space_packet, max_size_idle_space_packet);
+    type test_data_state_t is (max_size_space_packet, max_size_idle_space_packet, max_size_space_packet_split_header, max_size_space_packet_split_data, max_size_idle_space_packet_split_data, max_size_space_packet_mismatch, max_size_idle_space_packet_mismatch);
     signal test_data_state: test_data_state_t := max_size_space_packet;
     signal validate_data_state: test_data_state_t := max_size_space_packet;
 begin
@@ -69,10 +75,12 @@ EUT: data_decoder port map (
     data_o => data_o_s,
     data_valid_o => data_valid_o_s,
     data_fully_read_o => data_fully_read_s,
+    packet_header_err_o => packet_header_err_s,
     data_i => data_i_s,
     clk_i => clk_s,
     data_valid_i => data_valid_i_s,
     tm_frame_first_header_pointer_i => tm_frame_first_header_pointer_s,
+    new_frame_i => new_frame_s,
     reset_i => reset_s
 );
 
@@ -102,6 +110,7 @@ data_input: process is
 begin
     wait for CLK_PERIOD;
     if rdy_s = '1' then
+        new_frame_s <= '0';
         case test_data_state is
             when max_size_space_packet =>
                 data_i_s <= max_size_space_packet_s(wr_ptr);
@@ -115,6 +124,72 @@ begin
                 data_i_s <= max_size_idle_space_packet_s(wr_ptr);
                 data_valid_i_s <= '1';
                 wr_ptr <= wr_ptr + 1;
+                if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                    wr_ptr <= 0;
+                    test_data_state <= max_size_space_packet_split_header;
+                end if;
+            when max_size_space_packet_split_header =>
+                data_i_s <= max_size_space_packet_s(wr_ptr);
+                data_valid_i_s <= '1';
+                wr_ptr <= wr_ptr + 1;
+                if wr_ptr = 1 then
+                    tm_frame_first_header_pointer_s <= std_logic_vector(to_unsigned(MAX_SPACE_PACKET_SIZE_OCTET - 1, 11));
+                    new_frame_s <= '1';
+                end if;
+                if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                    wr_ptr <= 0;
+                    test_data_state <= max_size_space_packet_split_data;
+                end if;
+            when max_size_space_packet_split_data =>
+                data_i_s <= max_size_space_packet_s(wr_ptr);
+                data_valid_i_s <= '1';
+                wr_ptr <= wr_ptr + 1;
+                if wr_ptr = 100 then
+                    tm_frame_first_header_pointer_s <= std_logic_vector(to_unsigned(MAX_SPACE_PACKET_SIZE_OCTET - 100 - 1, 11));
+                    new_frame_s <= '1';
+                end if;
+                if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                    wr_ptr <= 0;
+                    test_data_state <= max_size_idle_space_packet_split_data;
+                end if;
+            when max_size_idle_space_packet_split_data =>
+                data_i_s <= max_size_idle_space_packet_s(wr_ptr);
+                data_valid_i_s <= '1';
+                wr_ptr <= wr_ptr + 1;
+                if wr_ptr = 100 then
+                    tm_frame_first_header_pointer_s <= std_logic_vector(to_unsigned(MAX_SPACE_PACKET_SIZE_OCTET - 100 - 1, 11));
+                    new_frame_s <= '1';
+                end if;
+                if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                    wr_ptr <= 0;
+                    test_data_state <= max_size_space_packet_mismatch;
+                end if;
+            when max_size_space_packet_mismatch =>
+                data_i_s <= max_size_space_packet_s(wr_ptr);
+                data_valid_i_s <= '1';
+                wr_ptr <= wr_ptr + 1;
+                if wr_ptr = 100 then
+                    tm_frame_first_header_pointer_s <= std_logic_vector(to_unsigned(0, 11));
+                    new_frame_s <= '1';
+                    wr_ptr <= 1;
+                    data_i_s <= max_size_space_packet_s(0);
+                    test_data_state <= max_size_idle_space_packet_mismatch;
+                end if;
+                if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
+                    wr_ptr <= 0;
+                    test_data_state <= max_size_idle_space_packet_mismatch;
+                end if;
+            when max_size_idle_space_packet_mismatch =>
+                data_i_s <= max_size_idle_space_packet_s(wr_ptr);
+                data_valid_i_s <= '1';
+                wr_ptr <= wr_ptr + 1;
+                if wr_ptr = 100 then
+                    tm_frame_first_header_pointer_s <= std_logic_vector(to_unsigned(0, 11));
+                    new_frame_s <= '1';
+                    wr_ptr <= 1;
+                    data_i_s <= max_size_space_packet_s(0);
+                    test_data_state <= max_size_space_packet;
+                end if;
                 if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
                     wr_ptr <= 0;
                     test_data_state <= max_size_space_packet;
