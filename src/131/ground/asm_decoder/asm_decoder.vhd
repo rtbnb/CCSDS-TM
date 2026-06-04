@@ -39,7 +39,7 @@ architecture behavioral of asm_decoder is
 -- shift register to detect asm in 
 signal shift_register_r : std_logic_vector(32 downto 0) := (others => '0');     
 -- counter 
-signal counter_r        : integer range 0 to FRAME_LENGTH := 0;
+signal counter_r        : integer range 0 to FRAME_LENGTH + 33 := 0;
 -- flags for datavalid state 
 signal s_axi_datavalid_r    : std_logic := '0';
 signal m_axi_datavalid_r    : std_logic := '0';
