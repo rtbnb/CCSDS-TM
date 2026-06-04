@@ -55,7 +55,7 @@ architecture behavioral of integration_sim is
 
     -- automatic testbench
     constant WORDS_PER_FRAME: integer := 510;
-    constant MAX_SPACE_PACKET_SIZE_OCTET: integer := 256;
+    constant MAX_SPACE_PACKET_SIZE_OCTET: integer := 255;
 
     type space_packet_t is array (MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 0) of std_logic_vector(7 downto 0);
     signal max_size_space_packet_s: space_packet_t := (others => (others => '0'));
@@ -92,7 +92,7 @@ begin
         max_size_space_packet_s(1) <= x"00";
         max_size_space_packet_s(2) <= x"00";
         max_size_space_packet_s(3) <= x"00";
-        max_size_space_packet_s(4) <= x"f9"; -- 249 Data Octets
+        max_size_space_packet_s(4) <= x"f8"; -- 249 Data Octets
         max_size_space_packet_s(5) <= x"00";
         for i in 6 to MAX_SPACE_PACKET_SIZE_OCTET - 1 loop
             max_size_space_packet_s(i) <= std_logic_vector(to_unsigned(i, 8));
@@ -105,7 +105,7 @@ begin
     max_size_idle_space_packet_s(1) <= x"FF";
     max_size_idle_space_packet_s(2) <= x"00";
     max_size_idle_space_packet_s(3) <= x"00";
-    max_size_idle_space_packet_s(4) <= x"f9"; -- 249 Data Octets
+    max_size_idle_space_packet_s(4) <= x"f8"; -- 249 Data Octets
     max_size_idle_space_packet_s(5) <= x"00";
     max_size_idle_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 6) <= (others => x"00");
 
@@ -161,19 +161,15 @@ begin
         case validate_data_state is
             when max_size_space_packet =>
                 if tm_data_field_valid_s = '1' then
-                    assert (tm_data_field_s(7 downto 0) = max_size_space_packet_s(test_data_ptr + 0))
+                    assert (tm_data_field_s(7 downto 0) = max_size_space_packet_s((test_data_ptr + 0) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 0" severity failure;
-                    assert (tm_data_field_s(15 downto 8) = max_size_space_packet_s(test_data_ptr + 1))
+                    assert (tm_data_field_s(15 downto 8) = max_size_space_packet_s((test_data_ptr + 1) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 1" severity failure;
-                    assert (tm_data_field_s(23 downto 16) = max_size_space_packet_s(test_data_ptr + 2))
+                    assert (tm_data_field_s(23 downto 16) = max_size_space_packet_s((test_data_ptr + 2) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 2" severity failure;
-                    assert (tm_data_field_s(31 downto 24) = max_size_space_packet_s(test_data_ptr + 3))
+                    assert (tm_data_field_s(31 downto 24) = max_size_space_packet_s((test_data_ptr + 3) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 3" severity failure;
-                    test_data_ptr <= test_data_ptr + 4;
-                    if test_data_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 4 then
-                        test_data_ptr <= 0;
-                        validate_data_state <= max_size_space_packet;
-                    end if;
+                    test_data_ptr <= (test_data_ptr + 4) mod MAX_SPACE_PACKET_SIZE_OCTET;
                 end if;
             when others =>
                 validate_data_state <= max_size_space_packet;
