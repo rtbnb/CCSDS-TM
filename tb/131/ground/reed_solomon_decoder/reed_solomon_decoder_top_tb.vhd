@@ -51,13 +51,13 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
 begin
 
-    dut_enccoder : entity work.ccsds_axi_int_wrapper
+    dut_enccoder : entity work.asm_pr_debug_wrapper
         port map(
         clk_i_0 => clk_r,
-        m_axi_tdata_0 => decoder_m_axi_tdata_r,
-        m_axi_tlast_0 => decoder_m_axi_tlast_r,
-        m_axi_tready_0 => decoder_m_axi_tready_r,
-        m_axi_tvalid_0 => decoder_m_axi_tvalid_r,
+        m_axis_tdata_0 => decoder_m_axi_tdata_r,
+        m_axis_tlast_0 => decoder_m_axi_tlast_r,
+        m_axis_tready_0 => decoder_m_axi_tready_r,
+        m_axis_tvalid_0 => decoder_m_axi_tvalid_r,
         reed_solomon_failure_o_0 => reed_solomon_failure_r,
         rst_i_0 => reset_r,
         s_axi_tdata_0 => encoder_s_axi_tdata_r,
