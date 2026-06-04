@@ -67,7 +67,7 @@ begin
         -- reset axi signals 
         m_tvalid_r        <= '0';
         s_tready_r        <= '0';
-        
+        generate_asm_r    <= '0';
     elsif rising_edge(clk_i) then
         -- reset data valid flags 
         s_tready_r    <=  m_axi_tready;
