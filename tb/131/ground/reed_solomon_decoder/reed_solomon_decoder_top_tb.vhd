@@ -40,19 +40,8 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     signal encoder_s_axi_tvalid_r    :  std_logic; 
     signal encoder_s_axi_tready_r    :  std_logic;
     signal encoder_s_axi_tdata_r     :  std_logic_vector(7 downto 0);
-    signal encoder_s_axi_tlast_r     :  std_logic;
-    
-    -- axi outputs from encoder
-    signal encoder_m_axi_tvalid_r    : std_logic; 
-    signal encoder_m_axi_tready_r    : std_logic;
-    signal encoder_m_axi_tdata_r     : std_logic;
-    signal encoder_m_axi_tlast_r     : std_logic;
-    
-    -- axi inputs to decoder 
-    signal decoder_s_axi_tvalid_r    : std_logic; 
-    signal decoder_s_axi_tready_r    : std_logic;
-    signal decoder_s_axi_tdata_r     : std_logic;
-    signal decoder_s_axi_tlast_r     : std_logic;
+    signal encoder_s_axi_tlast_r     :  std_logic := '0';
+   
     
     -- axi outputs from decoder
     signal decoder_m_axi_tvalid_r    : std_logic; 
@@ -62,48 +51,27 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     
 begin
 
-    dut_enccoder : entity work.axi_ccsds_131_space
-    port map (
-        clk_i   => clk_r,
-        rst_i   => reset_r,
-        
-        -- axi inputs 
-        s_axi_tvalid    => encoder_s_axi_tvalid_r,
-        s_axi_tready    => encoder_s_axi_tready_r,
-        s_axi_tdata     => encoder_s_axi_tdata_r,
-        s_axi_tlast     => encoder_s_axi_tlast_r,
-
-        -- axi outputs
-        m_axi_tvalid    => encoder_m_axi_tvalid_r,
-        m_axi_tready    => encoder_m_axi_tready_r,
-        m_axi_tdata     => encoder_m_axi_tdata_r
-    );
-
-    dut_decoder : entity work.axi_ccsds_131_ground
-    port map (
-        clk_i   => clk_r,
-        rst_i   => reset_r,
-        reed_solomon_failure_o => reed_solomon_failure_r,
-
-        -- axi inputs 
-        s_axi_tvalid    => decoder_s_axi_tvalid_r,
-        s_axi_tready    => decoder_s_axi_tready_r,
-        s_axi_tdata     => decoder_s_axi_tdata_r,
-
-        -- axi outputs
-        m_axi_tvalid    => decoder_m_axi_tvalid_r,
-        m_axi_tready    => decoder_m_axi_tready_r,
-        m_axi_tdata     => decoder_m_axi_tdata_r,
-        m_axi_tlast     => decoder_m_axi_tlast_r
+    dut_enccoder : entity work.asm_pr_debug_wrapper
+        port map(
+        clk_i_0 => clk_r,
+        m_axi_tdata_0 => decoder_m_axi_tdata_r,
+        m_axi_tlast_0 => decoder_m_axi_tlast_r,
+        m_axi_tready_0 => decoder_m_axi_tready_r,
+        m_axi_tvalid_0 => decoder_m_axi_tvalid_r,
+        --reed_solomon_failure_o_0 => reed_solomon_failure_r,
+        reset_i_0 => reset_r,
+        s_axi_tdata_0 => encoder_s_axi_tdata_r,
+        s_axi_tlast_0 => encoder_s_axi_tlast_r,
+        s_axi_tready_0 => encoder_s_axi_tready_r,
+        s_axi_tvalid_0 => encoder_s_axi_tvalid_r
     );
            
     clk_r <= not clk_r after 5 ns;
     reset_r <= '1' after 100 ns;
+    encoder_s_axi_tlast_r <= '1' after 7600 ns, '0' after 7700 ns;
     
     decoder_m_axi_tready_r <= '1';
-    decoder_s_axi_tvalid_r <= encoder_m_axi_tvalid_r;
-    encoder_m_axi_tready_r <= decoder_s_axi_tready_r;
-    decoder_s_axi_tlast_r <= encoder_m_axi_tlast_r;
+--    decoder_s_axi_tlast_r <= encoder_m_axi_tlast_r;
     
 
     
@@ -122,34 +90,34 @@ begin
     end process data_valid_stimuli;
     
     -- only for test
-    new_random_data: process
-        variable seed1 : positive;
-        variable seed2 : positive;
-        variable x : real;
-        variable y : integer;
-    begin
-        if encoder_m_axi_tlast_r = '1' then
-            -- between 0 and 17 erros
-            uniform(seed1, seed2, x);
-            y := integer(floor(x * 17));
-            for n in 0 to y loop
-              uniform(seed1, seed2, x);
-              random_index_r(n) <= integer(floor(x * 255));
-              --random_index_r(n) <= n+10;
-            end loop;
+--    new_random_data: process
+--        variable seed1 : positive;
+--        variable seed2 : positive;
+--        variable x : real;
+--        variable y : integer;
+--    begin
+--        if encoder_m_axi_tlast_r = '1' then
+--            -- between 0 and 17 erros
+--            uniform(seed1, seed2, x);
+--            y := integer(floor(x * 17));
+--            for n in 0 to y loop
+--              uniform(seed1, seed2, x);
+--              random_index_r(n) <= integer(floor(x * 255));
+--              --random_index_r(n) <= n+10;
+--           end loop;
             
-            for n in y to 17 loop 
-                random_index_r(n) <= 257;
-            end loop;
+--            for n in y to 17 loop 
+--                random_index_r(n) <= 257;
+--            end loop;
             
-            for n in 0 to 17 loop
-              uniform(seed1, seed2, x);
-              random_error_mag_r(n) <= integer(floor(x * 255));
-            end loop;
-        end if;
-        wait for 10 ns;
+--            for n in 0 to 17 loop
+--              uniform(seed1, seed2, x);
+--              random_error_mag_r(n) <= integer(floor(x * 255));
+--            end loop;
+--        end if;
+--        wait for 10 ns;
     
-    end process new_random_data;
+--    end process new_random_data;
     
     
 --    decoder_s_axi_tdata_r <= std_logic_vector(TO_UNSIGNED(random_error_mag_r(0),8)) when input_value_r = random_index_r(0) else
@@ -170,7 +138,7 @@ begin
 --                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(15),8)) when input_value_r = random_index_r(15) else
 --                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(16),8)) when input_value_r = random_index_r(16) else
 --                           std_logic_vector(TO_UNSIGNED(random_error_mag_r(17),8)) when input_value_r = random_index_r(17) else
-decoder_s_axi_tdata_r <= encoder_m_axi_tdata_r;
+--decoder_s_axi_tdata_r <= encoder_m_axi_tdata_r;
 
     --sync_fifo_val_r <= output_byte_r  when  data_valid_decoder_r = '1' else
     --                    sync_fifo_val_r;          

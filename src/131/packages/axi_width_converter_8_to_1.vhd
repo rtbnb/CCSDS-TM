@@ -62,6 +62,7 @@ if reset_i = '0' then
     
 elsif rising_edge(clk_i) then 
     s_tready_r      <= m_axi_tready;
+    
     if m_axi_datavalid_r = '1' then
     -- written valid data  
         m_tvalid_r <= '0';
@@ -77,6 +78,7 @@ elsif rising_edge(clk_i) then
         m_axi_tdata <= data_register_r (8-counter_r-1);
         m_tvalid_r <= '1';
         s_tready_r <= '0';
+        
         if counter_r = 7 then 
            output_data_r <= '0';
            counter_r <= 0;
@@ -91,6 +93,8 @@ elsif rising_edge(clk_i) then
         m_tlast                     <= s_axi_tlast;
         m_axi_tdata                 <= s_axi_tdata (8-counter_r-1);
         m_tvalid_r <= '1';
+        
+        
     end if;   
 end if; 
 
