@@ -66,7 +66,7 @@ architecture behavioral of data_decoder is
     signal packet_input_valid_s: boolean := false;
     signal packet_input_en_r: boolean := true;
     signal packet_length_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
-    signal first_header_point_packet_size_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
+    signal first_header_pointer_packet_size_s: integer range 0 to PACKET_MAX_SIZE_OCTET := 0;
     signal use_first_header_pointer_size_s: boolean := false;
 
     -- data output
@@ -129,7 +129,7 @@ begin
                                     packet_state_r <= packet_header;
                                 else
                                     -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
-                                    first_header_point_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
+                                    first_header_pointer_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
                                     use_first_header_pointer_size_s <= true;
                                     packet_state_r <= packet_data;
                                 end if;
@@ -149,16 +149,6 @@ begin
                     when packet_data =>
                         rdy_o <= '1';
                         if data_valid_i = '1' then
-                            if new_frame_i = '1' then
-                                -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
-                                if to_integer(unsigned(tm_frame_first_header_pointer_i)) = ((PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - input_octet_counter_r) then
-                                    packet_state_r <= packet_data;
-                                else
-                                    first_header_point_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
-                                    use_first_header_pointer_size_s <= true;
-                                    packet_state_r <= packet_idle;
-                                end if;
-                            end if;
                             input_octet_counter_r <= input_octet_counter_r + 1;
                             packet_data_r(input_octet_counter_r) <= data_i;
                             if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
@@ -170,10 +160,42 @@ begin
                                 input_octet_counter_r <= 0;
                                 packet_output_en_r <= true;
                             end if;
+                            if new_frame_i = '1' then
+                                -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
+                                if to_integer(unsigned(tm_frame_first_header_pointer_i)) + 1 = ((PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - (input_octet_counter_r)) then
+                                    packet_state_r <= packet_data;
+                                else
+                                    first_header_pointer_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
+                                    use_first_header_pointer_size_s <= true;
+                                    if input_octet_counter_r = to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r then
+                                        input_octet_counter_r <= 1;
+                                        packet_state_r <= packet_header;
+                                        packet_data_r(0) <= data_i;
+                                    else
+                                        packet_state_r <= packet_idle;
+                                    end if;
+                                end if;
+                            end if;
                         end if;
                     when packet_idle =>
                         rdy_o <= '1';
                         if data_valid_i = '1' then
+                             if new_frame_i = '1' then
+                                -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
+                                if to_integer(unsigned(tm_frame_first_header_pointer_i)) + 1 = ((PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - (input_octet_counter_r)) then
+                                    packet_state_r <= packet_idle;
+                                else
+                                    first_header_pointer_packet_size_s <= to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r;
+                                    use_first_header_pointer_size_s <= true;
+                                    if input_octet_counter_r = to_integer(unsigned(tm_frame_first_header_pointer_i)) + input_octet_counter_r then
+                                        input_octet_counter_r <= 1;
+                                        packet_state_r <= packet_header;
+                                        packet_data_r(0) <= data_i;
+                                    else
+                                        packet_state_r <= packet_idle;
+                                    end if;
+                                end if;
+                            end if;
                             input_octet_counter_r <= input_octet_counter_r + 1;
                             if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
                                 rdy_o <= '0';
@@ -211,7 +233,7 @@ begin
 
     packet_length_s <= 
         to_integer(unsigned(header_packet_length_s)) + 1 when use_first_header_pointer_size_s = false else -- packet length in header is packet data size - 1, so add 1 to get actual packet data size
-        first_header_point_packet_size_s;
+        first_header_pointer_packet_size_s;
     packet_size_calculation: process(packet_length_s)
     begin
         if packet_length_s < PACKET_MAX_SIZE_OCTET - PACKET_HEADER_SIZE_OCTET then
