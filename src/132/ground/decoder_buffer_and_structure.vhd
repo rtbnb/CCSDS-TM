@@ -228,7 +228,7 @@ begin
                 new_frame_o <= '0';
                 case output_state_r is
                     when output_idle =>
-                        dd_data_valid_i_r <= '0';
+                        space_packet_data_valid_r <= '0';
                         tm_frame_data_finished_output_r <= false;
                         if tm_frame_data_enable_output_s then
                             if synch_flag_s = '0' then
