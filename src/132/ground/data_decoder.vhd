@@ -180,7 +180,17 @@ begin
                     when packet_idle =>
                         rdy_o <= '1';
                         if data_valid_i = '1' then
-                             if new_frame_i = '1' then
+                            input_octet_counter_r <= input_octet_counter_r + 1;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
+                                rdy_o <= '0';
+                            end if;
+                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                                rdy_o <= '0';
+                                packet_state_r <= packet_header;
+                                input_octet_counter_r <= 0;
+                                packet_output_en_r <= false;
+                            end if;
+                            if new_frame_i = '1' then
                                 -- if new frame present, compare first header pointer with remaining length -> mismatch -> discard data until next packet header
                                 if to_integer(unsigned(tm_frame_first_header_pointer_i)) + 1 = ((PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - (input_octet_counter_r)) then
                                     packet_state_r <= packet_idle;
@@ -195,16 +205,6 @@ begin
                                         packet_state_r <= packet_idle;
                                     end if;
                                 end if;
-                            end if;
-                            input_octet_counter_r <= input_octet_counter_r + 1;
-                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 2 then
-                                rdy_o <= '0';
-                            end if;
-                            if input_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
-                                rdy_o <= '0';
-                                packet_state_r <= packet_header;
-                                input_octet_counter_r <= 0;
-                                packet_output_en_r <= false;
                             end if;
                         end if;
                     when packet_output =>
