@@ -4,6 +4,7 @@
 -- Author : Nico Tunkowski
 -- Project Name : HW/SW Project TM
 -- Description : CCSDS-132.0-B-3 Virtual Channel Demultiplexing Function
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;
