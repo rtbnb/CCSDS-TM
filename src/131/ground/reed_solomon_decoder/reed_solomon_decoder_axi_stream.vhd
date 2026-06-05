@@ -44,7 +44,7 @@ architecture behavioral of reed_solomon_decoder_axi_stream is
     signal m_axi_datavalid_s : std_logic := '0';
     
     signal m_tvalid_s : std_logic := '0';
-    signal s_tready_s : std_logic := '0';
+    signal s_tready_s : std_logic := '1';
     
     signal asm_done_r: std_logic := '0';
     signal output_from_fifo_r : std_logic := '1';
@@ -65,7 +65,7 @@ begin
         if reset_i ='0' then 
             -- reset signals 
             m_tvalid_s    <= '0';
-            s_tready_s <= '0';
+            s_tready_s <= '1';
             m_axi_tdata <= x"00";
             m_axi_tlast     <= '0';
             asm_done_r <= '1';
@@ -77,17 +77,17 @@ begin
           fifo_data_valid_r <= fifo_data_valid_r or rs_data_valid_out_i;
           --rs_data_valid_in_o <= '0';
     
-          s_tready_s    <=  m_axi_tready;
+          --s_tready_s    <=  m_axi_tready;
     
           -- reset data valid flags 
             if m_axi_datavalid_s = '1' then
                 m_tvalid_s        <= '0';
                 m_axi_tlast     <= '0';
-                s_tready_s        <= m_axi_tready;
+                s_tready_s        <= '1';
                 rs_data_valid_in_o <= '0';
             elsif output_from_fifo_r = '0' then
                 m_tvalid_s        <= '0';
-                s_tready_s        <= m_axi_tready;
+                s_tready_s        <= '1';
                 output_from_fifo_r <= '1';
                 rs_data_valid_in_o <= '0';
 

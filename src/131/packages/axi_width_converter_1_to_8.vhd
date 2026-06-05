@@ -68,7 +68,7 @@ elsif rising_edge(clk_i) then
     -- written valid data  
         m_tvalid_r      <= '0';
         m_tlast         <= '0';
-        s_tready_r      <= m_axi_tready;
+        s_tready_r      <= '1';
         --m_axi_tdata     <= data_register_r;
         counter_r       <= 0;
         

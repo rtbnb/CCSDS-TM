@@ -15,7 +15,7 @@ entity axi_ccsds_131_ground is
     -- m_axi signals 
     m_axi_tvalid    : out std_logic; 
     m_axi_tready    : in std_logic; 
-    m_axi_tdata     : out std_logic_vector(7 downto 0);
+    m_axi_tdata     : out std_logic_vector(31 downto 0);
     m_axi_tlast     : out std_logic
     );
 end axi_ccsds_131_ground;
@@ -46,6 +46,8 @@ signal    widthconvrt_axi_tready    : std_logic;
 signal    widthconvrt_axi_tdata     : std_logic_vector(7 downto 0); 
 signal    widthconvrt_axi_tlast     : std_logic;
 
+signal    reedsolomon_axi_tdata    : std_logic_vector(7 downto 0);
+signal    m_tvalid                  : std_logic; 
 
 begin
 
@@ -140,12 +142,16 @@ port map(
     s_axi_tlast     => widthconvrt_axi_tlast, 
 
     -- axi outputs
-    m_axi_tvalid    => m_axi_tvalid,
+    m_axi_tvalid    => m_tvalid,
     m_axi_tready    => m_axi_tready,
-    m_axi_tdata     => m_axi_tdata,
-    m_axi_tlast     => m_axi_tlast
+    m_axi_tdata     => reedsolomon_axi_tdata,
+    m_axi_tlast     => open
 );
 
+
+m_axi_tdata <= x"000000" & reedsolomon_axi_tdata;
+m_axi_tlast     <= m_tvalid;
+m_axi_tvalid    <= m_tvalid;
 
 
 end connectivity;
