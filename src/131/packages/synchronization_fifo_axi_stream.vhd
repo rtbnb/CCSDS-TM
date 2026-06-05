@@ -44,6 +44,7 @@ architecture behavioral of synchronization_fifo_axi_stream is
     signal full_s  : std_logic;
 
     signal fifo_data_out_r : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    signal tvalid_r : std_logic;
 begin
 
     empty_s <= '1' when wr_ptr_r = rd_ptr_r else '0';
@@ -68,19 +69,20 @@ begin
         if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
             fifo_data_out_r <= (others => '0');
-            m_axis_tvalid <= '0';
+            tvalid_r <= '0';
         elsif rising_edge(m_axis_aclk) then
             if m_axis_tready = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
                 rd_ptr_r <= (rd_ptr_r + 1) mod DEPTH;
-                m_axis_tvalid <= '1';
+                tvalid_r <= '1';
             else
-                m_axis_tvalid <= '0';
+                tvalid_r <= '0';
             end if;
         end if;
     end process read_process;
 
     m_axis_tdata <= fifo_data_out_r;
-    m_axis_tlast <= '1';
+    m_axis_tlast <= tvalid_r;
+    m_axis_tvalid <= tvalid_r;
     
 end architecture behavioral;

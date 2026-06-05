@@ -11,7 +11,7 @@ entity axi_ccsds_131_space is
     -- s_axi signals 
     s_axi_tvalid    : in std_logic; 
     s_axi_tready    : out std_logic; 
-    s_axi_tdata     : in std_logic_vector(7 downto 0); 
+    s_axi_tdata     : in std_logic_vector(31 downto 0); 
     s_axi_tlast     : in std_logic;
     -- m_axi signals 
     m_axi_tvalid    : out std_logic; 
@@ -59,7 +59,7 @@ reed_solomon_encoder_inst : entity work.reed_solomon_encoder
         -- axi inputs 
         s_axi_tvalid    => s_axi_tvalid,
         s_axi_tready    => s_axi_tready,
-        s_axi_tdata     => s_axi_tdata,
+        s_axi_tdata     => s_axi_tdata(7 downto 0),
         s_axi_tlast     => s_axi_tlast,
 
         -- axi outputs

@@ -38,14 +38,14 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     -- axi inputs to encoder
     signal encoder_s_axi_tvalid_r    :  std_logic; 
     signal encoder_s_axi_tready_r    :  std_logic;
-    signal encoder_s_axi_tdata_r     :  std_logic_vector(7 downto 0);
+    signal encoder_s_axi_tdata_r     :  std_logic_vector(31 downto 0);
     signal encoder_s_axi_tlast_r     :  std_logic := '0';
    
     
     -- axi outputs from decoder
     signal decoder_m_axi_tvalid_r    : std_logic; 
     signal decoder_m_axi_tready_r    : std_logic;
-    signal decoder_m_axi_tdata_r     : std_logic_vector(7 downto 0);
+    signal decoder_m_axi_tdata_r     : std_logic_vector(31 downto 0);
     signal decoder_m_axi_tlast_r     : std_logic;
     
 begin
@@ -65,8 +65,8 @@ begin
         s_axi_tvalid_0 => encoder_s_axi_tvalid_r
     );
            
-    clk_r <= not clk_r after 5 ns;
-    reset_r <= '1' after 100 ns;
+    clk_r <= not clk_r after 50 ns;
+    reset_r <= '1' after 500 ns;
     --encoder_s_axi_tlast_r <= '1' after 7600 ns, '0' after 7700 ns;
     
     decoder_m_axi_tready_r <= '1';
@@ -79,7 +79,7 @@ begin
         wait for 100 ns;
         for i in 0 to 255 loop
             wait until encoder_s_axi_tready_r = '1';
-            encoder_s_axi_tdata_r   <= std_logic_vector(to_unsigned(i, 8));
+            encoder_s_axi_tdata_r   <= x"000000" & std_logic_vector(to_unsigned(i, 8));
             input_value_r <= i;
             encoder_s_axi_tvalid_r  <= '1';
             wait until encoder_s_axi_tready_r = '0';
