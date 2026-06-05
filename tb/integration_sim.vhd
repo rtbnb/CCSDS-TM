@@ -16,20 +16,23 @@ entity integration_sim is
 end entity integration_sim;
 
 architecture behavioral of integration_sim is
-    component system_integration_wrapper is
+    component top_level is
         port (
-            ground_clk_i_1 : in std_logic;
-            clk_i_0 : in std_logic;
-            data_i_0 : in std_logic_vector ( 7 downto 0 );
-            data_valid_i_0 : in std_logic;
-            ready_o_0 : out std_logic;
-            reset_i_0 : in std_logic;
-            spacecraft_id_i_0 : in std_logic_vector ( 9 downto 0 );
-            tm_data_field_vc1_o_0 : out std_logic_vector ( 31 downto 0 );
-            tm_data_field_valid_vc1_o_0 : out std_logic;
-            transfer_frame_version_number_i_0 : in std_logic_vector ( 1 downto 0 )   
+            -- outputs
+            ready_o: out std_logic := '0';
+            tm_data_field_valid_vc1_o: out std_logic := '0';
+            tm_data_field_vc1_o: out std_logic_vector(31 downto 0) := (others => '0');
+
+            -- inputs
+            data_valid_i: in std_logic;
+            clk_i: in std_logic;
+            reset_i: in std_logic;
+            data_i: in std_logic_vector(7 downto 0);
+            transfer_frame_version_number_i: in std_logic_vector(1 downto 0);
+            spacecraft_id_i: in std_logic_vector(9 downto 0);
+            ground_clk_i: in std_logic
         );
-    end component system_integration_wrapper;
+    end component top_level;
 
     signal tm_data_field_s: std_logic_vector(31 downto 0);
     signal tm_data_field_valid_s: std_logic;
@@ -74,17 +77,17 @@ architecture behavioral of integration_sim is
     signal validate_data_state: test_data_state_t := max_size_space_packet;
 
 begin
-    DBF: system_integration_wrapper port map (
-        ground_clk_i_1 => ground_clk_s,
-        data_i_0 => test_input_data_s,
-        data_valid_i_0 => test_input_valid_s,
-        clk_i_0 => clk_s,
-        ready_o_0 => test_input_ready_s,
-        reset_i_0 => reset_s,
-        tm_data_field_vc1_o_0 => tm_data_field_s,
-        tm_data_field_valid_vc1_o_0 => tm_data_field_valid_s,
-        transfer_frame_version_number_i_0 => transfer_frame_version_number_s,
-        spacecraft_id_i_0 => spacecraft_id_s
+    DBF: top_level port map (
+        ready_o => test_input_ready_s,
+        tm_data_field_valid_vc1_o => tm_data_field_valid_s,
+        tm_data_field_vc1_o => tm_data_field_s,
+        data_valid_i => test_input_valid_s,
+        clk_i => clk_s,
+        reset_i => reset_s,
+        data_i => test_input_data_s,
+        transfer_frame_version_number_i => transfer_frame_version_number_s,
+        spacecraft_id_i => spacecraft_id_s,
+        ground_clk_i => ground_clk_s
     );
 
     fill_packet: process begin
