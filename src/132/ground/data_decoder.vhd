@@ -12,10 +12,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity data_decoder is
-    generic (
-        TM_FRAME_DATA_SIZE_OCTET: integer := 2040
-    );
-
     port (
         -- outputs
         data_o: out std_logic_vector(31 downto 0) := x"00000000"; -- to axi stream entity

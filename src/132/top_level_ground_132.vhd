@@ -146,10 +146,6 @@ architecture behavioral of top_level_ground_132 is
     signal dd_vc1_err_s: std_logic := '0';
 
     component data_decoder is
-        generic (
-            TM_FRAME_DATA_SIZE_OCTET: integer := 2040
-        );
-
         port (
             -- outputs
             data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
@@ -239,9 +235,7 @@ begin
         rdy_o => vc1_rdy_s
     );
 
-    data_decoder_virtual_channel_1: data_decoder generic map (
-        TM_FRAME_DATA_SIZE_OCTET => TM_FRAME_DATA_FIELD_SIZE_OCTET
-    )
+    data_decoder_virtual_channel_1: data_decoder 
     port map (
         data_o => tm_data_field_vc1_o,
         data_valid_o => tm_data_field_valid_vc1_o,
