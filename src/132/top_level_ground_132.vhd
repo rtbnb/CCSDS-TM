@@ -41,8 +41,8 @@ architecture behavioral of top_level_ground_132 is
 
     component decoder_buffer_and_structure is
         generic (
-            tm_frame_size_octet_g: integer := 2046;
-            fecf_enb_g: boolean := false
+            TM_FRAME_SIZE_OCTET: integer := 2046;
+            FECF_ENB: boolean := false
         );
         port (
             -- inputs
@@ -75,7 +75,7 @@ architecture behavioral of top_level_ground_132 is
     component master_channel_demultiplexer is
         generic (
             -- create this generic for every master channel
-            master_channel_1_id_g: std_logic_vector(11 downto 0)
+            MASTER_CHANNEL_1_ID: std_logic_vector(11 downto 0)
         );
         port (
             -- inputs
@@ -113,7 +113,7 @@ architecture behavioral of top_level_ground_132 is
     component virtual_channel_demultiplexer is
         generic (
             -- create this generic for every virtual channel
-            virtual_channel_1_id_g: std_logic_vector(2 downto 0)
+            VIRTUAL_CHANNEL_1_ID: std_logic_vector(2 downto 0)
         );
         port (
             -- inputs
@@ -147,7 +147,7 @@ architecture behavioral of top_level_ground_132 is
 
     component data_decoder is
         generic (
-            tm_frame_data_size_octet_g: integer := 2040
+            TM_FRAME_DATA_SIZE_OCTET: integer := 2040
         );
 
         port (
@@ -172,8 +172,8 @@ architecture behavioral of top_level_ground_132 is
 begin
 
     buffer_structure: decoder_buffer_and_structure generic map (
-        tm_frame_size_octet_g => 2046,
-        fecf_enb_g => false
+        TM_FRAME_SIZE_OCTET => 2046,
+        FECF_ENB => false
     )
     port map (
         -- inputs
@@ -195,7 +195,7 @@ begin
     );
 
     master_channel_demux: master_channel_demultiplexer generic map (
-        master_channel_1_id_g => "000000000000"
+        MASTER_CHANNEL_1_ID => "000000000000"
     )
     port map (
         -- inputs
@@ -221,7 +221,7 @@ begin
     );
 
     virtual_channel_demux_master_channel_1: virtual_channel_demultiplexer generic map (
-        virtual_channel_1_id_g => "000"
+        VIRTUAL_CHANNEL_1_ID => "000"
     )
     port map (
         data_i => mc1_data_s,
@@ -240,7 +240,7 @@ begin
     );
 
     data_decoder_virtual_channel_1: data_decoder generic map (
-        tm_frame_data_size_octet_g => TM_FRAME_DATA_FIELD_SIZE_OCTET
+        TM_FRAME_DATA_SIZE_OCTET => TM_FRAME_DATA_FIELD_SIZE_OCTET
     )
     port map (
         data_o => tm_data_field_vc1_o,

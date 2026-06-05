@@ -13,8 +13,8 @@ use ieee.numeric_std.all;
 
 entity decoder_buffer_and_structure is
     generic (
-        tm_frame_size_octet_g: integer := 2046;
-        fecf_enb_g: boolean := false
+        TM_FRAME_SIZE_OCTET: integer := 2046;
+        FECF_ENB: boolean := false
     );
     port (
         -- inputs
@@ -78,8 +78,8 @@ architecture behavioral of decoder_buffer_and_structure is
     -- TM Frame field sizes
     constant TM_FRAME_HEADER_SIZE_OCTET: integer := 6;
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
-    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_size_octet_g - TM_FRAME_HEADER_SIZE_OCTET - TM_FRAME_SECONDARY_HEADER_SIZE_OCTET;
-    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := tm_frame_size_octet_g;
+    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := TM_FRAME_SIZE_OCTET - TM_FRAME_HEADER_SIZE_OCTET - TM_FRAME_SECONDARY_HEADER_SIZE_OCTET;
+    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := TM_FRAME_SIZE_OCTET;
 
     -- TM Frame buffer
     type buffer_mem_t is array (0 to TM_FRAME_BUFFER_SIZE_OCTET - 1) of std_logic_vector(7 downto 0);
@@ -91,7 +91,7 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_enable_output_s: boolean := false;
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
-    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
+    signal tm_frame_octet_counter_r: integer range 0 to TM_FRAME_SIZE_OCTET - 1 := 0;
     type output_state_t is (output_idle, output_packet_data);
     signal output_state_r: output_state_t := output_packet_data;
     signal input_data_valid_r: std_logic := '0';
@@ -207,8 +207,8 @@ begin
         false;
 
     trailer_size_s <=
-        OCF_SIZE_OCTETS + FECF_SIZE_OCTETS when ocf_flag_s = '1' and fecf_enb_g else
-        FECF_SIZE_OCTETS when fecf_enb_g else
+        OCF_SIZE_OCTETS + FECF_SIZE_OCTETS when ocf_flag_s = '1' and FECF_ENB else
+        FECF_SIZE_OCTETS when FECF_ENB else
         OCF_SIZE_OCTETS when ocf_flag_s = '1' else
         0;
 

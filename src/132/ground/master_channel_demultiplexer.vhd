@@ -14,7 +14,7 @@ use ieee.numeric_std.all;
 entity master_channel_demultiplexer is
     generic (
         -- create this generic for every master channel
-        master_channel_1_id_g: std_logic_vector(11 downto 0) := "000000000000"
+        MASTER_CHANNEL_1_ID: std_logic_vector(11 downto 0) := "000000000000"
     );
     port (
         -- inputs
@@ -54,11 +54,11 @@ begin
     -- for every master channel
     data_valid_mc1_o <= 
         '0' when reset_i = '0' else
-        data_valid_i when master_channel_1_id_g = master_channel_id_i else
+        data_valid_i when MASTER_CHANNEL_1_ID = master_channel_id_i else
         '0';
     data_mc1_o <= 
         x"00" when reset_i = '0' else  
-        data_i when master_channel_1_id_g = master_channel_id_i else
+        data_i when MASTER_CHANNEL_1_ID = master_channel_id_i else
         x"00";
 
 end architecture behavioral;

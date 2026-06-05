@@ -13,7 +13,7 @@ use ieee.numeric_std.all;
 
 entity data_decoder is
     generic (
-        tm_frame_data_size_octet_g: integer := 2040
+        TM_FRAME_DATA_SIZE_OCTET: integer := 2040
     );
 
     port (
