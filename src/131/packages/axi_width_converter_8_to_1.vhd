@@ -37,7 +37,7 @@ signal s_axi_datavalid_r  : std_logic := '0';
 signal m_axi_datavalid_r  : std_logic := '0';
 -- additional signals 
 signal m_tvalid_r         : std_logic := '0';
-signal s_tready_r         : std_logic := '0';
+signal s_tready_r         : std_logic := '1';
 signal m_tlast            : std_logic := '0';
 signal output_data_r      : std_logic := '0';
 
@@ -59,6 +59,7 @@ if reset_i = '0' then
     m_tvalid_r      <= '0';
     counter_r       <= 0;
     m_tlast         <= '0';
+    output_data_r   <= '0';
     
 elsif rising_edge(clk_i) then 
     s_tready_r      <= m_axi_tready;

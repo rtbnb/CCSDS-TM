@@ -77,7 +77,7 @@ begin
           fifo_data_valid_r <= fifo_data_valid_r or rs_data_valid_out_i;
           --rs_data_valid_in_o <= '0';
     
-          --s_tready_s    <=  m_axi_tready;
+          s_tready_s    <=  m_axi_tready;
     
           -- reset data valid flags 
             if m_axi_datavalid_s = '1' then
