@@ -128,6 +128,12 @@ begin
         ready_o <= '1';
         wait for CLK_PERIOD * 500;
         ready_o <= '0';
+        
+        wait for CLK_PERIOD * 1500;
+        wait for CLK_PERIOD * 0.5;
+        
+        ready_o <= '1';
+        
         wait;
     end process ready_ctrl;
 

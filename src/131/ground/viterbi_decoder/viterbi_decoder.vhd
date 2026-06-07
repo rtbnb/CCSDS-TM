@@ -39,6 +39,11 @@ architecture connectivity of viterbi_decoder is
     signal viterbi_data_tready : std_logic;
     signal viterbi_data_tlast : std_logic;
 
+    signal decoded_data_tdata_internal : std_logic;
+    signal decoded_data_tvalid_internal : std_logic;
+    signal decoded_data_tready_internal : std_logic;
+    signal decoded_data_tlast_internal : std_logic;
+
     component convolutional_to_viterbi_converter is
         generic (
             ACQUISITION_LENGTH_g : integer := 96; -- Number of convolutional encoded bits to acquire before processing (Should be 6x the constraint length of the convolutional encoder)
@@ -142,14 +147,28 @@ begin
             s_axis_input_tdata => viterbi_data_tdata,
             s_axis_input_tlast => viterbi_data_tlast,
             s_axis_input_tready => viterbi_data_tready,
-            m_axis_output_tvalid => decoded_data_tvalid,
-            m_axis_output_tdata => decoded_data_tdata,
-            m_axis_output_tlast => decoded_data_tlast,
-            m_axis_output_tready => decoded_data_tready,
+            m_axis_output_tvalid => decoded_data_tvalid_internal,
+            m_axis_output_tdata => decoded_data_tdata_internal,
+            m_axis_output_tlast => decoded_data_tlast_internal,
+            m_axis_output_tready => decoded_data_tready_internal,
             s_axis_ctrl_tvalid => viterbi_ctrl_tvalid,
             s_axis_ctrl_tdata => viterbi_ctrl_tdata,
             s_axis_ctrl_tlast => viterbi_ctrl_tlast,
             s_axis_ctrl_tready => viterbi_ctrl_tready
+        );
+
+    viterbi_axi_adapter_inst : entity work.viterbi_axi_adapter
+        port map(
+            clk_i => clk_i,
+            reset_i => reset_i,
+            s_axis_output_tvalid => decoded_data_tvalid_internal,
+            s_axis_output_tdata => decoded_data_tdata_internal,
+            s_axis_output_tlast => decoded_data_tlast_internal,
+            s_axis_output_tready => decoded_data_tready_internal,
+            m_axis_tdata => decoded_data_tdata,
+            m_axis_tvalid => decoded_data_tvalid,
+            m_axis_tready => decoded_data_tready,
+            m_axis_tlast => decoded_data_tlast
         );
 
 
