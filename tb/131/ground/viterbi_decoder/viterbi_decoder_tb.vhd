@@ -122,6 +122,14 @@ begin
         wait;
     end process resetter;
     
+    
+    ready_ctrl : process
+    begin
+        ready_o <= '1';
+        wait for CLK_PERIOD * 500;
+        ready_o <= '0';
+        wait;
+    end process ready_ctrl;
 
     stimulus : process
     begin
@@ -155,7 +163,7 @@ begin
         end loop;
         wait for clk_period * 2 * 8;
 
-        for i in 0 to 1000 loop
+        for i in 0 to 10000 loop
             data_i <= not data_i; -- Alternate between '0' and '1'
             valid_i <= '1';
             wait for clk_period;
