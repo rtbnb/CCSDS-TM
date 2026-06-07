@@ -30,38 +30,21 @@ architecture behavioral of synchronization_fifo_tb is
     signal rd_data_s  : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal empty_s    : std_logic;
 
+    signal reset_r : std_logic := '0';
+
     constant RD_CLK_PERIOD : time := 10 ns;
     constant WR_CLK_PERIOD : time := 7 ns;
-
-    component synchronization_fifo is
-        generic (
-            data_width_g : integer := DATA_WIDTH;
-            depth_g      : integer := DEPTH
-        );
-        port (
-            -- Write Interface
-            wr_clk_i   : in  std_logic;
-            wr_en_i    : in  std_logic;
-            wr_data_i  : in  std_logic_vector(data_width_g-1 downto 0);
-            full_o     : out std_logic;
-
-            -- Read Interface
-            rd_clk_i   : in  std_logic;
-            rd_en_i    : in  std_logic;
-            rd_data_o  : out std_logic_vector(data_width_g-1 downto 0);
-            empty_o    : out std_logic
-        );
-    end component synchronization_fifo;
 
 
 begin
 
-    fifo : synchronization_fifo
+    fifo : entity work.synchronization_fifo
         generic map (
             data_width_g => DATA_WIDTH,
             depth_g      => DEPTH
         )
         port map (
+            reset_i   => reset_r,
             wr_clk_i   => wr_clk_r,
             wr_en_i    => wr_en_r,
             wr_data_i  => wr_data_r,
@@ -71,6 +54,17 @@ begin
             rd_data_o  => rd_data_s,
             empty_o    => empty_s
         );
+
+
+    reset_process : process
+    begin
+        reset_r <= '1';
+        wait for 10 ns;
+        reset_r <= '0';
+        wait for 10ns;
+        reset_r <= '1';
+        wait;
+    end process reset_process;
 
     rd_clk_process : process
     begin

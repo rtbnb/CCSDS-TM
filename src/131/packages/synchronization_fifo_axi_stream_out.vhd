@@ -17,6 +17,9 @@ entity synchronization_fifo_axi_stream_out is
         DEPTH      : integer := 16
     );
     port (
+
+        reset_i   : in  std_logic := '1';
+
         -- Input Interface
         wr_clk_i   : in  std_logic;
         wr_en_i    : in  std_logic;
@@ -25,7 +28,6 @@ entity synchronization_fifo_axi_stream_out is
 
         -- Output Interface
         m_axis_aclk : in  std_logic;
-        m_axis_aresetn : in  std_logic;
         m_axis_tvalid : out std_logic;
         m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
         m_axis_tready : in  std_logic
@@ -50,9 +52,11 @@ begin
 
     full_o  <= full_s;
 
-    write_process : process(wr_clk_i)
+    write_process : process(wr_clk_i, reset_i)
     begin
-        if rising_edge(wr_clk_i) then
+        if reset_i = '0' then
+            wr_ptr_r <= 0;
+        elsif rising_edge(wr_clk_i) then
             if wr_en_i = '1' and full_s = '0' then
                 fifo_mem_r(wr_ptr_r) <= wr_data_i;
                 wr_ptr_r <= (wr_ptr_r + 1) mod DEPTH;
@@ -60,10 +64,10 @@ begin
         end if;
     end process write_process;
 
-    read_process : process(m_axis_aclk, m_axis_aresetn)
+    read_process : process(m_axis_aclk, reset_i)
     begin
-        if m_axis_aresetn = '0' then
-            -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
+        if reset_i = '0' then
+            rd_ptr_r <= 0;
             fifo_data_out_r <= (others => '0');
             m_axis_tvalid <= '0';
         elsif rising_edge(m_axis_aclk) then

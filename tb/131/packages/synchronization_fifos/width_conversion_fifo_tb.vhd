@@ -30,40 +30,23 @@ architecture behavioral of width_conversion_fifo_tb is
     signal rd_data_s  : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal empty_s    : std_logic;
 
+    signal reset_r : std_logic := '1';
+
     constant RD_CLK_PERIOD : time := 10 ns;
     constant WR_CLK_PERIOD : time := 7 ns;
 
-    component width_conversion_fifo is
-        generic (
-            input_data_width_g : integer := DATA_WIDTH;
-            output_data_width_g : integer := DATA_WIDTH;
-            depth_g      : integer := DEPTH
-        );
-        port (
-            -- Write Interface
-            wr_clk_i   : in  std_logic;
-            wr_en_i    : in  std_logic;
-            wr_data_i  : in  std_logic_vector(input_data_width_g-1 downto 0);
-            full_o     : out std_logic;
-
-            -- Read Interface
-            rd_clk_i   : in  std_logic;
-            rd_en_i    : in  std_logic;
-            rd_data_o  : out std_logic_vector(output_data_width_g-1 downto 0);
-            empty_o    : out std_logic
-        );
-    end component width_conversion_fifo;
 
 
 begin
 
-    fifo : width_conversion_fifo
+    fifo : entity work.width_conversion_fifo
         generic map (
             input_data_width_g => DATA_WIDTH,
             output_data_width_g => DATA_WIDTH,
             depth_g      => DEPTH
         )
         port map (
+            reset_i   => reset_r,
             wr_clk_i   => wr_clk_r,
             wr_en_i    => wr_en_r,
             wr_data_i  => wr_data_r,

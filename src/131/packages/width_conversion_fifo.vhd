@@ -17,6 +17,9 @@ entity width_conversion_fifo is
         depth_g      : integer := 16  -- How many entries the FIFO can hold (the width is which ever is wider)
     );
     port (
+
+        reset_i   : in  std_logic := '1';
+
         -- Write Interface
         wr_clk_i   : in  std_logic;
         wr_en_i    : in  std_logic;
@@ -81,10 +84,13 @@ begin
     empty_o <= empty_s;
     full_o  <= full_s;
 
-    write_process : process(wr_clk_i)
+    write_process : process(wr_clk_i, reset_i)
         variable expander_counter_v : integer range 0 to RATIO-1 := RATIO - 1;
     begin
-        if rising_edge(wr_clk_i) then
+        if reset_i = '1' then
+            wr_ptr_r <= 0;
+            expander_counter_v := RATIO - 1;
+        elsif rising_edge(wr_clk_i) then
             if wr_en_i = '1' and full_s = '0' then
                 if FIFO_MODE = SAME or FIFO_MODE = INPUT_WIDER then
                     fifo_mem_r(wr_ptr_r) <= wr_data_i;
@@ -102,10 +108,14 @@ begin
         end if;
     end process write_process;
 
-    read_process : process(rd_clk_i)
+    read_process : process(rd_clk_i, reset_i)
         variable expander_counter_v : integer range 0 to RATIO-1 := RATIO - 1;  
     begin
-        if rising_edge(rd_clk_i) then
+        if reset_i = '1' then
+            rd_ptr_r <= 0;
+            fifo_data_out_r <= (others => '0');
+            expander_counter_v := RATIO - 1;
+        elsif rising_edge(rd_clk_i) then
             if rd_en_i = '1' and empty_s = '0' then
                 
                 if FIFO_MODE = SAME or FIFO_MODE = OUTPUT_WIDER then

@@ -16,6 +16,9 @@ entity synchronization_fifo is
         depth_g      : integer := 16
     );
     port (
+
+        reset_i   : in  std_logic := '1';
+
         -- Write Interface
         wr_clk_i   : in  std_logic;
         wr_en_i    : in  std_logic;
@@ -49,9 +52,11 @@ begin
     empty_o <= empty_s;
     full_o  <= full_s;
 
-    write_process : process(wr_clk_i)
+    write_process : process(wr_clk_i, reset_i)
     begin
-        if rising_edge(wr_clk_i) then
+        if reset_i = '0' then
+            wr_ptr_r <= 0;
+        elsif rising_edge(wr_clk_i) then
             if wr_en_i = '1' and full_s = '0' then
                 fifo_mem_r(wr_ptr_r) <= wr_data_i;
                 wr_ptr_r <= (wr_ptr_r + 1) mod depth_g;
@@ -59,9 +64,11 @@ begin
         end if;
     end process write_process;
 
-    read_process : process(rd_clk_i)
+    read_process : process(rd_clk_i, reset_i)
     begin
-        if rising_edge(rd_clk_i) then
+        if reset_i = '0' then
+            rd_ptr_r <= 0;
+        elsif rising_edge(rd_clk_i) then
             if rd_en_i = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
                 rd_ptr_r <= (rd_ptr_r + 1) mod depth_g;

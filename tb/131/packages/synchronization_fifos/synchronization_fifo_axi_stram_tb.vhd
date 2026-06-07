@@ -37,34 +37,9 @@ architecture behavioral of synchronization_fifo_axi_stream_tb is
     signal wr_en_r    : std_logic := '0';
 
 
-    component synchronization_fifo_axi_stream_integration is
-        generic (
-            DATA_WIDTH : integer := 8;
-            DEPTH      : integer := 16
-        );
-        port(
-            internal_clk_i : in std_logic;
-            internal_rst_i : in std_logic;
-
-            -- Input Interface
-            wr_clk_i   : in  std_logic;
-            wr_en_i    : in  std_logic;
-            wr_data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-            full_o     : out std_logic;
-
-            -- Output Interface
-            rd_clk_i   : in  std_logic;
-            rd_en_i    : in  std_logic;
-            rd_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            empty_o    : out std_logic
-            
-        );
-    end component synchronization_fifo_axi_stream_integration;
-
-
 begin
 
-    dut : synchronization_fifo_axi_stream_integration
+    dut : entity work.synchronization_fifo_axi_stream_integration
         port map (
             internal_clk_i => aclk_r,
             internal_rst_i => aresetn_r,
@@ -105,7 +80,8 @@ begin
             wait for WR_CLK_PERIOD;
         end loop;
         wr_en_r <= '0';
-        wait;
+
+        wait for 300 ns;
     end process write_process;
 
     read_process : process
@@ -122,7 +98,16 @@ begin
         rd_en_r <= '1';
         wait for RD_CLK_PERIOD * 20;
         rd_en_r <= '0';
-        wait;
+        wait for 300 ns;
     end process read_process;
+
+    resetter : process
+    begin
+        wait for 800 ns;
+        aresetn_r <= '0';
+        wait for 10 ns;
+        aresetn_r <= '1';
+        wait;
+    end process resetter;
 
 end architecture behavioral;
