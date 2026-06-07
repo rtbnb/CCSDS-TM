@@ -57,7 +57,7 @@ architecture behavioral of viterbi_decoder_tb is
         );
     end component convolutional_encoder;
     
-    signal clk : std_logic := '0';
+    signal clk : std_logic := '1';
     signal reset : std_logic := '0';
     
     signal data_i : std_logic := '0';
@@ -129,8 +129,7 @@ begin
         wait for CLK_PERIOD * 500;
         ready_o <= '0';
         
-        wait for CLK_PERIOD * 1500;
-        wait for CLK_PERIOD * 0.5;
+        wait for CLK_PERIOD * 4001;
         
         ready_o <= '1';
         

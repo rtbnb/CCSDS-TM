@@ -37,6 +37,7 @@ architecture behavioral of convolutional_encoder is
     signal fifo_data_in_r : std_logic_vector(0 downto 0) := (others => '0');
     signal fifo_data_valid_r : std_logic := '0';
     signal fifo_full_s : std_logic;
+    signal ready_out_s : std_logic;
 
     signal internal_data_in_ready_r : std_logic := '0';
 
@@ -77,6 +78,11 @@ architecture behavioral of convolutional_encoder is
         end loop;
         return parity_bit;
     end function calculate_parity_bit;
+
+
+    -- For monitoring purposes
+    signal shift_register_monitor_r : std_logic_vector(K-1 downto 0) := (others => '0');
+    signal input_counter_monitor_r : integer range 0 to 1 := 0;
 begin
 
     convolutional_out_sync_fifo : synchronization_fifo_axi_stream_out
@@ -110,23 +116,31 @@ begin
             -- Only process input every second clock cycle
             if input_counter = 0 then
                 if s_axis_tvalid = '1' then
-                    shift_register_r := s_axis_tdata(0) & shift_register_r(K-1 downto 1);
-                    internal_data_in_ready_r <= '0';
-                    input_counter := 1; 
-                    fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G1) xor INVERT_MASK(0);
                     fifo_data_valid_r <= '1';
+                    if ready_out_s = '1' then
+                        shift_register_r := s_axis_tdata(0) & shift_register_r(K-1 downto 1);
+                        shift_register_monitor_r <= shift_register_r;
+                        internal_data_in_ready_r <= '0';
+                        input_counter := 1; 
+                        input_counter_monitor_r <= input_counter;
+                        fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G1) xor INVERT_MASK(0);
+                    end if;
                 else
                     fifo_data_valid_r <= '0';
                 end if;
             else
-                internal_data_in_ready_r <= '1';
-                input_counter := 0;
-                fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G2) xor INVERT_MASK(1);
                 fifo_data_valid_r <= '1';
+                if fifo_full_s = '0' then
+                    internal_data_in_ready_r <= '1';
+                    input_counter := 0;
+                    input_counter_monitor_r <= input_counter;
+                    fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G2) xor INVERT_MASK(1);
+                end if;
             end if;
         end if;
     end process main_process;
 
-    s_axis_tready <= internal_data_in_ready_r and not fifo_full_s;
+    ready_out_s <= internal_data_in_ready_r and not fifo_full_s;
+    s_axis_tready <= ready_out_s;
 
 end architecture behavioral;
