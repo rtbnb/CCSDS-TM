@@ -13,7 +13,7 @@ use ieee.numeric_std.all;
 
 entity secondary_header_decoder is
     generic(
-        secondary_header_data_field_width_octets_g : integer := 63 -- 63 maximum value of data field from CCSDS-132-0-B-3 4.1.3.1.3 b
+        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- 63 maximum value of data field from CCSDS-132-0-B-3 4.1.3.1.3 b
     );
     port(
         enable_input_i: in std_logic;
@@ -31,7 +31,7 @@ entity secondary_header_decoder is
 end entity secondary_header_decoder;
 
 architecture behavioral of secondary_header_decoder is
-    signal secondary_header_r : std_logic_vector(((secondary_header_data_field_width_octets_g + 1) * 8) - 1 downto 0) := (others => '0');
+    signal secondary_header_r : std_logic_vector(((SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS + 1) * 8) - 1 downto 0) := (others => '0');
 begin
 
     -- output secondary header id
@@ -42,7 +42,7 @@ begin
         variable data_octet_counter: integer := 0;
     begin
         if rising_edge(clk_i) and enable_input_i = '1' then
-            if data_octet_counter = (secondary_header_data_field_width_octets_g) then
+            if data_octet_counter = (SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS) then
                 secondary_header_r(((data_octet_counter + 1)  * 8) - 1 downto data_octet_counter  * 8) <= data_i;
                 data_octet_counter := 0;
             else 
@@ -57,7 +57,7 @@ begin
         variable data_octet_counter_out: integer := 1;
     begin
         if rising_edge(clk_i) and enable_output_i = '1' then
-            if data_octet_counter_out = secondary_header_data_field_width_octets_g then
+            if data_octet_counter_out = SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS then
                 secondary_header_fully_read_o <= '1';
                 secondary_header_data_o <= secondary_header_r( ((data_octet_counter_out + 1) * 8) - 1 downto (data_octet_counter_out) * 8);
                 data_octet_counter_out := 1;

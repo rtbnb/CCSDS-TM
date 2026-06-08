@@ -3,7 +3,7 @@
 -- Created : 23.04.2026
 -- Author : Nico Tunkowski
 -- Project Name : HW/SW Project TM
--- Description : CCSDS-132.0-B-3 Top Level Decoder Entity
+-- Description : CCSDS-132.0-B-3 TM Frame Buffer
 -- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
@@ -13,18 +13,26 @@ use ieee.numeric_std.all;
 
 entity decoder_buffer_and_structure is
     generic (
-        tm_frame_size_octet_g: integer := 2046
+        TM_FRAME_SIZE_OCTET: integer := 2046;
+        FECF_ENB: boolean := false
     );
     port (
         -- inputs
         data_i: std_logic_vector(7 downto 0);
-        data_valid_i: std_logic;
         clk_i: std_logic;
         reset_i: std_logic;
+        fifo_empty_i: std_logic;
+        master_channel_demux_rdy_i: std_logic;
 
         -- outputs
-        tm_data_field_o: out std_logic_vector(31 downto 0);
-        tm_data_field_valid_o: out std_logic
+        tm_frame_first_header_pointer_o: out std_logic_vector(10 downto 0);
+        new_frame_o: out std_logic;
+        master_channel_id_o: out std_logic_vector(11 downto 0);
+        virtual_channel_id_o: out std_logic_vector(2 downto 0);
+        
+        space_packet_data_o: out std_logic_vector(7 downto 0);
+        space_packet_data_valid_o: out std_logic;
+        rdy_o: out std_logic := '0'
     );
 end entity decoder_buffer_and_structure;
 
@@ -67,36 +75,15 @@ architecture behavioral of decoder_buffer_and_structure is
         );
     end component secondary_header_decoder;
 
-    component data_decoder is
-        generic (
-            tm_frame_data_size_octet_g: integer := 2040
-        );
-
-        port (
-            -- outputs
-            data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
-            data_valid_o: out std_logic := '0';
-            data_fully_read_o: out std_logic := '0';
-
-            -- inputs
-            data_i: in std_logic_vector(7 downto 0);
-            clk_i: in std_logic; -- "8 Bit" x4 clock
-            data_valid_i: in std_logic := '0';
-            tm_frame_first_header_pointer_i: in std_logic_vector(10 downto 0) := (others => '0');
-            reset_i: in std_logic
-        );
-    end component data_decoder;
-
     -- TM Frame field sizes
     constant TM_FRAME_HEADER_SIZE_OCTET: integer := 6;
     constant TM_FRAME_SECONDARY_HEADER_SIZE_OCTET: integer := 0;
-    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := tm_frame_size_octet_g - TM_FRAME_HEADER_SIZE_OCTET - TM_FRAME_SECONDARY_HEADER_SIZE_OCTET;
-    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := tm_frame_size_octet_g;
+    constant TM_FRAME_DATA_FIELD_SIZE_OCTET: integer := TM_FRAME_SIZE_OCTET - TM_FRAME_HEADER_SIZE_OCTET - TM_FRAME_SECONDARY_HEADER_SIZE_OCTET;
+    constant TM_FRAME_BUFFER_SIZE_OCTET: integer := TM_FRAME_SIZE_OCTET;
 
     -- TM Frame buffer
     type buffer_mem_t is array (0 to TM_FRAME_BUFFER_SIZE_OCTET - 1) of std_logic_vector(7 downto 0);
     signal tm_frame_buffer_r: buffer_mem_t := (others => (others => '0'));
-    signal tm_frame_buffer_counter_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal next_tm_frame_buffer_start_index_r: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1 := 0;
     signal tm_frame_data_field_start_index_s: integer range 0 to TM_FRAME_BUFFER_SIZE_OCTET - 1;
@@ -104,7 +91,10 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_data_enable_output_s: boolean := false;
     signal tm_frame_data_finished_output_r: boolean := false;
     signal tm_frame_data_valid_r: boolean := false;
-    signal tm_frame_octet_counter_r: integer range 0 to tm_frame_size_octet_g - 1 := 0;
+    signal tm_frame_octet_counter_r: integer range 0 to TM_FRAME_SIZE_OCTET - 1 := 0;
+    type output_state_t is (output_idle, output_packet_data);
+    signal output_state_r: output_state_t := output_packet_data;
+    signal input_data_valid_r: std_logic := '0';
 
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
@@ -121,13 +111,19 @@ architecture behavioral of decoder_buffer_and_structure is
     signal segment_length_id_s: std_logic_vector(1 downto 0);
     signal first_header_pointer_s: std_logic_vector(10 downto 0);
 
-    -- data decoder (dd instance)
-    signal dd_data_o_s: std_logic_vector(31 downto 0);
-    signal dd_data_valid_o_s: std_logic := '0';
-    signal dd_data_fully_read_s: std_logic := '0';
-    signal dd_data_i_r: std_logic_vector(7 downto 0);
-    signal dd_data_valid_i_r: std_logic := '0';
-    signal dd_tm_frame_first_header_pointer_s: std_logic_vector(10 downto 0) := (others => '0');
+    -- space packet processing
+    signal space_packet_data_r: std_logic_vector(7 downto 0);
+    signal space_packet_data_valid_r: std_logic;
+
+    -- trailer handling
+    signal trailer_size_s: integer := 0;
+
+    -- operational control field (ocf) handling
+    constant OCF_SIZE_OCTETS: integer := 4 * 8;
+
+    -- frame error control field (fecf) handling
+    constant FECF_SIZE_OCTETS: integer := 2 * 8;
+
 begin
     HD: header_decoder port map (
         reset_i => reset_i,
@@ -146,42 +142,24 @@ begin
         first_header_pointer_o => first_header_pointer_s
     );
 
-    DD: data_decoder generic map (
-        tm_frame_data_size_octet_g => TM_FRAME_DATA_FIELD_SIZE_OCTET
-    )
-    port map (
-        data_o => dd_data_o_s,
-        data_valid_o => dd_data_valid_o_s,
-        data_fully_read_o => dd_data_fully_read_s,
-        data_i => dd_data_i_r,
-        clk_i => clk_i,
-        data_valid_i => dd_data_valid_i_r,
-        tm_frame_first_header_pointer_i => dd_tm_frame_first_header_pointer_s,
-        reset_i => reset_i
-    );
+    master_channel_id_o(1 downto 0) <= transfer_frame_version_number_s;
+    master_channel_id_o(11 downto 2) <= spacecraft_id_s;
+    virtual_channel_id_o <= virtual_channel_id_s;
 
-    -- input TM Frame to Buffer
-    input_tm_frame: process(clk_i) is
+    input_valid: process(clk_i) is
     begin
-        if (reset_i = '0') then 
-            tm_frame_buffer_counter_r <= 0;
-            -- it is intentional, that the tm_frame_buffer_r is not cleared on reset, because the block ram can not be reseted. Reset behavior is achieved by resetting the tm_frame_buffer_counter_r and tm_frame_data_index_r.
+        if (reset_i = '0') then
+            input_data_valid_r <= '0';
         else
             if rising_edge(clk_i) then
-                if data_valid_i = '1' then
-                    tm_frame_buffer_r(tm_frame_buffer_counter_r) <= data_i;
-                    tm_frame_buffer_counter_r <= tm_frame_buffer_counter_r + 1;
-                    if tm_frame_buffer_counter_r = TM_FRAME_BUFFER_SIZE_OCTET - 1 then
-                        tm_frame_buffer_counter_r <= 0;
-                    end if;
-                end if;
+                input_data_valid_r <= not fifo_empty_i;
             end if;
         end if;
-    end process input_tm_frame;
+    end process input_valid;
 
     tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
 
-    tm_frame_input_count: process(clk_i) is
+    tm_frame_header_decode: process(clk_i) is
     begin
         if (reset_i = '0') then
             tm_frame_data_valid_r <= false;
@@ -193,7 +171,8 @@ begin
                 if tm_frame_data_finished_output_r then
                     tm_frame_data_valid_r <= false;
                 end if;
-                if data_valid_i = '1' then
+                if input_data_valid_r = '1' then
+                    tm_frame_buffer_r(tm_frame_octet_counter_r) <= data_i;
                     tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                     if tm_frame_octet_counter_r = TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1 then
                         -- finished buffering full frame
@@ -205,7 +184,7 @@ begin
                         header_data_r(39 downto 32) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 4) mod TM_FRAME_BUFFER_SIZE_OCTET));
                         header_data_r(47 downto 40) <= tm_frame_buffer_r(((next_tm_frame_buffer_start_index_r + 5) mod TM_FRAME_BUFFER_SIZE_OCTET));
                         -- set control signals
-                        next_tm_frame_buffer_start_index_r <= (tm_frame_buffer_counter_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET;
+                        next_tm_frame_buffer_start_index_r <= (tm_frame_octet_counter_r + 1) mod TM_FRAME_BUFFER_SIZE_OCTET;
                         tm_frame_buffer_start_index_r <= next_tm_frame_buffer_start_index_r;
                         tm_frame_octet_counter_r <= 0;
                         tm_frame_data_valid_r <= true;
@@ -213,47 +192,78 @@ begin
                 end if;
             end if;
         end if;
-    end process tm_frame_input_count;
+    end process tm_frame_header_decode;
+
+    rdy_o <=
+        '0' when reset_i = '0' else
+        '1' when master_channel_demux_rdy_i = '1' else
+        '0';
 
 
     tm_frame_data_enable_output_s <= 
         false when reset_i = '0' else
-        true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' else
+        true when (not tm_frame_data_finished_output_r) and tm_frame_data_valid_r and is_oid_flag_s = '0' and master_channel_demux_rdy_i = '1' else
         false when is_oid_flag_s = '1' else
         false;
+
+    trailer_size_s <=
+        OCF_SIZE_OCTETS + FECF_SIZE_OCTETS when ocf_flag_s = '1' and FECF_ENB else
+        FECF_SIZE_OCTETS when FECF_ENB else
+        OCF_SIZE_OCTETS when ocf_flag_s = '1' else
+        0;
 
     -- to not send half space packets to output you can compare the needed octets (Packet header size) against the remaining length of the tm transfer frame
     -- 1 Tick Reset time required
     output_tm_frame: process(clk_i) is
     begin
         if (reset_i = '0') then
-            dd_data_valid_i_r <= '0';
+            space_packet_data_valid_r <= '0';
             tm_frame_data_finished_output_r <= false;
             tm_frame_data_field_index_r <= 0;
+            output_state_r <= output_idle;
+            tm_frame_first_header_pointer_o <= (others => '0');
+            new_frame_o <= '0';
         else
             if rising_edge(clk_i) then
-                if tm_frame_data_enable_output_s then
-                    dd_data_i_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
-                    dd_data_valid_i_r <= '1';
-                    tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
-                    if tm_frame_data_field_index_r = TM_FRAME_DATA_FIELD_SIZE_OCTET - 1 then
-                        tm_frame_data_field_index_r <= 0;
-                        tm_frame_data_finished_output_r <= true;
-                    end if;
-                else
-                    dd_data_valid_i_r <= '0';
-                    tm_frame_data_finished_output_r <= false;
-                end if;
+                new_frame_o <= '0';
+                case output_state_r is
+                    when output_idle =>
+                        space_packet_data_valid_r <= '0';
+                        tm_frame_data_finished_output_r <= false;
+                        if tm_frame_data_enable_output_s then
+                            if synch_flag_s = '0' then
+                                    tm_frame_first_header_pointer_o <= first_header_pointer_s;
+                                    new_frame_o <= '1';
+                                else
+                                    tm_frame_first_header_pointer_o <= (others => '0');
+                                    new_frame_o <= '0';
+                                end if;
+                            output_state_r <= output_packet_data;
+                        end if;
+                    when output_packet_data =>
+                        if tm_frame_data_enable_output_s then                                
+                            space_packet_data_r <= tm_frame_buffer_r(((tm_frame_data_field_start_index_s + tm_frame_data_field_index_r) mod (TM_FRAME_BUFFER_SIZE_OCTET)));
+                            space_packet_data_valid_r <= '1';
+                            tm_frame_data_field_index_r <= tm_frame_data_field_index_r + 1;
+                            if tm_frame_data_field_index_r = (TM_FRAME_DATA_FIELD_SIZE_OCTET - trailer_size_s) - 1 then
+                                tm_frame_data_field_index_r <= 0;
+                                tm_frame_data_finished_output_r <= true;
+                                output_state_r <= output_idle;
+                            end if;
+                        else
+                            space_packet_data_valid_r <= '0';
+                            tm_frame_data_finished_output_r <= false;
+                        end if;
+                end case;
             end if;
         end if;
     end process output_tm_frame;
 
-    dd_tm_frame_first_header_pointer_s <= first_header_pointer_s;
-    tm_data_field_valid_o <= 
-        '0' when reset_i = '0' 
-        else dd_data_valid_o_s;
-    tm_data_field_o <= 
-        x"00000000" when reset_i = '0' 
-        else dd_data_o_s;
+    space_packet_data_valid_o <= 
+        '0' when reset_i = '0' else
+        space_packet_data_valid_r;
+    space_packet_data_o <= 
+        x"00" when reset_i = '0' else
+        space_packet_data_r;
 
 end architecture behavioral;
