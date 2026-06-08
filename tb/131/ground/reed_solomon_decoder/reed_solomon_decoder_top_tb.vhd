@@ -40,30 +40,30 @@ architecture behavioral of reed_solomon_decoder_top_tb is
     -- axi inputs to encoder
     signal encoder_s_axi_tvalid_r    :  std_logic; 
     signal encoder_s_axi_tready_r    :  std_logic;
-    signal encoder_s_axi_tdata_r     :  std_logic_vector(7 downto 0);
+    signal encoder_s_axi_tdata_r     :  std_logic_vector(31 downto 0);
     signal encoder_s_axi_tlast_r     :  std_logic := '0';
    
     
     -- axi outputs from decoder
     signal decoder_m_axi_tvalid_r    : std_logic; 
     signal decoder_m_axi_tready_r    : std_logic;
-    signal decoder_m_axi_tdata_r     : std_logic_vector(7 downto 0);
-    signal decoder_m_axi_tdata_2_r     : std_logic_vector(31 downto 0) := x"00000000";
+    signal decoder_m_axi_tdata_r     : std_logic_vector(31 downto 0);
+    --signal decoder_m_axi_tdata_2_r     : std_logic_vector(31 downto 0) := x"00000000";
     
     signal decoder_m_axi_tlast_r     : std_logic;
     
 begin
 
-    dut_enccoder : entity work.design_1_wrapper
+    dut_enccoder : entity work.asm_pr_debug_wrapper
         port map(
         clk_i_0 => clk_r,
-        m_axi_tdata_0 => decoder_m_axi_tdata_r,
-        m_axi_tlast_0 => decoder_m_axi_tlast_r,
-        m_axi_tready_0 => decoder_m_axi_tready_r,
-        m_axi_tvalid_0 => decoder_m_axi_tvalid_r,
+        m_axis_tdata_0 => decoder_m_axi_tdata_r,
+        m_axis_tlast_0 => decoder_m_axi_tlast_r,
+        m_axis_tready_0 => decoder_m_axi_tready_r,
+        m_axis_tvalid_0 => decoder_m_axi_tvalid_r,
         reed_solomon_failure_o_0 => reed_solomon_failure_r,
-        reset_i_0 => reset_r,
-        s_axi_tdata_0 => encoder_s_axi_tdata_r,
+        rst_i_0 => reset_r,
+        s_axis_tdata_0 => encoder_s_axi_tdata_r,
         s_axi_tlast_0 => encoder_s_axi_tlast_r,
         s_axi_tready_0 => encoder_s_axi_tready_r,
         s_axi_tvalid_0 => encoder_s_axi_tvalid_r
@@ -73,17 +73,16 @@ begin
     reset_r <= '1' after 500 ns;
     --encoder_s_axi_tlast_r <= '1' after 7600 ns, '0' after 7700 ns;
     
-    decoder_m_axi_tready_r <= '1', '0' after 2000 us, '1' after 2200 us;
---    decoder_s_axi_tlast_r <= encoder_m_axi_tlast_r;
+    decoder_m_axi_tready_r <= '1', '0' after 4000 us, '1' after 4200 us;
+    --decoder_s_axi_tlast_r <= encoder_m_axi_tlast_r;
     
 
     
     data_valid_stimuli: process
     begin
-        --wait for 1000 ns;
         for i in 0 to 255 loop
             wait until encoder_s_axi_tready_r = '1';
-            encoder_s_axi_tdata_r   <= std_logic_vector(to_unsigned(i, 8));
+            encoder_s_axi_tdata_r   <= x"000000" &  std_logic_vector(to_unsigned(i, 8));
             --input_value_r <= i;
             encoder_s_axi_tvalid_r  <= '1';
             wait until encoder_s_axi_tready_r = '0';

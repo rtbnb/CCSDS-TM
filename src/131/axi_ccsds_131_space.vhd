@@ -71,19 +71,19 @@ reed_solomon_encoder_inst : entity work.reed_solomon_encoder
 
 width_converter_inst : entity work.axi_width_converter_8_to_1
     port map (
-        -- control signals
-        clk_i   => clk_i,
-        reset_i => rst_i,
-        -- s axi intputs 
-        s_axi_tvalid => reedsolomon_axi_tvalid,
-        s_axi_tready => reedsolomon_axi_tready,
-        s_axi_tdata  => reedsolomon_axi_tdata,
-        s_axi_tlast  => reedsolomon_axi_tlast,
-        -- m axi outputs
-        m_axi_tvalid    => widthconvrt_axi_tvalid,
-        m_axi_tready    => widthconvrt_axi_tready,
-        m_axi_tdata     => widthconvrt_axi_tdata,
-        m_axi_tlast     => widthconvrt_axi_tlast
+            -- Usual ports
+    clk_i    => clk_i,
+    reset_i  => rst_i,
+    -- AXI stream input
+    s_axi_tready => reedsolomon_axi_tready,
+    s_axi_tdata  => reedsolomon_axi_tdata,
+    s_axi_tvalid => reedsolomon_axi_tvalid,
+    s_axi_tlast  => reedsolomon_axi_tlast,
+    -- AXI stream output
+    m_axi_tready => widthconvrt_axi_tready,
+    m_axi_tdata  => widthconvrt_axi_tdata,
+    m_axi_tvalid => widthconvrt_axi_tvalid,
+    m_axi_tlast  => widthconvrt_axi_tlast
     );
     
 pseudorandomizer_inst : entity work.pseudo_randomizer_entity
