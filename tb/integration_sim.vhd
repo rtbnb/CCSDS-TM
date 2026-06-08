@@ -23,6 +23,11 @@ architecture behavioral of integration_sim is
             tm_data_field_valid_vc1_o: out std_logic := '0';
             tm_data_field_vc1_o: out std_logic_vector(31 downto 0) := (others => '0');
 
+            vc1_m_axi_tvalid: out std_logic := '0'; 
+            vc1_m_axi_tready: in std_logic;
+            vc1_m_axi_tdata: out std_logic_vector(31 downto 0) := x"00000000";
+            vc1_m_axi_tlast: out std_logic := '0';
+
             -- inputs
             data_valid_i: in std_logic;
             clk_i: in std_logic;
@@ -34,11 +39,11 @@ architecture behavioral of integration_sim is
         );
     end component top_level;
 
-    signal tm_data_field_s: std_logic_vector(31 downto 0);
-    signal tm_data_field_valid_s: std_logic;
+    signal vc1_m_axi_tvalid_s: std_logic := '0';
+    signal vc1_m_axi_tready_s: std_logic := '1';
+    signal vc1_m_axi_tdata_s: std_logic_vector(31 downto 0) := x"00000000";
+    signal vc1_m_axi_tlast_s: std_logic := '0';
     
-
-
     constant GND_CLK_PERIOD : time := 10 ns;
     constant CLK_PERIOD : time := 500 ns;
 
@@ -79,8 +84,10 @@ architecture behavioral of integration_sim is
 begin
     DBF: top_level port map (
         ready_o => test_input_ready_s,
-        tm_data_field_valid_vc1_o => tm_data_field_valid_s,
-        tm_data_field_vc1_o => tm_data_field_s,
+        vc1_m_axi_tvalid => vc1_m_axi_tvalid_s, 
+        vc1_m_axi_tready => vc1_m_axi_tready_s,
+        vc1_m_axi_tdata => vc1_m_axi_tdata_s,
+        vc1_m_axi_tlast => vc1_m_axi_tlast_s,
         data_valid_i => test_input_valid_s,
         clk_i => clk_s,
         reset_i => reset_s,
@@ -163,14 +170,14 @@ begin
         wait for GND_CLK_PERIOD;
         case validate_data_state is
             when max_size_space_packet =>
-                if tm_data_field_valid_s = '1' then
-                    assert (tm_data_field_s(7 downto 0) = max_size_space_packet_s((test_data_ptr + 0) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                if vc1_m_axi_tvalid_s = '1' then
+                    assert (vc1_m_axi_tdata_s(7 downto 0) = max_size_space_packet_s((test_data_ptr + 0) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 0" severity failure;
-                    assert (tm_data_field_s(15 downto 8) = max_size_space_packet_s((test_data_ptr + 1) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    assert (vc1_m_axi_tdata_s(15 downto 8) = max_size_space_packet_s((test_data_ptr + 1) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 1" severity failure;
-                    assert (tm_data_field_s(23 downto 16) = max_size_space_packet_s((test_data_ptr + 2) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    assert (vc1_m_axi_tdata_s(23 downto 16) = max_size_space_packet_s((test_data_ptr + 2) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 2" severity failure;
-                    assert (tm_data_field_s(31 downto 24) = max_size_space_packet_s((test_data_ptr + 3) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    assert (vc1_m_axi_tdata_s(31 downto 24) = max_size_space_packet_s((test_data_ptr + 3) mod MAX_SPACE_PACKET_SIZE_OCTET))
                     report "output not matching input Space Packet index 3" severity failure;
                     test_data_ptr <= (test_data_ptr + 4) mod MAX_SPACE_PACKET_SIZE_OCTET;
                 end if;

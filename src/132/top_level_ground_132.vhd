@@ -22,8 +22,10 @@ entity top_level_ground_132 is
         -- outputs
         rdy_o: out std_logic := '0';
         -- every virtual channel needs its own output
-        tm_data_field_vc1_o: out std_logic_vector(31 downto 0);
-        tm_data_field_valid_vc1_o: out std_logic
+        vc1_m_axi_tvalid    : out std_logic := '0'; 
+        vc1_m_axi_tready    : in std_logic;
+        vc1_m_axi_tdata     : out std_logic_vector(31 downto 0) := x"00000000";
+        vc1_m_axi_tlast     : out std_logic := '0'
     );
 end entity top_level_ground_132;
 
@@ -141,17 +143,19 @@ architecture behavioral of top_level_ground_132 is
     end component virtual_channel_demultiplexer;
 
     -- data decoder (virtual channel 1)
-    signal dd_vc1_data_fully_read_s: std_logic := '0';
     signal dd_vc1_rd_o_s: std_logic := '0';
     signal dd_vc1_err_s: std_logic := '0';
 
     component data_decoder is
         port (
             -- outputs
-            data_o: out std_logic_vector(31 downto 0); -- to axi stream entity
-            data_valid_o: out std_logic := '0';
-            data_fully_read_o: out std_logic := '0';
             rdy_o: out std_logic := '0';
+
+            -- axi outputs
+            m_axi_tvalid    : out std_logic := '0'; 
+            m_axi_tready    : in std_logic;
+            m_axi_tdata     : out std_logic_vector(31 downto 0) := x"00000000";
+            m_axi_tlast     : out std_logic := '0';
 
             packet_header_err_o: out std_logic := '0';
 
@@ -237,10 +241,11 @@ begin
 
     data_decoder_virtual_channel_1: data_decoder 
     port map (
-        data_o => tm_data_field_vc1_o,
-        data_valid_o => tm_data_field_valid_vc1_o,
-        data_fully_read_o => dd_vc1_data_fully_read_s,
         rdy_o => dd_vc1_rd_o_s,
+        m_axi_tvalid => vc1_m_axi_tvalid,
+        m_axi_tready => vc1_m_axi_tready,
+        m_axi_tdata => vc1_m_axi_tdata,
+        m_axi_tlast => vc1_m_axi_tlast,
         packet_header_err_o => dd_vc1_err_s,
         data_i => data_vc1_s,
         clk_i => gnd_clk_i,

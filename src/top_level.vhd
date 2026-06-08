@@ -17,6 +17,10 @@ entity top_level is
         ready_o: out std_logic := '0';
         tm_data_field_valid_vc1_o: out std_logic := '0';
         tm_data_field_vc1_o: out std_logic_vector(31 downto 0) := (others => '0');
+        vc1_m_axi_tvalid: out std_logic := '0'; 
+        vc1_m_axi_tready: in std_logic;
+        vc1_m_axi_tdata: out std_logic_vector(31 downto 0) := x"00000000";
+        vc1_m_axi_tlast: out std_logic := '0';
 
         -- inputs
         data_valid_i: in std_logic;
@@ -108,8 +112,10 @@ architecture behavioral of top_level is
             reset_i: in std_logic;
             fifo_empty_i: in std_logic;
             rdy_o: out std_logic := '0';
-            tm_data_field_vc1_o: out std_logic_vector(31 downto 0);
-            tm_data_field_valid_vc1_o: out std_logic
+            vc1_m_axi_tvalid    : out std_logic := '0';
+            vc1_m_axi_tready    : in std_logic;
+            vc1_m_axi_tdata     : out std_logic_vector(31 downto 0) := x"00000000";
+            vc1_m_axi_tlast     : out std_logic := '0'
         );
     end component top_level_ground_132;
 
@@ -210,8 +216,10 @@ begin
         reset_i => reset_i,
         fifo_empty_i => fifo_131_ground_empty_s,
         rdy_o => fifo_131_ground_rd_en_s,
-        tm_data_field_vc1_o => tm_data_field_vc1_o,
-        tm_data_field_valid_vc1_o => tm_data_field_valid_vc1_o
+        vc1_m_axi_tvalid => vc1_m_axi_tvalid,
+        vc1_m_axi_tready => vc1_m_axi_tready,
+        vc1_m_axi_tdata => vc1_m_axi_tdata,
+        vc1_m_axi_tlast => vc1_m_axi_tlast
     );
 
 end architecture behavioral;

@@ -14,10 +14,13 @@ use ieee.numeric_std.all;
 entity data_decoder is
     port (
         -- outputs
-        data_o: out std_logic_vector(31 downto 0) := x"00000000"; -- to axi stream entity
-        data_valid_o: out std_logic := '0';
-        data_fully_read_o: out std_logic := '0';
         rdy_o: out std_logic := '1';
+
+        -- axi outputs
+        m_axi_tvalid    : out std_logic := '0'; 
+        m_axi_tready    : in std_logic;
+        m_axi_tdata     : out std_logic_vector(31 downto 0) := x"00000000";
+        m_axi_tlast     : out std_logic := '0';
 
         packet_header_err_o: out std_logic := '0';
 
@@ -71,6 +74,7 @@ architecture behavioral of data_decoder is
     signal output_word_octet_counter_r: integer range 0 to OUTPUT_DATA_SIZE_OCTET - 1 := 0;
     signal data_buffer_r: std_logic_vector(OUTPUT_DATA_SIZE_OCTET * 8 - 1 downto 0) := (others => '0');
     signal outputing_packet_r: boolean := false;
+    signal output_rdy_r: std_logic := '1';
 
     -- space packet decoder
     signal packet_version_number_s: std_logic_vector(2 downto 0);
@@ -106,15 +110,18 @@ begin
     header_data_s(39 downto 32) <= packet_data_r(4);
     header_data_s(47 downto 40) <= packet_data_r(5);
 
-    input_data: process(clk_i) is
+    packet_io: process(clk_i) is
     begin
         if (reset_i = '0') then
             input_octet_counter_r <= 0;
             packet_state_r <= packet_header;
             packet_output_en_r <= false;
+            m_axi_tlast <= '0';
+            m_axi_tvalid <= '0';
         else
             if rising_edge(clk_i) then
-                data_valid_o <= '0';
+                m_axi_tvalid <= '0';
+                m_axi_tlast <= '0';
                 case packet_state_r is
                     when packet_header =>
                         rdy_o <= '1';
@@ -205,27 +212,37 @@ begin
                         end if;
                     when packet_output =>
                         rdy_o <= '0';
-                        data_buffer_r((output_word_octet_counter_r * 8) + 7 downto (output_word_octet_counter_r * 8)) <= packet_data_r(output_octet_counter_r);
-                        -- count packet buffer octets
-                        if output_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
-                            -- finished outputting packet, wait for next packet
-                            packet_state_r <= packet_header;
-                            output_octet_counter_r <= 0;
-                        else
-                            output_octet_counter_r <= output_octet_counter_r + 1;
+                        m_axi_tvalid <= '0';
+                        if output_rdy_r = '1' then
+                            data_buffer_r((output_word_octet_counter_r * 8) + 7 downto (output_word_octet_counter_r * 8)) <= packet_data_r(output_octet_counter_r);
+                            -- count packet buffer octets
+                            if output_octet_counter_r = (PACKET_HEADER_SIZE_OCTET + packet_data_size_octet_s) - 1 then
+                                -- finished outputting packet, wait for next packet
+                                packet_state_r <= packet_header;
+                                m_axi_tlast <= '1';
+                                output_octet_counter_r <= 0;
+                            else
+                                output_octet_counter_r <= output_octet_counter_r + 1;
+                            end if;
                         end if;
                         -- count output buffer octets
                         if output_word_octet_counter_r = OUTPUT_DATA_SIZE_OCTET - 1 then
-                            output_word_octet_counter_r <= 0;
-                            data_valid_o <= '1';
+                            if m_axi_tready = '1' then
+                                output_word_octet_counter_r <= 0;
+                                output_rdy_r <= '1';
+                            else
+                                output_rdy_r <= '0';
+                            end if;
+                            m_axi_tvalid <= '1';
                         else
+                            output_rdy_r <= '1';
                             output_word_octet_counter_r <= output_word_octet_counter_r + 1;
-                            data_valid_o <= '0';
+                            m_axi_tvalid <= '0';
                         end if;
                 end case;
             end if;
         end if;
-    end process input_data;
+    end process packet_io;
 
     packet_length_s <= 
         to_integer(unsigned(header_packet_length_s)) + 1 when use_first_header_pointer_size_s = false else -- packet length in header is packet data size - 1, so add 1 to get actual packet data size
@@ -241,7 +258,7 @@ begin
         end if;
     end process packet_size_calculation;
 
-    data_o <= 
+    m_axi_tdata <= 
         x"00000000" when reset_i = '0' 
         else data_buffer_r;
 
