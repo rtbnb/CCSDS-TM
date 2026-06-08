@@ -4,6 +4,7 @@
 -- Author       : Hannah Lindner 
 -- Project Name : HW/SW Project TM
 -- Description  : ASM Pattern decoder, removes asm pattern from bitstream
+-- License      : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;

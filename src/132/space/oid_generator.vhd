@@ -4,6 +4,7 @@
 -- Author       : Hannah Lindner 
 -- Project Name : HW/SW Project TM
 -- Description  : only idle data noise generator
+-- License      : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee; 

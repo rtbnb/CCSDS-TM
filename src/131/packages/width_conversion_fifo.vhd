@@ -4,6 +4,7 @@
 -- Author : Lukas Reil 
 -- Project Name : HW/SW Project TM
 -- Description : FIFO to change data width between two clock domains. The FIFO can be configured to have an input data width that is either wider, narrower or the same as the output data width. The FIFO depth is defined in terms of the number of output data words it can hold.
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

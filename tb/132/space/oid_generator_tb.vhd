@@ -1,10 +1,11 @@
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+----------------------------------------------------------------
 -- File         : oid_generator_tb.vhd
 -- Created      : 18.05.2026
 -- Author       : Hannah Lindner 
 -- Project Name : CCSDS 132 
--- Description  : testbench for oid generator 
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-- Description  : testbench for oid generator
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
+----------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

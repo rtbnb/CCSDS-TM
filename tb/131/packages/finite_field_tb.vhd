@@ -4,6 +4,7 @@
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for Custom Package for finite field maths
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

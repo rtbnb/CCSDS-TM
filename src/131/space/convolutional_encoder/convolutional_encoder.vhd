@@ -4,6 +4,7 @@
 -- Author : Lukas Reil
 -- Project Name : HW/SW Project TM
 -- Description : A convolutional encoder module. It uses a configurable length and generator polynomials G1 and G2. The output data rate is 2x the input data rate.
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

@@ -4,6 +4,7 @@
 -- Author : Lukas Reil
 -- Project Name : HW/SW Project TM
 -- Description : A stub for a convolutional decoder module. It does produce the same data rate as a real convolutional decoder, but uses a constraint length of 1.
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

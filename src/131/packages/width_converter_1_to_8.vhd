@@ -4,6 +4,7 @@
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : 1-Bit to 8-Bit converter
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

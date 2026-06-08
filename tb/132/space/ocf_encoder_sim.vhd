@@ -4,6 +4,7 @@
 -- Author : Robin Eilers
 -- Project Name : HW/SW Project TM
 -- Description : Simulation for the OCF Encoder
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 

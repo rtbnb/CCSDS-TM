@@ -4,6 +4,7 @@
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : Testbench R/S Decoder stub for MVP, just implements the FIFO for error correction
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 

@@ -5,6 +5,7 @@
 -- Project Name : HW/SW Project TM
 -- Description : Generic FIFO to synchronize between two clock domains with AXI Stream as its output interface.
 --               AXI Stream I/F according to: https://www.kampis-elektroecke.de/2020/04/axi-stream-interface/
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

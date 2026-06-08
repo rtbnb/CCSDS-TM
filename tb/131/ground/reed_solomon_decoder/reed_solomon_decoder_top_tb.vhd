@@ -3,7 +3,8 @@
 -- Created : 20.05.2026
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
--- Description : Testbench full R/S Decoder 
+-- Description : Testbench full R/S Decoder
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 

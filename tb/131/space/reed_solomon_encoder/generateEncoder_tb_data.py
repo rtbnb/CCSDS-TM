@@ -1,3 +1,5 @@
+# License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
+
 import numpy as np
 
 testDatas = np.linspace(0, 223, 223, dtype=np.uint8)

@@ -4,6 +4,7 @@
 -- Author : Matthias Fuchs
 -- Project Name : HW/SW Project TM
 -- Description : This entity runs the Enhanced Chien Search & Error Evaluation (eCSEE) to compute error mags and positions from ePIBMA results
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;

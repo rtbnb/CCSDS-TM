@@ -4,6 +4,7 @@
 -- Author : Lukas Reil
 -- Project Name : HW/SW Project TM
 -- Description : Testbench for the stub convolutional encoder module.
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee;
