@@ -12,3 +12,4 @@ build/*
 # vivado artifacts
 ip_core/
 
+*.xsa

@@ -49,6 +49,8 @@ m_axi_datavalid_r     <= m_axi_tready and m_tvalid_r;
 m_axi_tvalid          <= m_tvalid_r;
 s_axi_tready          <= s_tready_r;
 
+m_axi_tlast           <= m_tlast;
+
 width_conversion: process (clk_i, reset_i)
 begin 
 
@@ -61,26 +63,28 @@ if reset_i = '0' then
     
 elsif rising_edge(clk_i) then 
 
-    s_tready_r      <= m_axi_tready;
+    --s_tready_r      <= m_axi_tready;
     if m_axi_datavalid_r = '1' then
     -- written valid data  
         m_tvalid_r      <= '0';
-        m_axi_tlast     <= m_tlast;
         m_tlast         <= '0';
-        s_tready_r      <= m_axi_tready;
-        m_axi_tdata     <= data_register_r;
+        s_tready_r      <= '1';
+        --m_axi_tdata     <= data_register_r;
         counter_r       <= 0;
         
+    elsif s_axi_datavalid_r = '0' and counter_r <= 7 then 
+        s_tready_r      <= m_axi_tready;
+                
     elsif s_axi_datavalid_r = '1' then 
     -- read valid data 
+        s_tready_r                  <= '0'; 
         m_tlast                     <= m_tlast OR s_axi_tlast;
-        counter_r                   <= counter_r + 1;
-        data_register_r(8-counter_r-1)  <= s_axi_tdata; 
-        s_tready_r                  <= m_axi_tready;
+        data_register_r(8-counter_r-1)  <= s_axi_tdata;
+        counter_r       <= counter_r + 1;
         
         if counter_r = 7 then 
-            s_tready_r      <= '0'; 
             m_tvalid_r      <= '1';
+            m_axi_tdata     <= data_register_r(7 downto 1) & s_axi_tdata;
         end if; 
     end if;
     
