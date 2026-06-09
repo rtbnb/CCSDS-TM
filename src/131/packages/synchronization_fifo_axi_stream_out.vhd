@@ -42,13 +42,15 @@ architecture behavioral of synchronization_fifo_axi_stream_out is
     signal empty_s : std_logic;
     signal full_s  : std_logic;
 
-    signal fifo_data_out_r : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    signal m_axis_tvalid_r : std_logic := '0';
 begin
 
     empty_s <= '1' when wr_ptr_r = rd_ptr_r else '0';
     full_s  <= '1' when ((wr_ptr_r + 1) mod DEPTH) = rd_ptr_r else '0';
 
     full_o  <= full_s;
+
+    m_axis_tvalid <= m_axis_tvalid_r;
 
     write_process : process(wr_clk_i)
     begin
@@ -61,22 +63,30 @@ begin
     end process write_process;
 
     read_process : process(m_axis_aclk, m_axis_aresetn)
+        variable int_rd_ptr : integer range 0 to DEPTH-1 := 0;
+        variable empty_lookahead : boolean;
     begin
         if m_axis_aresetn = '0' then
             -- rd_ptr_r <= 0; -- Reset logic currently not implemented.
-            fifo_data_out_r <= (others => '0');
-            m_axis_tvalid <= '0';
+            m_axis_tdata <= (others => '0');
+            m_axis_tvalid_r <= '0';
         elsif rising_edge(m_axis_aclk) then
-            if m_axis_tready = '1' and empty_s = '0' then
-                fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
-                rd_ptr_r <= (rd_ptr_r + 1) mod DEPTH;
-                m_axis_tvalid <= '1';
-            else
-                m_axis_tvalid <= '0';
+
+            if m_axis_tvalid_r = '1' and m_axis_tready = '1' then
+                int_rd_ptr := (int_rd_ptr + 1) mod DEPTH;
+                rd_ptr_r <= int_rd_ptr;
             end if;
+
+            empty_lookahead := (int_rd_ptr = wr_ptr_r);
+
+            if empty_s = '0' and not empty_lookahead then
+                m_axis_tdata <= fifo_mem_r(int_rd_ptr);
+                m_axis_tvalid_r <= '1';
+            else
+                m_axis_tvalid_r <= '0';
+            end if;
+
         end if;
     end process read_process;
-
-    m_axis_tdata <= fifo_data_out_r;
     
 end architecture behavioral;
