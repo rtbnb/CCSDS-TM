@@ -123,6 +123,11 @@ architecture connectivity of viterbi_decoder is
 begin
 
     viterbi_controller : convolutional_to_viterbi_converter
+        generic map(
+            ACQUISITION_LENGTH_g => 480,
+            WINDOW_SIZE_g => 500,
+            INVERT_MASK_g => "10"
+        )
         port map(
             clk_i => clk_i,
             reset_i => reset_i,

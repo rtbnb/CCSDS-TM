@@ -129,7 +129,7 @@ begin
         wait for CLK_PERIOD * 500;
         ready_o <= '0';
         
-        wait for CLK_PERIOD * 4001;
+        wait for CLK_PERIOD * 6001;
         
         ready_o <= '1';
         
