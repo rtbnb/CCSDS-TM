@@ -38,9 +38,9 @@ architecture behavioral of virtual_channel_buffer_sim is
             reset_i: in std_logic;
         
             -- input interface
-            data_i: in std_logic_vector(7 downto 0);
-            data_valid_i: in std_logic;
-            ready_o: out std_logic;
+            s_axis_tdata        : in std_logic_vector(7 downto 0);
+            s_axis_tvalid       : in std_logic;
+            s_axis_tready       : out std_logic;
     
             -- output interface
             frame_ready_o: out std_logic;
@@ -107,9 +107,9 @@ begin
     port map(
         clk_i => clk_s,
         reset_i => reset_s,
-        data_i => data_i_s,
-        data_valid_i => data_valid_i_s,
-        ready_o => ready_o_s,
+        s_axis_tdata => data_i_s,
+        s_axis_tvalid => data_valid_i_s,
+        s_axis_tready => ready_o_s,
         frame_ready_o => frame_ready_o_s,
         virtual_channel_select_i => virtual_channel_select_i_s,
         data_out_en_i => data_out_en_i_s,
@@ -147,6 +147,11 @@ begin
         wait for 10 * CLK_PERIOD;
         data_out_en_i_s <= '1';
         
+        wait for 10 * CLK_PERIOD;
+        data_out_en_i_s <= '0';
+        wait for 10 * CLK_PERIOD;
+        data_out_en_i_s <= '1';        
+                
         wait;
         
     end process read_out;

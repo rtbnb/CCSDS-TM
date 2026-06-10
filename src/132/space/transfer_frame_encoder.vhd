@@ -10,6 +10,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+library work;
+use work.virtual_channel_configuration.all;
 
 entity transfer_frame_encoder is
 	Port(
@@ -21,23 +23,20 @@ entity transfer_frame_encoder is
         spacecraft_id_i: in std_logic_vector(9 downto 0);       
         
         -- output interface
-        out_en_o: out std_logic;
-        data_o: out std_logic_vector(7 downto 0);
-        out_full_i: in std_logic;
+        m_axis_tvalid : out std_logic;
+        m_axis_tdata  : out std_logic_vector(7 downto 0);
+        m_axis_tready : in  std_logic;
+        m_axis_tlast : out std_logic;
 	   
         -- input interface
 	    virtual_channel_select_o: out std_logic_vector(2 downto 0) := (others => '0');
+	    encoder_ready_i: in std_logic; -- this signal tells the virtual channel that the next byte can be send
 	    
         -- virtual channel 0
         vch0_frame_ready_i: in std_logic;
-        vch0_data_en_o: out std_logic := '0';
-        vch0_data_i: in std_logic_vector(7 downto 0);
-        vch0_virtual_channel_frame_count_i: in std_logic_vector(7 downto 0);
-        vch0_first_header_pointer_i: in std_logic_vector(10 downto 0);
-	    vch0_end_of_frame_i: in std_logic;
-	    vch0_has_ocf: in std_logic;
-	    vch0_has_fecf: in std_logic;
-	   
+        vch0_data_i: in std_logic_vector(7 downto 0) := (others => '0');
+        vch0_end_of_frame_i: in std_logic;
+        vch0_encoder_config_i: in virtual_channel_configuration_t
 	);
 end entity transfer_frame_encoder;
 
@@ -75,6 +74,18 @@ architecture behavioral of transfer_frame_encoder is
             secondary_header_valid_o : out std_logic := '0'
         );
     end component secondary_header_encoder;  
+    
+    component oid_generator is
+        port(
+                    -- input ports 
+            clk_i           : in std_logic; 
+            reset_i         : in std_logic;
+            enable_i        : in std_logic;  
+            -- output ports  
+            data_o          : out std_logic_vector(7 downto 0);
+            data_valid_o    : out std_logic
+        );
+    end component oid_generator;
 
     constant PRIMARY_HEADER_LENGTH: integer := 6;
     
@@ -82,7 +93,7 @@ architecture behavioral of transfer_frame_encoder is
     signal state_r: state_machine_t := INITIAL;
     
     --virtual buffer combination signals
-    signal vch_available_s: std_logic := '0';
+    signal any_vch_available_s: std_logic := '0';
     signal vch_first_header_pointer_s: std_logic_vector(10 downto 0);
     signal vch_has_ocf_s: std_logic;
     signal vch_has_fecf_s: std_logic;
@@ -102,6 +113,12 @@ architecture behavioral of transfer_frame_encoder is
     signal oid_length_counter_r: integer range 0 to OID_PACKET_LENGTH -1 := 0;
     
     signal virtual_channel_out_enable_r: std_logic;
+    
+    -- oid generator signals
+    signal oid_generator_enable_s: std_logic := '0';
+    signal oid_generator_data_s: std_logic_vector(7 downto 0);
+    signal oid_generator_data_valid_s: std_logic;
+    
 begin
     
     header_encoder_inst: header_encoder port map (
@@ -135,7 +152,17 @@ begin
 --        secondary_header_valid_o => (others => '0')
     );
     
-    vch_available_s <= vch0_frame_ready_i;
+    oid_generator_inst: oid_generator
+    port map(
+        clk_i => clk_i,
+        reset_i => reset_i,
+        enable_i => oid_generator_enable_s,  
+        data_o => oid_generator_data_s,
+        data_valid_o => oid_generator_data_valid_s     
+    );
+    
+    
+    any_vch_available_s <= vch0_frame_ready_i;
     
     with is_oid_frame_r select
         first_header_pointer_s <= "11111111110" when '1',
@@ -174,9 +201,9 @@ begin
                 
                 if is_oid_frame_r = '1' then
                     oid_length_counter_r <= oid_length_counter_r + 1;
-                    data_o <= testCounter_r;
+                    m_axis_tdata <= testCounter_r;
                 else
-                    data_o <= vch0_data_i;
+                    m_axis_tdata <= vch0_data_i;
                 end if;
                 
                 -- this only gets triggert when the frame is ending
@@ -198,7 +225,7 @@ begin
                 end if;
             elsif (state_r = LAST_PAYLOAD_BYTE) and out_full_i = '0' then
                     state_r <= PRIMARY_HEADER;
-                    data_o <= vch0_data_i;
+                    m_axis_tdata <= vch0_data_i;
                     master_channel_frame_count_r <= std_logic_vector(unsigned(master_channel_frame_count_r) + 1);
                     is_oid_frame_r <= not vch_available_s;
                     virtual_channel_out_enable_r <= '0';
@@ -207,7 +234,7 @@ begin
             elsif (state_r = PRIMARY_HEADER) and out_full_i = '0' then
                 out_en_o <= '1'; -- This needs only to be set once
             
-                data_o <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
+                m_axis_tdata <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
                 primary_header_ptr_r <= primary_header_ptr_r + 1;
                 if (primary_header_ptr_r = PRIMARY_HEADER_LENGTH -1) then
                     state_r <= PAYLOAD;
@@ -226,5 +253,7 @@ begin
         end if;
         
     end process;
+
+    
 
 end architecture behavioral;
