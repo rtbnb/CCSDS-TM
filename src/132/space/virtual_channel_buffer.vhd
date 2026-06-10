@@ -129,21 +129,33 @@ begin
         encoded_ocf_o => encoder_config_o.ocf_data,
         ocf_valid_o => ocf_encoding_valid_s      
     );
-    
-    encoder_config_o.first_header_pointer <= external_first_header_pointer_r;
+
+    -- counter configuration
     encoder_config_o.virtual_channel_frame_count <= virtual_channel_frame_count_r;
     encoder_config_o.master_channel_frame_count_trigger <= master_channel_frame_count_trigger_s;
+    
+    encoder_config_o.first_header_pointer <= external_first_header_pointer_r;
+
+    -- identification configuration
     encoder_config_o.transfer_frame_version_number <= std_logic_vector(to_unsigned(transfer_frame_version_number, encoder_config_o.transfer_frame_version_number'length));
     encoder_config_o.spacecraft_id <= std_logic_vector(to_unsigned(spacecraft_id, encoder_config_o.spacecraft_id'length));
+    encoder_config_o.virtual_channel_id <= own_virtual_channel_s;
+    
+    --secondary header configuration
+    encoder_config_o.has_secondary_header <= '0';
+    encoder_config_o.secondary_header_data <= (others => '0');
+    encoder_config_o.secondary_header_valid <= '0';
+    encoder_config_o.secondary_header_last_byte <= '0';
     
     own_virtual_channel_s <= std_logic_vector(to_unsigned(virtual_channel, own_virtual_channel_s'length));
 
     space_packet_size_s <= to_integer(signed(space_packet_data_length_s)) + SPACE_PACKET_PRIMARY_HEADER_SIZE;
-    first_header_pointer_o <= external_first_header_pointer_r;
     
-    s_axis_tready <= ((not readout_active_r) or pre_loading_active_r) and (not frame_full_r);
+    with space_packet_decoding_state_r select
+        s_axis_tready <= ((not readout_active_r) or pre_loading_active_r) and (not frame_full_r) when WORKING,
+                         '0' when others;
+    
     frame_ready_o <= frame_armed_r;
-    virtual_channel_frame_count_o <= virtual_channel_frame_count_r;
     end_of_frame_o <= end_of_frame_r;
     
     with (option_has_ocf) select
@@ -170,7 +182,7 @@ begin
     space_package_ingestion: process(clk_i)
     begin
         if rising_edge(clk_i) and reset_i = '1' then
-            if (frame_armed_r = '1' and frame_full_r = '1') or (frame_full_r = '1' and readout_active_r = '1') then
+            if (frame_armed_r = '1' and frame_full_r = '1' and readout_active_r = '1') or (frame_full_r = '1' and readout_active_r = '1') then
                 frame_full_r <= '0';
                 frame_write_ptr_r <= 0;
             end if;
