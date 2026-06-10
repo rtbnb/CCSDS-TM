@@ -35,32 +35,12 @@ end entity convolutional_encoder;
 
 architecture behavioral of convolutional_encoder is
 
+    signal s_axis_tready_s : std_logic := '0';
     signal fifo_data_in_r : std_logic_vector(0 downto 0) := (others => '0');
     signal fifo_data_valid_r : std_logic := '0';
     signal fifo_full_s : std_logic;
 
     signal internal_data_in_ready_r : std_logic := '0';
-
-    component synchronization_fifo_axi_stream_out is
-        generic (
-            DATA_WIDTH : integer := 8;
-            DEPTH      : integer := 16
-        );
-        port (
-            -- Input Interface
-            wr_clk_i   : in  std_logic;
-            wr_en_i    : in  std_logic;
-            wr_data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-            full_o     : out std_logic;
-
-            -- Output Interface
-            m_axis_aclk : in  std_logic;
-            m_axis_aresetn : in  std_logic;
-            m_axis_tvalid : out std_logic;
-            m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            m_axis_tready : in  std_logic
-        );
-    end component synchronization_fifo_axi_stream_out;
 
     function calculate_parity_bit(
         shift_reg : std_logic_vector(K-1 downto 0);
@@ -78,9 +58,14 @@ architecture behavioral of convolutional_encoder is
         end loop;
         return parity_bit;
     end function calculate_parity_bit;
+
+    
+    -- For debug purposes
+    signal shift_register_monitor_r : std_logic_vector(K-1 downto 0) := (others => '0');
+    signal input_counter_monitor_r : integer range 0 to 1 := 0;
 begin
 
-    convolutional_out_sync_fifo : synchronization_fifo_axi_stream_out
+    convolutional_out_sync_fifo : entity work.synchronization_fifo_axi_stream_out
         generic map (
             DATA_WIDTH => 1,
             DEPTH => 16
@@ -111,23 +96,31 @@ begin
             -- Only process input every second clock cycle
             if input_counter = 0 then
                 if s_axis_tvalid = '1' then
-                    shift_register_r := s_axis_tdata(0) & shift_register_r(K-1 downto 1);
-                    internal_data_in_ready_r <= '0';
-                    input_counter := 1; 
-                    fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G1) xor INVERT_MASK(0);
                     fifo_data_valid_r <= '1';
+                    if s_axis_tready_s = '1' then
+                        shift_register_r := s_axis_tdata(0) & shift_register_r(K-1 downto 1);
+                        shift_register_monitor_r <= shift_register_r;
+                        internal_data_in_ready_r <= '0';
+                        input_counter := 1; 
+                        input_counter_monitor_r <= input_counter;
+                        fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G1) xor INVERT_MASK(0);
+                    end if;
                 else
                     fifo_data_valid_r <= '0';
                 end if;
             else
-                internal_data_in_ready_r <= '1';
-                input_counter := 0;
-                fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G2) xor INVERT_MASK(1);
                 fifo_data_valid_r <= '1';
+                if fifo_full_s = '0' then
+                    internal_data_in_ready_r <= '1';
+                    input_counter := 0;
+                    input_counter_monitor_r <= input_counter;
+                    fifo_data_in_r(0) <= calculate_parity_bit(shift_register_r, G2) xor INVERT_MASK(1);
+                end if;
             end if;
         end if;
     end process main_process;
 
-    s_axis_tready <= internal_data_in_ready_r and not fifo_full_s;
+    s_axis_tready_s <= internal_data_in_ready_r and not fifo_full_s;
+    s_axis_tready <= s_axis_tready_s;
 
 end architecture behavioral;
