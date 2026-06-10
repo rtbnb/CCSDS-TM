@@ -288,60 +288,61 @@ begin
             m_axis_tdata <= (others => '0');
             m_axis_tvalid <= '0';
             
-        elsif reset_i = '1' and rising_edge(clk_i) then
-            
-            if (state_r = RESET) then
-                
-                state_r <= PRIMARY_HEADER;
-                master_channel_frame_count_r <= (others => '0');
-                selected_vch_r <= OID_VCH;
-   
-            elsif (state_r = PRIMARY_HEADER) and m_axis_tready = '1' then
-                m_axis_tvalid <= '1'; -- This sets valid once
-            
-                m_axis_tdata <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
-                primary_header_ptr_r <= primary_header_ptr_r + 1;
-                
-                if (primary_header_ptr_r = PRIMARY_HEADER_LENGTH -1) then
-                    if current_vch_config_r.has_secondary_header = '1' then
-                        state_r <= SECONDARY_HEADER;
-                    else
-                        state_r <= PAYLOAD;
-                    end if;
+        else
+            if rising_edge(clk_i) then
+                if (state_r = RESET) then
                     
-                    primary_header_ptr_r <= 0;
-                end if;            
-            
-            elsif (state_r = SECONDARY_HEADER) then
-            
-            elsif (state_r = PAYLOAD) then
-                if (selected_vch_r = OID_VCH and current_vch_valid_r = '1') or selected_vch_r /= OID_VCH then
-                    m_axis_tdata <= current_vch_data_r;
-                end if;    
+                    state_r <= PRIMARY_HEADER;
+                    master_channel_frame_count_r <= (others => '0');
+                    selected_vch_r <= OID_VCH;
+       
+                elsif (state_r = PRIMARY_HEADER) and m_axis_tready = '1' then
+                    m_axis_tvalid <= '1'; -- This sets valid once
                 
-                if current_vch_end_of_frame_r = '1' then
-                    current_vch_ready_r <= '0';
+                    m_axis_tdata <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
+                    primary_header_ptr_r <= primary_header_ptr_r + 1;
+                    
+                    if (primary_header_ptr_r = PRIMARY_HEADER_LENGTH -1) then
+                        if current_vch_config_r.has_secondary_header = '1' then
+                            state_r <= SECONDARY_HEADER;
+                        else
+                            state_r <= PAYLOAD;
+                        end if;
+                        
+                        primary_header_ptr_r <= 0;
+                    end if;            
                 
-                    if current_vch_config_r.has_ocf = '1' then
-                        state_r <= OCF;
-                    elsif current_vch_config_r.has_fecf = '1' then
-                        state_r <= FECF;
+                elsif (state_r = SECONDARY_HEADER) then
+                
+                elsif (state_r = PAYLOAD) then
+                    if (selected_vch_r = OID_VCH and current_vch_valid_r = '1') or selected_vch_r /= OID_VCH then
+                        m_axis_tdata <= current_vch_data_r;
+                    end if;    
+                    
+                    if current_vch_end_of_frame_r = '1' then
+                        current_vch_ready_r <= '0';
+                    
+                        if current_vch_config_r.has_ocf = '1' then
+                            state_r <= OCF;
+                        elsif current_vch_config_r.has_fecf = '1' then
+                            state_r <= FECF;
+                        else
+                            selected_vch_r <= f_select_next_vch(
+                                not any_vch_available_s,
+                                vch0_frame_ready_i,
+                                vch1_frame_ready_i
+                            );
+                            state_r <= PRIMARY_HEADER;
+                        end if;
                     else
-                        selected_vch_r <= f_select_next_vch(
-                            not any_vch_available_s,
-                            vch0_frame_ready_i,
-                            vch1_frame_ready_i
-                        );
-                        state_r <= PRIMARY_HEADER;
+                        current_vch_ready_r <= '1';             
                     end if;
-                else
-                    current_vch_ready_r <= '1';             
+                elsif (state_r = OCF) then
+                
+                elsif (state_r = FECF) then
+                
                 end if;
-            elsif (state_r = OCF) then
-            
-            elsif (state_r = FECF) then
-            
-            end if;    
+            end if;  
         end if;
     end process main_state_machine;
     
@@ -350,16 +351,18 @@ begin
         if reset_i = '0' then
             oid_length_counter_r <= 0;
             oid_end_of_frame_r <= '1';
-        elsif reset_i = '1' and rising_edge(clk_i)  then
-            if selected_vch_r = OID_VCH and oid_end_of_frame_r = '0' and current_vch_valid_r = '1'  then
-                oid_length_counter_r <= oid_length_counter_r + 1;
-                
-                if oid_length_counter_r = OID_PACKET_LENGTH -1 then
-                    oid_length_counter_r <= 0;
-                    oid_end_of_frame_r <= '1';  
+        else
+            if rising_edge(clk_i)  then
+                if selected_vch_r = OID_VCH and oid_end_of_frame_r = '0' and current_vch_valid_r = '1'  then
+                    oid_length_counter_r <= oid_length_counter_r + 1;
+                    
+                    if oid_length_counter_r = OID_PACKET_LENGTH -1 then
+                        oid_length_counter_r <= 0;
+                        oid_end_of_frame_r <= '1';  
+                    end if;
+                elsif oid_end_of_frame_r = '1' then
+                    oid_end_of_frame_r <= '0';    
                 end if;
-            elsif oid_end_of_frame_r = '1' then
-                oid_end_of_frame_r <= '0';    
             end if;
         end if; 
         
