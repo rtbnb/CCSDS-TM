@@ -23,7 +23,7 @@ architecture behavioral of viterbi_decoder_tb is
             reset_i : in std_logic;
 
             -- Convolutional encoded data input
-            convolutional_data_tdata : in std_logic;
+            convolutional_data_tdata : in std_logic_vector(0 downto 0);
             convolutional_data_tvalid : in std_logic;
             convolutional_data_tready : out std_logic;
 
@@ -80,7 +80,7 @@ begin
         port map (
             clk_i => clk,
             reset_i => reset,
-            convolutional_data_tdata => conv_axis_tdata,
+            convolutional_data_tdata(0) => conv_axis_tdata,
             convolutional_data_tvalid => conv_axis_tvalid,
             convolutional_data_tready => conv_axis_tready,
             decoded_data_tdata => data_o,
@@ -167,6 +167,17 @@ begin
 
 
     end process stimulus;
+
+
+    ready_stutter : process
+    begin
+
+        wait for clk_period * 1700;
+        ready_o <= '0'; -- Simulate backpressure by deasserting ready
+        wait for clk_period * 100;
+        ready_o <= '1'; -- Reassert ready to allow data flow
+        wait;
+    end process ready_stutter;
     
     
 
