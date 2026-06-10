@@ -15,7 +15,7 @@ entity viterbi_decoder is
         reset_i : in std_logic;
 
         -- Convolutional encoded data input
-        convolutional_data_tdata : in std_logic;
+        convolutional_data_tdata : in std_logic_vector(0 downto 0);
         convolutional_data_tvalid : in std_logic;
         convolutional_data_tready : out std_logic;
 
@@ -41,9 +41,9 @@ architecture connectivity of viterbi_decoder is
 
     component convolutional_to_viterbi_converter is
         generic (
-            ACQUISITION_LENGTH_g : integer := 96; -- Number of convolutional encoded bits to acquire before processing (Should be 6x the constraint length of the convolutional encoder)
-            WINDOW_SIZE_g : integer := 250; -- Size of the sliding window for processing convolutional data (Should be at least 6x the constraint length of the convolutional encoder to ensure proper decoding)
-            INVERT_MASK_g : std_logic_vector(1 downto 0) := "10" -- Mask to invert output bits, '1' means invert. CCSDS standard uses "01" to invert the second output bit.
+            ACQUISITION_LENGTH : integer := 96; -- Number of convolutional encoded bits to acquire before processing (Should be 6x the constraint length of the convolutional encoder)
+            WINDOW_SIZE : integer := 250; -- Size of the sliding window for processing convolutional data (Should be at least 6x the constraint length of the convolutional encoder to ensure proper decoding)
+            INVERT_MASK : std_logic_vector(1 downto 0) := "10" -- Mask to invert output bits, '1' means invert. CCSDS standard uses "01" to invert the second output bit.
         );
 
         port (
@@ -51,7 +51,7 @@ architecture connectivity of viterbi_decoder is
             reset_i : in std_logic;
 
             -- Convolutional encoded data input
-            convolutional_data_tdata : in std_logic;
+            convolutional_data_tdata : in std_logic_vector(0 downto 0);
             convolutional_data_tvalid : in std_logic;
             convolutional_data_tready : out std_logic;
 

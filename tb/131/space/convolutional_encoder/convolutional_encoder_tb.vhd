@@ -84,7 +84,7 @@ begin
         wait for 20 ns;
 
         data_in_r <= '1';
-        wait for clk_period * 10; -- No output expected since data_in_ready_r is '0'
+        wait for clk_period * 10; -- No output expected since data_in_valid_r is '0'
 
         data_in_valid_r <= '1';
         wait for clk_period;
