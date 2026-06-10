@@ -57,7 +57,7 @@ viterbi_decoder_inst : entity work.viterbi_decoder
         reset_i => rst_i,
 
         -- Convolutional encoded data input
-        convolutional_data_tdata    => s_axi_tdata,
+        convolutional_data_tdata(0)    => s_axi_tdata,
         convolutional_data_tvalid   => s_axi_tvalid,
         convolutional_data_tready   => s_axi_tready,
 
