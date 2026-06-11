@@ -281,7 +281,7 @@ begin
     tlast_delay: process(clk_i)
     begin
         if rising_edge(clk_i) then
-            m_axis_tlast <= internal_tlast_s;
+            
         end if;
         
     end process tlast_delay;
@@ -315,6 +315,7 @@ begin
                             state_r <= SECONDARY_HEADER;
                         else
                             state_r <= PAYLOAD;
+                            current_vch_ready_r <= '1';
                         end if;
                         
                         primary_header_ptr_r <= 0;
