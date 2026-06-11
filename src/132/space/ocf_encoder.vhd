@@ -12,7 +12,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity ocf_encoder is
-	Port(
+	port(
         ocf_type_i: in std_logic;    
         sdls_fsr_report_i: in std_logic;
         project_specific_report_i: in std_logic;

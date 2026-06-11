@@ -16,21 +16,33 @@ entity integration_sim is
 end entity integration_sim;
 
 architecture behavioral of integration_sim is
-    component sim_tmchain_wrapper is
+    component top_level is
         port (
-            clk_i_0 : in STD_LOGIC;
-            reset_i_0 : in STD_LOGIC;
-            ready_o_0 : out STD_LOGIC;
-            transfer_frame_version_number_i_0 : in STD_LOGIC_VECTOR ( 1 downto 0 );
-            spacecraft_id_i_0 : in STD_LOGIC_VECTOR ( 9 downto 0 );
-            data_valid_i_0 : in STD_LOGIC;
-            data_i_0 : in STD_LOGIC_VECTOR ( 7 downto 0 );
-            vc1_m_axi_tdata_0 : out STD_LOGIC_VECTOR ( 31 downto 0 );
-            vc1_m_axi_tlast_0 : out STD_LOGIC;
-            vc1_m_axi_tvalid_0 : out STD_LOGIC;
-            vc1_m_axi_tready_0 : in STD_LOGIC
+            -- outputs
+            ready_o: out std_logic := '0';
+            tm_data_field_valid_vc1_o: out std_logic := '0';
+            tm_data_field_vc1_o: out std_logic_vector(31 downto 0) := (others => '0');
+            vc1_m_axi_tvalid: out std_logic := '0'; 
+            vc1_m_axi_tready: in std_logic;
+            vc1_m_axi_tdata: out std_logic_vector(31 downto 0) := x"00000000";
+            vc1_m_axi_tlast: out std_logic := '0';
+
+            -- inputs
+            clk_i: in std_logic;
+            reset_i: in std_logic;
+            ground_clk_i: in std_logic;
+
+            -- vch0 inputs
+            vch0_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch0_s_axis_tvalid       : in std_logic;
+            vch0_s_axis_tready       : out std_logic;
+
+            -- vch1 inputs
+            vch1_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch1_s_axis_tvalid       : in std_logic;
+            vch1_s_axis_tready       : out std_logic
         );
-    end component sim_tmchain_wrapper;
+    end component top_level;
 
     signal vc1_m_axi_tvalid_s: std_logic := '0';
     signal vc1_m_axi_tready_s: std_logic := '1';
@@ -43,14 +55,15 @@ architecture behavioral of integration_sim is
     signal clk_s: std_logic := '0';
     signal reset_s: std_logic := '0';
 
-    signal transfer_frame_version_number_s: std_logic_vector(1 downto 0);
-    signal spacecraft_id_s: std_logic_vector(9 downto 0);
-
     -- test signals
-    signal test_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
-    signal test_input_valid_s: std_logic := '0';
-    signal test_input_ready_s: std_logic;
+    signal test_vch0_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
+    signal test_vch0_input_valid_s: std_logic := '0';
+    signal test_vch0_input_ready_s: std_logic;
     
+    signal test_vch1_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
+    signal test_vch1_input_valid_s: std_logic := '0';
+    signal test_vch1_input_ready_s: std_logic;        
+
     -- ground
     signal ground_clk_s: std_logic := '0';
 
@@ -75,18 +88,20 @@ architecture behavioral of integration_sim is
     signal validate_data_state: test_data_state_t := max_size_space_packet;
 
 begin
-    DBF: sim_tmchain_wrapper port map (
-        clk_i_0     => clk_s,
-        reset_i_0   => reset_s,
-        ready_o_0   => test_input_ready_s,
-        transfer_frame_version_number_i_0   => transfer_frame_version_number_s,
-        spacecraft_id_i_0                   => spacecraft_id_s,
-        data_valid_i_0      => test_input_valid_s,
-        data_i_0            => test_input_data_s,
-        vc1_m_axi_tvalid_0  => vc1_m_axi_tvalid_s, 
-        vc1_m_axi_tready_0  => vc1_m_axi_tready_s,
-        vc1_m_axi_tdata_0   => vc1_m_axi_tdata_s,
-        vc1_m_axi_tlast_0   => vc1_m_axi_tlast_s
+    DBF: top_level port map (
+        vc1_m_axi_tvalid => vc1_m_axi_tvalid_s, 
+        vc1_m_axi_tready => vc1_m_axi_tready_s,
+        vc1_m_axi_tdata => vc1_m_axi_tdata_s,
+        vc1_m_axi_tlast => vc1_m_axi_tlast_s,
+        clk_i => clk_s,
+        ground_clk_i => ground_clk_s,
+        reset_i => reset_s,
+        vch0_s_axis_tdata => test_vch0_input_data_s,
+        vch0_s_axis_tvalid => test_vch0_input_valid_s,
+        vch0_s_axis_tready => test_vch0_input_ready_s,
+        vch1_s_axis_tdata => test_vch1_input_data_s,
+        vch1_s_axis_tvalid => test_vch1_input_valid_s,
+        vch1_s_axis_tready => test_vch1_input_ready_s
     );
 
     fill_packet: process begin
@@ -113,9 +128,6 @@ begin
 
     
     general_settings: process begin
-        transfer_frame_version_number_s <= "00";
-        spacecraft_id_s <= "0000000000";
-        wait for 100ns;
         reset_s <= '1';
         wait;
     end process general_settings;
@@ -133,19 +145,19 @@ begin
     data_input: process is
     begin
         --wait for CLK_PERIOD;
-        if test_input_ready_s = '1' then
+        if test_vch0_input_ready_s = '1' then
             case test_data_state is
                 when max_size_space_packet =>
-                    test_input_data_s <= max_size_space_packet_s(wr_ptr);
-                    test_input_valid_s <= '1';
+                    test_vch0_input_data_s <= max_size_space_packet_s(wr_ptr);
+                    test_vch0_input_valid_s <= '1';
                     wr_ptr <= wr_ptr + 1;
                     if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
                         wr_ptr <= 0;
                         test_data_state <= max_size_idle_space_packet;
                     end if;
                 when max_size_idle_space_packet =>
-                    test_input_data_s <= max_size_idle_space_packet_s(wr_ptr);
-                    test_input_valid_s <= '1';
+                    test_vch0_input_data_s <= max_size_idle_space_packet_s(wr_ptr);
+                    test_vch0_input_valid_s <= '1';
                     wr_ptr <= wr_ptr + 1;
                     if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
                         wr_ptr <= 0;
@@ -153,7 +165,7 @@ begin
                     end if;
             end case;
         else
-            test_input_valid_s <= '0';
+            test_vch0_input_valid_s <= '0';
         end if;    
         wait for 2 * CLK_PERIOD;
     end process data_input;
@@ -164,15 +176,15 @@ begin
         case validate_data_state is
             when max_size_space_packet =>
                 if vc1_m_axi_tvalid_s = '1' then
-                  --  assert (vc1_m_axi_tdata_s(7 downto 0) = max_size_space_packet_s((test_data_ptr + 0) mod MAX_SPACE_PACKET_SIZE_OCTET))
-                  --  report "output not matching input Space Packet index 0" severity failure;
-                  --  assert (vc1_m_axi_tdata_s(15 downto 8) = max_size_space_packet_s((test_data_ptr + 1) mod MAX_SPACE_PACKET_SIZE_OCTET))
-                  --  report "output not matching input Space Packet index 1" severity failure;
-                  --  assert (vc1_m_axi_tdata_s(23 downto 16) = max_size_space_packet_s((test_data_ptr + 2) mod MAX_SPACE_PACKET_SIZE_OCTET))
-                  --  report "output not matching input Space Packet index 2" severity failure;
-                  --  assert (vc1_m_axi_tdata_s(31 downto 24) = max_size_space_packet_s((test_data_ptr + 3) mod MAX_SPACE_PACKET_SIZE_OCTET))
-                  --  report "output not matching input Space Packet index 3" severity failure;
-                  --  test_data_ptr <= (test_data_ptr + 4) mod MAX_SPACE_PACKET_SIZE_OCTET;
+                    assert (vc1_m_axi_tdata_s(7 downto 0) = max_size_space_packet_s((test_data_ptr + 0) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    report "output not matching input Space Packet index 0" severity failure;
+                    assert (vc1_m_axi_tdata_s(15 downto 8) = max_size_space_packet_s((test_data_ptr + 1) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    report "output not matching input Space Packet index 1" severity failure;
+                    assert (vc1_m_axi_tdata_s(23 downto 16) = max_size_space_packet_s((test_data_ptr + 2) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    report "output not matching input Space Packet index 2" severity failure;
+                    assert (vc1_m_axi_tdata_s(31 downto 24) = max_size_space_packet_s((test_data_ptr + 3) mod MAX_SPACE_PACKET_SIZE_OCTET))
+                    report "output not matching input Space Packet index 3" severity failure;
+                    test_data_ptr <= (test_data_ptr + 4) mod MAX_SPACE_PACKET_SIZE_OCTET;
                 end if;
             when others =>
                 validate_data_state <= max_size_space_packet;

@@ -4,7 +4,6 @@
 -- Author       : Hannah Lindner 
 -- Project Name : HW/SW Project TM
 -- Description  : component of pseudorandomizer, polynomial h(x) = x^17 + x^14 + 1
--- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library ieee; 

@@ -23,46 +23,45 @@ entity top_level is
         vc1_m_axi_tlast: out std_logic := '0';
 
         -- inputs
-        data_valid_i: in std_logic;
         clk_i: in std_logic;
         reset_i: in std_logic;
-        data_i: in std_logic_vector(7 downto 0);
-        transfer_frame_version_number_i: in std_logic_vector(1 downto 0);
-        spacecraft_id_i: in std_logic_vector(9 downto 0);
-        ground_clk_i: in std_logic
+        ground_clk_i: in std_logic;
+
+        -- vch0 inputs
+        vch0_s_axis_tdata        : in std_logic_vector(7 downto 0);
+        vch0_s_axis_tvalid       : in std_logic;
+        vch0_s_axis_tready       : out std_logic;
+
+        -- vch1 inputs
+        vch1_s_axis_tdata        : in std_logic_vector(7 downto 0);
+        vch1_s_axis_tvalid       : in std_logic;
+        vch1_s_axis_tready       : out std_logic
     );
 end entity top_level;
 
 architecture behavioral of top_level is
-    component virtual_channel_buffer is
+    component top_level_space_132 is
         port (
-            clk_i: in std_logic;
-            reset_i: in std_logic;
-            data_i: in std_logic_vector(7 downto 0);
-            data_valid_i: in std_logic;
-            ready_o: out std_logic;
-            frame_ready_o: out std_logic;
-            data_out_en_i: in std_logic;
-            data_o: out std_logic_vector(7 downto 0) := (others => '0');
-            virtual_channel_frame_count_o: out std_logic_vector(7 downto 0)
-        );
-    end component virtual_channel_buffer;
+            space_clk_i: std_logic;
+            reset_i: std_logic;
 
-    component transfer_frame_encoder is
-        port (
-            clk_i: in std_logic;
-            reset_i: in std_logic;
-            transfer_frame_version_number_i: in std_logic_vector(1 downto 0);
-            spacecraft_id_i: in std_logic_vector(9 downto 0);
-            out_en_o: out std_logic;
-            data_o: out std_logic_vector(7 downto 0);
-            out_full_i: in std_logic;
-            vch0_frame_ready_i: in std_logic;
-            vch0_data_en_o: out std_logic := '0';
-            vch0_data_i: in std_logic_vector(7 downto 0);
-            vch0_virtual_channel_frame_count_i: in std_logic_vector(7 downto 0)
+            -- virtual channel 0 input interface
+            vch0_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch0_s_axis_tvalid       : in std_logic;
+            vch0_s_axis_tready       : out std_logic;        
+
+            -- virtual channel 1 input interface
+            vch1_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch1_s_axis_tvalid       : in std_logic;
+            vch1_s_axis_tready       : out std_logic;
+
+            -- output interface
+            m_axis_tvalid : out std_logic;
+            m_axis_tdata  : out std_logic_vector(7 downto 0);
+            m_axis_tready : in  std_logic;
+            m_axis_tlast : out std_logic
         );
-    end component transfer_frame_encoder;
+    end component top_level_space_132;
 
     component synchronization_fifo is
         generic (
@@ -119,11 +118,6 @@ architecture behavioral of top_level is
         );
     end component top_level_ground_132;
 
-    signal virtual_channel_data_s: std_logic_vector(7 downto 0) := (others => '0');
-    signal virtual_channel_frame_ready_s: std_logic := '0';
-    signal virtual_channel_frame_count_s: std_logic_vector(7 downto 0) := (others => '0');
-    signal virtual_channel_data_en_s: std_logic := '0';
-
     signal transfer_frame_data_s: std_logic_vector(7 downto 0) := (others => '0');
     signal transfer_frame_output_enable_s: std_logic := '0';
     signal transfer_frame_output_full_s: std_logic := '0';
@@ -140,32 +134,26 @@ architecture behavioral of top_level is
     signal ccsds_131_ground_data_s: std_logic_vector(7 downto 0) := (others => '0');
     signal ccsds_131_ground_valid_s: std_logic := '0';
 
+    signal ccsds_132_m_axis_tvalid: std_logic;
+    signal ccsds_132_m_axis_tdata: std_logic_vector(7 downto 0);
+    signal ccsds_132_m_axis_tready: std_logic;
+    signal ccsds_132_m_axis_tlast: std_logic;
+
 begin
 
-    virtual_channel_buffer_inst: virtual_channel_buffer port map (
-        clk_i => clk_i,
+    top_level_space_132_inst: top_level_space_132 port map(
+        space_clk_i => clk_i,
         reset_i => reset_i,
-        data_i => data_i,
-        data_valid_i => data_valid_i,
-        ready_o => ready_o,
-        frame_ready_o => virtual_channel_frame_ready_s,
-        data_out_en_i => virtual_channel_data_en_s,
-        data_o => virtual_channel_data_s,
-        virtual_channel_frame_count_o => virtual_channel_frame_count_s
-    );
-
-    transfer_frame_encoder_inst: transfer_frame_encoder port map (
-        clk_i => clk_i,
-        reset_i => reset_i,
-        transfer_frame_version_number_i => transfer_frame_version_number_i,
-        spacecraft_id_i => spacecraft_id_i,
-        out_en_o => transfer_frame_output_enable_s,
-        data_o => transfer_frame_data_s,
-        out_full_i => transfer_frame_output_full_s,
-        vch0_frame_ready_i => virtual_channel_frame_ready_s,
-        vch0_data_en_o => virtual_channel_data_en_s,
-        vch0_data_i => virtual_channel_data_s,
-        vch0_virtual_channel_frame_count_i => virtual_channel_frame_count_s
+        vch0_s_axis_tdata => vch0_s_axis_tdata,
+        vch0_s_axis_tvalid => vch0_s_axis_tvalid,
+        vch0_s_axis_tready => vch0_s_axis_tready,   
+        vch1_s_axis_tdata => vch1_s_axis_tdata,
+        vch1_s_axis_tvalid => vch1_s_axis_tvalid,
+        vch1_s_axis_tready => vch1_s_axis_tready,
+        m_axis_tvalid => ccsds_132_m_axis_tvalid,
+        m_axis_tdata => ccsds_132_m_axis_tdata,
+        m_axis_tready => ccsds_132_m_axis_tready,
+        m_axis_tlast => ccsds_132_m_axis_tlast      
     );
 
     fifo_131_space_inst: synchronization_fifo port map (
