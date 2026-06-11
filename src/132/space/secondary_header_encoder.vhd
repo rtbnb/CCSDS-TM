@@ -13,7 +13,7 @@ use ieee.numeric_std.all;
 
 entity secondary_header_encoder is
     generic (
-        secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3 4.1.3.1.6
+        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3 4.1.3.1.6
     );
 
     port (
@@ -29,14 +29,14 @@ entity secondary_header_encoder is
 end entity secondary_header_encoder;
 
 architecture behavioral of secondary_header_encoder is
-    constant LAST_OCTET_COUNTER_VALUE : integer := secondary_header_data_field_width_octets_g; -- last octet is at position 63 which represents the 64th octet (0 to 63)
+    constant LAST_OCTET_COUNTER_VALUE : integer := SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS; -- last octet is at position 63 which represents the 64th octet (0 to 63)
     signal octet_counter_r : integer range 0 to LAST_OCTET_COUNTER_VALUE + 1 := 0;
     signal id_s : std_logic_vector(7 downto 0) := (others => '0');
     signal secondary_header_fully_read_r : std_logic := '0';
     signal secondary_header_s : std_logic_vector(7 downto 0) := (others => '0');
 
-    signal data_field_in_octet_counter_r : integer range 0 to secondary_header_data_field_width_octets_g := 0;
-    signal data_field_r : std_logic_vector( (secondary_header_data_field_width_octets_g * 8) - 1 downto 0) := (others => '0');
+    signal data_field_in_octet_counter_r : integer range 0 to SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS := 0;
+    signal data_field_r : std_logic_vector( (SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS * 8) - 1 downto 0) := (others => '0');
     signal data_field_valid_flag_r : std_logic := '0';
    
 begin
@@ -78,9 +78,9 @@ begin
     process (input_clk_i, data_field_valid_flag_r, data_field_in_octet_counter_r) begin
         if rising_edge(input_clk_i) then
             if data_field_valid_flag_r = '0' then
-                if data_field_in_octet_counter_r = secondary_header_data_field_width_octets_g then
+                if data_field_in_octet_counter_r = SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS then
                     data_field_in_octet_counter_r <= 0;
-                elsif data_field_in_octet_counter_r = secondary_header_data_field_width_octets_g - 1 then
+                elsif data_field_in_octet_counter_r = SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS - 1 then
                     data_field_in_octet_counter_r <= data_field_in_octet_counter_r + 1;
                     data_field_valid_flag_r <= '1';
                     data_field_r( ((data_field_in_octet_counter_r * 8) + 7) downto (data_field_in_octet_counter_r * 8) ) <= data_field_i;
