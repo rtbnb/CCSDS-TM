@@ -15,11 +15,11 @@ use work.virtual_channel_configuration.all;
 
 entity virtual_channel_buffer is
 	generic(
-	   virtual_channel: integer := 1; -- zero is not allowed as a value for the virtual channel
-	   transfer_frame_version_number: integer := 0;
-	   spacecraft_id: integer := 1;
-	   option_has_ocf: boolean := false;
-	   option_has_fecf: boolean := false
+	   VIRTUAL_CHANNEL: integer := 1; -- zero is not allowed as a value for the virtual channel
+	   TRANSFER_FRAME_VERSION_NUMBER: integer := 0;
+	   SPACECRAFT_ID: integer := 1;
+	   OPTION_HAS_OCF: boolean := false;
+	   OPTION_HAS_FECF: boolean := false
 	);
 	port(
         clk_i: in std_logic;
@@ -137,8 +137,8 @@ begin
     encoder_config_o.first_header_pointer <= external_first_header_pointer_r;
 
     -- identification configuration
-    encoder_config_o.transfer_frame_version_number <= std_logic_vector(to_unsigned(transfer_frame_version_number, encoder_config_o.transfer_frame_version_number'length));
-    encoder_config_o.spacecraft_id <= std_logic_vector(to_unsigned(spacecraft_id, encoder_config_o.spacecraft_id'length));
+    encoder_config_o.transfer_frame_version_number <= std_logic_vector(to_unsigned(TRANSFER_FRAME_VERSION_NUMBER, encoder_config_o.transfer_frame_version_number'length));
+    encoder_config_o.spacecraft_id <= std_logic_vector(to_unsigned(SPACECRAFT_ID, encoder_config_o.spacecraft_id'length));
     encoder_config_o.virtual_channel_id <= own_virtual_channel_s;
     
     --secondary header configuration
@@ -147,7 +147,7 @@ begin
     encoder_config_o.secondary_header_valid <= '0';
     encoder_config_o.secondary_header_last_byte <= '0';
     
-    own_virtual_channel_s <= std_logic_vector(to_unsigned(virtual_channel, own_virtual_channel_s'length));
+    own_virtual_channel_s <= std_logic_vector(to_unsigned(VIRTUAL_CHANNEL, own_virtual_channel_s'length));
 
     space_packet_size_s <= to_integer(signed(space_packet_data_length_s)) + SPACE_PACKET_PRIMARY_HEADER_SIZE;
     
@@ -158,11 +158,11 @@ begin
     frame_ready_o <= frame_armed_r;
     end_of_frame_o <= end_of_frame_r;
     
-    with (option_has_ocf) select
+    with (OPTION_HAS_OCF) select
         encoder_config_o.has_ocf <= '1' when true,
                    '0' when others;
             
-    with (option_has_fecf) select
+    with (OPTION_HAS_FECF) select
         encoder_config_o.has_fecf <= '1' when true,
                     '0' when others;    
     

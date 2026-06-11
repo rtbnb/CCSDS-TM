@@ -50,11 +50,11 @@ architecture behavioral of encoder_sim is
     
     component virtual_channel_buffer is
         generic(
-           virtual_channel: integer := 1; -- zero is not allowed as a value for the virtual channel
-           transfer_frame_version_number: integer := 0;
-           spacecraft_id: integer := 1;
-           option_has_ocf: boolean := false;
-           option_has_fecf: boolean := false
+            VIRTUAL_CHANNEL: integer := 1; -- zero is not allowed as a value for the virtual channel
+            TRANSFER_FRAME_VERSION_NUMBER: integer := 0;
+            SPACECRAFT_ID: integer := 1;
+            OPTION_HAS_OCF: boolean := false;
+            OPTION_HAS_FECF: boolean := false
         );
         port(
             clk_i: in std_logic;

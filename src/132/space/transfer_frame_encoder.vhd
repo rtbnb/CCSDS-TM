@@ -64,7 +64,7 @@ architecture behavioral of transfer_frame_encoder is
     
     component secondary_header_encoder is
         generic (
-            secondary_header_data_field_width_octets_g : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3 4.1.3.1.6
+            SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS : integer := 63 -- maximum length of this parameter is 63 according to CCSDS-132.0-B-3 4.1.3.1.6
         );
         port (
             output_clk_i : in std_logic;
@@ -106,10 +106,7 @@ architecture behavioral of transfer_frame_encoder is
     constant OID_FIRST_HEADER_POINTER: std_logic_vector(10 downto 0) := "11111111110";
 
     type state_machine_t IS (RESET, PRIMARY_HEADER, SECONDARY_HEADER, PAYLOAD, OCF, FECF);
-    
-    
-    type selected_vch_t IS (OID_VCH, VCH0, VCH1);
-    
+    type selected_vch_t IS (OID_VCH, VCH0, VCH1);    
 
     function f_select_next_vch (
         is_oid_frame_r          : in std_logic;
@@ -191,7 +188,7 @@ begin
     
     secondary_header_encoder_inst: secondary_header_encoder
     generic map(
-        secondary_header_data_field_width_octets_g => 63
+        SECONDARY_HEADER_DATA_FIELD_WIDTH_OCTETS => 63
     )
     port map(
         output_clk_i => '0',
