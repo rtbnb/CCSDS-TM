@@ -195,7 +195,7 @@ begin
     );
 
     master_channel_demux: master_channel_demultiplexer generic map (
-        MASTER_CHANNEL_1_ID => "000000000000"
+        MASTER_CHANNEL_1_ID => "000000000100"
     )
     port map (
         -- inputs
@@ -221,7 +221,7 @@ begin
     );
 
     virtual_channel_demux_master_channel_1: virtual_channel_demultiplexer generic map (
-        VIRTUAL_CHANNEL_1_ID => "000"
+        VIRTUAL_CHANNEL_1_ID => "001"
     )
     port map (
         data_i => mc1_data_s,
