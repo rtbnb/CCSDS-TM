@@ -167,6 +167,9 @@ architecture behavioral of transfer_frame_encoder is
     signal oid_generator_data_s: std_logic_vector(7 downto 0);
     signal oid_generator_data_valid_s: std_logic;
     
+    signal oid_primed_s: std_logic := '0';
+    signal oid_primed_used_s: std_logic := '0';
+    
     -- fecf encoder signals
     signal fecf_data_s: std_logic_vector(15 downto 0) := (others => '0');
     
@@ -247,7 +250,8 @@ begin
     encoder_ready_o <= m_axis_tready and current_vch_ready_r;
     m_axis_tvalid <= internal_valid_s;
     
-    internal_tlast_s <= current_vch_end_of_frame_r;
+    
+    m_axis_tlast <= internal_tlast_s;
     
     with selected_vch_r select
         current_vch_config_r <= vch0_encoder_config_i when VCH0,
@@ -303,8 +307,14 @@ begin
                     state_r <= PRIMARY_HEADER;
                     master_channel_frame_count_r <= (others => '0');
                     selected_vch_r <= OID_VCH;
+                    oid_primed_used_s <= '0';
+                    internal_tlast_s <= '0';
        
                 elsif (state_r = PRIMARY_HEADER) and m_axis_tready = '1' then
+                    if internal_tlast_s = '1' then
+                        internal_tlast_s <= '0';
+                    end if;
+                
                     internal_valid_s <= '1'; -- This sets valid once
                 
                     m_axis_tdata <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
@@ -324,15 +334,25 @@ begin
                 elsif (state_r = SECONDARY_HEADER) then
                 
                 elsif (state_r = PAYLOAD) then
-                    if (selected_vch_r = OID_VCH and current_vch_valid_r = '1') or selected_vch_r /= OID_VCH then
+                    if (selected_vch_r = OID_VCH and current_vch_valid_r = '1') or selected_vch_r /= OID_VCH or (oid_primed_s = '1' and oid_primed_used_s = '0' and selected_vch_r = OID_VCH) then
+                        
+                        if oid_primed_s = '1' and oid_primed_used_s = '0' and selected_vch_r = OID_VCH then
+                            oid_primed_used_s <= '1';
+                        end if; 
+                        
                         m_axis_tdata <= current_vch_data_r;
                         internal_valid_s <= '1';
                     else
                         internal_valid_s <= '0';
-                    end if;    
+                    end if; 
+                    
+                    if oid_primed_used_s = '1' and oid_primed_s = '0' then
+                        oid_primed_used_s <= '0';
+                    end if;  
                     
                     if current_vch_end_of_frame_r = '1' then
                         current_vch_ready_r <= '0';
+                        
                     
                         if current_vch_config_r.has_ocf = '1' then
                             state_r <= OCF;
@@ -345,6 +365,7 @@ begin
                                 vch1_frame_ready_i
                             );
                             state_r <= PRIMARY_HEADER;
+                            internal_tlast_s <= '1';
                         end if;
                     else
                         current_vch_ready_r <= '1';             
@@ -358,14 +379,14 @@ begin
         end if;
     end process main_state_machine;
     
-    oid_end_flag_generator: process(clk_i)
+    oid_end_flag_generator: process(oid_generator_data_valid_s)
     begin
         if reset_i = '0' then
             oid_length_counter_r <= 0;
-            oid_end_of_frame_r <= '1';
+            oid_end_of_frame_r <= '0';
         else
-            if rising_edge(clk_i)  then
-                if selected_vch_r = OID_VCH and oid_end_of_frame_r = '0' and current_vch_valid_r = '1'  then
+            if rising_edge(oid_generator_data_valid_s) then
+                if (selected_vch_r = OID_VCH and oid_end_of_frame_r = '0' and oid_generator_data_valid_s = '1') or (oid_primed_s = '1' and oid_primed_used_s = '1') then
                     oid_length_counter_r <= oid_length_counter_r + 1;
                     
                     if oid_length_counter_r = OID_PACKET_LENGTH -1 then
@@ -373,8 +394,14 @@ begin
                         oid_end_of_frame_r <= '1';  
                     end if;
                 elsif oid_end_of_frame_r = '1' then
-                    oid_end_of_frame_r <= '0';    
+                    oid_end_of_frame_r <= '0';
+                    oid_primed_s <= '1';
                 end if;
+                
+                if oid_primed_s = '1' and oid_primed_used_s = '1' then
+                    oid_primed_s <= '0'; 
+                end if;
+                
             end if;
         end if; 
         
