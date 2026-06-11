@@ -149,6 +149,7 @@ architecture behavioral of transfer_frame_encoder is
     signal current_vch_valid_r: std_logic := '0';
     signal current_vch_ready_r: std_logic := '0';
     
+    signal internal_valid_s : std_logic := '0';
     
     signal master_channel_frame_count_r: std_logic_vector(7 downto 0) := (others => '0');
     
@@ -243,6 +244,7 @@ begin
     
     any_vch_available_s <= vch0_frame_ready_i or vch1_frame_ready_i;
     encoder_ready_o <= m_axis_tready and current_vch_ready_r;
+    m_axis_tvalid <= internal_valid_s;
     
     m_axis_tlast <= current_vch_end_of_frame_r;
     
@@ -283,7 +285,8 @@ begin
             state_r <= RESET;
             master_channel_frame_count_r <= (others => '0');
             m_axis_tdata <= (others => '0');
-            m_axis_tvalid <= '0';
+
+            internal_valid_s <= '0';
             
         else
             if rising_edge(clk_i) then
@@ -294,7 +297,7 @@ begin
                     selected_vch_r <= OID_VCH;
        
                 elsif (state_r = PRIMARY_HEADER) and m_axis_tready = '1' then
-                    m_axis_tvalid <= '1'; -- This sets valid once
+                    internal_valid_s <= '1'; -- This sets valid once
                 
                     m_axis_tdata <= header_data_r(7 + (primary_header_ptr_r * 8) downto 0 + (primary_header_ptr_r * 8));
                     primary_header_ptr_r <= primary_header_ptr_r + 1;
@@ -314,6 +317,9 @@ begin
                 elsif (state_r = PAYLOAD) then
                     if (selected_vch_r = OID_VCH and current_vch_valid_r = '1') or selected_vch_r /= OID_VCH then
                         m_axis_tdata <= current_vch_data_r;
+                        internal_valid_s <= '1';
+                    else
+                        internal_valid_s <= '0';
                     end if;    
                     
                     if current_vch_end_of_frame_r = '1' then
