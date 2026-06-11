@@ -150,6 +150,7 @@ architecture behavioral of transfer_frame_encoder is
     signal current_vch_ready_r: std_logic := '0';
     
     signal internal_valid_s : std_logic := '0';
+    signal internal_tlast_s : std_logic := '0';
     
     signal master_channel_frame_count_r: std_logic_vector(7 downto 0) := (others => '0');
     
@@ -246,7 +247,7 @@ begin
     encoder_ready_o <= m_axis_tready and current_vch_ready_r;
     m_axis_tvalid <= internal_valid_s;
     
-    m_axis_tlast <= current_vch_end_of_frame_r;
+    internal_tlast_s <= current_vch_end_of_frame_r;
     
     with selected_vch_r select
         current_vch_config_r <= vch0_encoder_config_i when VCH0,
@@ -277,6 +278,13 @@ begin
         oid_generator_enable_s <= current_vch_ready_r when OID_VCH,
                                   '0' when others; 
         
+    tlast_delay: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            m_axis_tlast <= internal_tlast_s;
+        end if;
+        
+    end process tlast_delay;
     
     main_state_machine: process(clk_i)
     begin
