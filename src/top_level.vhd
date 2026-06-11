@@ -10,6 +10,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+library work;
 
 entity top_level is
     port (
@@ -79,6 +80,27 @@ architecture behavioral of top_level is
             empty_o: out std_logic
         );
     end component synchronization_fifo;
+
+    component synchronization_fifo_axi_stream_in is
+        generic (
+            DATA_WIDTH : integer := 8;
+            DEPTH      : integer := 16
+        );
+        port (
+            -- Input Interface
+            s_axis_aclk : in  std_logic;
+            s_axis_aresetn : in  std_logic;
+            s_axis_tvalid : in  std_logic;
+            s_axis_tdata  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+            s_axis_tready : out std_logic;
+    
+            -- Read Interface
+            rd_clk_i   : in  std_logic;
+            rd_en_i    : in  std_logic;
+            rd_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+            empty_o    : out std_logic
+        );
+    end component synchronization_fifo_axi_stream_in;
 
     component ccsds_131_space is
         port (
@@ -156,11 +178,17 @@ begin
         m_axis_tlast => ccsds_132_m_axis_tlast      
     );
 
-    fifo_131_space_inst: synchronization_fifo port map (
-        wr_clk_i => clk_i,
-        wr_en_i => transfer_frame_output_enable_s,
-        wr_data_i => transfer_frame_data_s,
-        full_o => transfer_frame_output_full_s,
+    fifo_132_131_space_inst: synchronization_fifo_axi_stream_in
+    generic map(
+        DATA_WIDTH => 8,
+        DEPTH => 16        
+    )
+    port map(
+        s_axis_aclk => clk_i,
+        s_axis_aresetn => reset_i,
+        s_axis_tvalid => ccsds_132_m_axis_tvalid,
+        s_axis_tdata => ccsds_132_m_axis_tdata,
+        s_axis_tready => ccsds_132_m_axis_tready,
         rd_clk_i => clk_i,
         rd_en_i => ccsds_131_space_read_fifo_s,
         rd_data_o => fifo_131_space_rd_data_s,

@@ -72,9 +72,15 @@ architecture behavioral of virtual_channel_buffer is
     constant SPACE_PACKET_MAX_SIZE: integer := 256; -- The maximum defined size of the space package data field as defined by SeeSat
     constant SPACE_PACKET_MAX_DATA_SIZE: integer := SPACE_PACKET_MAX_SIZE - SPACE_PACKET_PRIMARY_HEADER_SIZE; 
     
+
+    
     type buffer_mem_t is array (0 to FRAME_DATA_BUFFER_SIZE -1) of std_logic_vector(7 downto 0);
     
     signal frame_data_buffer_r : buffer_mem_t := (others => (others => '0'));
+    
+    attribute RAM_STYLE : string;
+	attribute RAM_STYLE of frame_data_buffer_r : signal is "block";
+    
     signal space_packet_header_buffer_r: std_logic_vector(47 downto 0);
     
     signal space_packet_data_length_s: std_logic_vector(15 downto 0);
@@ -185,6 +191,7 @@ begin
             space_packet_write_ptr_r <= 0;
             space_packet_header_buffer_r <= (others => '0');
             frame_write_ptr_r <= 0;
+            frame_data_buffer_r <= (others => (others => '0'));
                   
             space_packet_decoding_state_r <= RESET;
         else

@@ -32,9 +32,6 @@ entity synchronization_fifo_axi_stream_in is
     );
 end entity synchronization_fifo_axi_stream_in;
 
-library ieee;
-use ieee.std_logic_1164.all;
-
 architecture behavioral of synchronization_fifo_axi_stream_in is
 
     type fifo_mem_t is array (0 to DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
