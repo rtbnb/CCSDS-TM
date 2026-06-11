@@ -22,20 +22,25 @@ architecture behavioral of integration_sim is
             ready_o: out std_logic := '0';
             tm_data_field_valid_vc1_o: out std_logic := '0';
             tm_data_field_vc1_o: out std_logic_vector(31 downto 0) := (others => '0');
-
             vc1_m_axi_tvalid: out std_logic := '0'; 
             vc1_m_axi_tready: in std_logic;
             vc1_m_axi_tdata: out std_logic_vector(31 downto 0) := x"00000000";
             vc1_m_axi_tlast: out std_logic := '0';
 
             -- inputs
-            data_valid_i: in std_logic;
             clk_i: in std_logic;
             reset_i: in std_logic;
-            data_i: in std_logic_vector(7 downto 0);
-            transfer_frame_version_number_i: in std_logic_vector(1 downto 0);
-            spacecraft_id_i: in std_logic_vector(9 downto 0);
-            ground_clk_i: in std_logic
+            ground_clk_i: in std_logic;
+
+            -- vch0 inputs
+            vch0_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch0_s_axis_tvalid       : in std_logic;
+            vch0_s_axis_tready       : out std_logic;
+
+            -- vch1 inputs
+            vch1_s_axis_tdata        : in std_logic_vector(7 downto 0);
+            vch1_s_axis_tvalid       : in std_logic;
+            vch1_s_axis_tready       : out std_logic
         );
     end component top_level;
 
@@ -50,14 +55,15 @@ architecture behavioral of integration_sim is
     signal clk_s: std_logic := '0';
     signal reset_s: std_logic := '0';
 
-    signal transfer_frame_version_number_s: std_logic_vector(1 downto 0);
-    signal spacecraft_id_s: std_logic_vector(9 downto 0);
-
     -- test signals
-    signal test_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
-    signal test_input_valid_s: std_logic := '0';
-    signal test_input_ready_s: std_logic;
+    signal test_vch0_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
+    signal test_vch0_input_valid_s: std_logic := '0';
+    signal test_vch0_input_ready_s: std_logic;
     
+    signal test_vch1_input_data_s: std_logic_vector(7 downto 0) := (others => '0');
+    signal test_vch1_input_valid_s: std_logic := '0';
+    signal test_vch1_input_ready_s: std_logic;        
+
     -- ground
     signal ground_clk_s: std_logic := '0';
 
@@ -83,18 +89,19 @@ architecture behavioral of integration_sim is
 
 begin
     DBF: top_level port map (
-        ready_o => test_input_ready_s,
         vc1_m_axi_tvalid => vc1_m_axi_tvalid_s, 
         vc1_m_axi_tready => vc1_m_axi_tready_s,
         vc1_m_axi_tdata => vc1_m_axi_tdata_s,
         vc1_m_axi_tlast => vc1_m_axi_tlast_s,
-        data_valid_i => test_input_valid_s,
         clk_i => clk_s,
+        ground_clk_i => ground_clk_s,
         reset_i => reset_s,
-        data_i => test_input_data_s,
-        transfer_frame_version_number_i => transfer_frame_version_number_s,
-        spacecraft_id_i => spacecraft_id_s,
-        ground_clk_i => ground_clk_s
+        vch0_s_axis_tdata => test_vch0_input_data_s,
+        vch0_s_axis_tvalid => test_vch0_input_valid_s,
+        vch0_s_axis_tready => test_vch0_input_ready_s,
+        vch1_s_axis_tdata => test_vch1_input_data_s,
+        vch1_s_axis_tvalid => test_vch1_input_valid_s,
+        vch1_s_axis_tready => test_vch1_input_ready_s
     );
 
     fill_packet: process begin
@@ -122,8 +129,6 @@ begin
     
     general_settings: process begin
         reset_s <= '1';
-        transfer_frame_version_number_s <= "00";
-        spacecraft_id_s <= "0000000000";
         wait;
     end process general_settings;
 
@@ -140,19 +145,19 @@ begin
     data_input: process is
     begin
         --wait for CLK_PERIOD;
-        if test_input_ready_s = '1' then
+        if test_vch0_input_ready_s = '1' then
             case test_data_state is
                 when max_size_space_packet =>
-                    test_input_data_s <= max_size_space_packet_s(wr_ptr);
-                    test_input_valid_s <= '1';
+                    test_vch0_input_data_s <= max_size_space_packet_s(wr_ptr);
+                    test_vch0_input_valid_s <= '1';
                     wr_ptr <= wr_ptr + 1;
                     if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
                         wr_ptr <= 0;
                         test_data_state <= max_size_idle_space_packet;
                     end if;
                 when max_size_idle_space_packet =>
-                    test_input_data_s <= max_size_idle_space_packet_s(wr_ptr);
-                    test_input_valid_s <= '1';
+                    test_vch0_input_data_s <= max_size_idle_space_packet_s(wr_ptr);
+                    test_vch0_input_valid_s <= '1';
                     wr_ptr <= wr_ptr + 1;
                     if wr_ptr = MAX_SPACE_PACKET_SIZE_OCTET - 1 then
                         wr_ptr <= 0;
@@ -160,7 +165,7 @@ begin
                     end if;
             end case;
         else
-            test_input_valid_s <= '0';
+            test_vch0_input_valid_s <= '0';
         end if;    
         wait for 2 * CLK_PERIOD;
     end process data_input;
