@@ -16,7 +16,7 @@ entity integration_sim is
 end entity integration_sim;
 
 architecture behavioral of integration_sim is
-    component full_integration_wrapper is
+    component sim_tmchain_wrapper is
         port (
             clk_i_0 : in STD_LOGIC;
             reset_i_0 : in STD_LOGIC;
@@ -30,7 +30,7 @@ architecture behavioral of integration_sim is
             vc1_m_axi_tvalid_0 : out STD_LOGIC;
             vc1_m_axi_tready_0 : in STD_LOGIC
         );
-    end component full_integration_wrapper;
+    end component sim_tmchain_wrapper;
 
     signal vc1_m_axi_tvalid_s: std_logic := '0';
     signal vc1_m_axi_tready_s: std_logic := '1';
@@ -75,7 +75,7 @@ architecture behavioral of integration_sim is
     signal validate_data_state: test_data_state_t := max_size_space_packet;
 
 begin
-    DBF: full_integration_wrapper port map (
+    DBF: sim_tmchain_wrapper port map (
         clk_i_0     => clk_s,
         reset_i_0   => reset_s,
         ready_o_0   => test_input_ready_s,
