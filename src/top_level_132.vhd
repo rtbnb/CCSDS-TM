@@ -63,7 +63,7 @@ architecture behavioral of top_level_132 is
         );
     end component top_level_space_132;
 
-    component synchronization_fifo_axi_stream_in is
+    component synchronization_fifo_axi_stream is
         generic (
             DATA_WIDTH : integer := 8;
             DEPTH      : integer := 16
@@ -76,27 +76,34 @@ architecture behavioral of top_level_132 is
             s_axis_tdata  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
             s_axis_tready : out std_logic;
 
-            -- Read Interface
-            rd_clk_i   : in  std_logic;
-            rd_en_i    : in  std_logic;
-            rd_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-            empty_o    : out std_logic
+            -- Output Interface
+            m_axis_aclk : in  std_logic;
+            m_axis_aresetn : in  std_logic;
+            m_axis_tvalid : out std_logic;
+            m_axis_tdata  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+            m_axis_tready : in  std_logic
         );
-    end component synchronization_fifo_axi_stream_in;
+    end component synchronization_fifo_axi_stream;
+
+    signal gnd_fifo_m_axis_tdata_s: std_logic_vector(7 downto 0) := (others => '0');
+    signal gnd_fifo_m_axis_tvalid_s: std_logic := '0';
+    signal gnd_fifo_s_axis_tlast_s: std_logic;
 
     component top_level_ground_132 is
         port (
-            data_i: in std_logic_vector(7 downto 0);
+            s_axi_tdata: in std_logic_vector(7 downto 0);
+            s_axi_tvalid: in std_logic;
+            s_axi_tready: out std_logic;
+            s_axi_tlast: in std_logic;
             gnd_clk_i: in std_logic;
             reset_i: in std_logic;
-            fifo_empty_i: in std_logic;
-            rdy_o: out std_logic := '0';
             vc1_m_axi_tvalid    : out std_logic := '0';
             vc1_m_axi_tready    : in std_logic;
             vc1_m_axi_tdata     : out std_logic_vector(31 downto 0) := x"00000000";
             vc1_m_axi_tlast     : out std_logic := '0'
         );
     end component top_level_ground_132;
+    signal gnd_132_s_axis_t_ready_s: std_logic;
 
     signal transfer_frame_data_s: std_logic_vector(7 downto 0) := (others => '0');
     signal transfer_frame_output_enable_s: std_logic := '0';
@@ -128,24 +135,26 @@ begin
         m_axis_tlast => ccsds_132_m_axis_tlast      
     );
 
-    fifo_132_inst: synchronization_fifo_axi_stream_in port map (
+    fifo_132_inst: synchronization_fifo_axi_stream port map (
         s_axis_aclk => clk_i,
         s_axis_aresetn => reset_i,
         s_axis_tvalid => ccsds_132_m_axis_tvalid,
         s_axis_tdata => ccsds_132_m_axis_tdata,
         s_axis_tready => ccsds_132_m_axis_tready,
-        rd_clk_i => ground_clk_i,
-        rd_en_i => fifo_132_ground_rd_en_s,
-        rd_data_o => fifo_132_ground_rd_data_s,
-        empty_o => fifo_132_ground_empty_s
+        m_axis_aclk => ground_clk_i,
+        m_axis_aresetn => reset_i,
+        m_axis_tvalid => gnd_fifo_m_axis_tvalid_s,
+        m_axis_tdata => gnd_fifo_m_axis_tdata_s,
+        m_axis_tready => gnd_132_s_axis_t_ready_s
     );
 
     top_level_ground_132_inst: top_level_ground_132 port map (
-        data_i => fifo_132_ground_rd_data_s,
+        s_axi_tdata => gnd_fifo_m_axis_tdata_s,
+        s_axi_tvalid => gnd_fifo_m_axis_tvalid_s,
+        s_axi_tready => gnd_132_s_axis_t_ready_s,
+        s_axi_tlast => gnd_fifo_s_axis_tlast_s,
         gnd_clk_i => ground_clk_i,
         reset_i => reset_i,
-        fifo_empty_i => fifo_132_ground_empty_s,
-        rdy_o => fifo_132_ground_rd_en_s,
         vc1_m_axi_tvalid => vc1_m_axi_tvalid,
         vc1_m_axi_tready => vc1_m_axi_tready,
         vc1_m_axi_tdata => vc1_m_axi_tdata,

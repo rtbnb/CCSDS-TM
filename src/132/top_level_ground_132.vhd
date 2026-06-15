@@ -14,13 +14,15 @@ use ieee.numeric_std.all;
 entity top_level_ground_132 is
     port (
         -- inputs
-        data_i: std_logic_vector(7 downto 0); -- to 131 decoder
-        gnd_clk_i: std_logic;
-        reset_i: std_logic;
-        fifo_empty_i: std_logic;
+        s_axi_tdata: in std_logic_vector(7 downto 0);
+        s_axi_tvalid: in std_logic;
+        s_axi_tready: out std_logic;
+        s_axi_tlast: in std_logic;
+
+        gnd_clk_i: in std_logic;
+        reset_i: in std_logic;
 
         -- outputs
-        rdy_o: out std_logic := '0';
         -- every virtual channel needs its own output
         vc1_m_axi_tvalid    : out std_logic := '0'; 
         vc1_m_axi_tready    : in std_logic;
@@ -48,11 +50,13 @@ architecture behavioral of top_level_ground_132 is
         );
         port (
             -- inputs
-            data_i: std_logic_vector(7 downto 0);
-            clk_i: std_logic;
-            reset_i: std_logic;
-            fifo_empty_i: std_logic;
-            master_channel_demux_rdy_i: std_logic;
+            s_axi_tdata: in std_logic_vector(7 downto 0);
+            s_axi_tvalid: in std_logic;
+            s_axi_tready: out std_logic;
+            s_axi_tlast: in std_logic;
+            clk_i: in std_logic;
+            reset_i: in std_logic;
+            master_channel_demux_rdy_i: in std_logic;
 
             -- outputs
             tm_frame_first_header_pointer_o: out std_logic_vector(10 downto 0);
@@ -177,10 +181,12 @@ begin
     )
     port map (
         -- inputs
-        data_i => data_i,
+        s_axi_tdata => s_axi_tdata,
+        s_axi_tvalid => s_axi_tvalid,
+        s_axi_tready => s_axi_tready,
+        s_axi_tlast => s_axi_tlast,
         clk_i => gnd_clk_i,
         reset_i => reset_i,
-        fifo_empty_i => fifo_empty_i,
         master_channel_demux_rdy_i => mc_rdy_s,
 
         -- outputs
@@ -190,8 +196,7 @@ begin
         virtual_channel_id_o => virtual_channel_id_s,
         
         space_packet_data_o => space_packet_data_s,
-        space_packet_data_valid_o => space_packet_data_valid_s,
-        rdy_o => rdy_o
+        space_packet_data_valid_o => space_packet_data_valid_s
     );
 
     master_channel_demux: master_channel_demultiplexer generic map (

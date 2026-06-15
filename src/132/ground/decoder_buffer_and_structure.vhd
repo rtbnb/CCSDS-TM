@@ -18,11 +18,13 @@ entity decoder_buffer_and_structure is
     );
     port (
         -- inputs
-        data_i: std_logic_vector(7 downto 0);
-        clk_i: std_logic;
-        reset_i: std_logic;
-        fifo_empty_i: std_logic;
-        master_channel_demux_rdy_i: std_logic;
+        s_axi_tdata: in std_logic_vector(7 downto 0);
+        s_axi_tvalid: in std_logic;
+        s_axi_tready: out std_logic;
+        s_axi_tlast: in std_logic;
+        clk_i: in std_logic;
+        reset_i: in std_logic;
+        master_channel_demux_rdy_i: in std_logic;
 
         -- outputs
         tm_frame_first_header_pointer_o: out std_logic_vector(10 downto 0);
@@ -94,7 +96,6 @@ architecture behavioral of decoder_buffer_and_structure is
     signal tm_frame_octet_counter_r: integer range 0 to TM_FRAME_SIZE_OCTET - 1 := 0;
     type output_state_t is (output_idle, output_packet_data);
     signal output_state_r: output_state_t := output_packet_data;
-    signal input_data_valid_r: std_logic := '0';
     signal rdy_en_s: std_logic := '0';
 
     -- header decoder
@@ -147,17 +148,6 @@ begin
     master_channel_id_o(11 downto 2) <= spacecraft_id_s;
     virtual_channel_id_o <= virtual_channel_id_s;
 
-    input_valid: process(clk_i) is
-    begin
-        if (reset_i = '0') then
-            input_data_valid_r <= '0';
-        else
-            if rising_edge(clk_i) then
-                input_data_valid_r <= (not fifo_empty_i) and rdy_en_s;
-            end if;
-        end if;
-    end process input_valid;
-
     tm_frame_data_field_start_index_s <= (tm_frame_buffer_start_index_r + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET) mod TM_FRAME_BUFFER_SIZE_OCTET;
 
     tm_frame_header_decode: process(clk_i) is
@@ -172,8 +162,8 @@ begin
                 if tm_frame_data_finished_output_r then
                     tm_frame_data_valid_r <= false;
                 end if;
-                if input_data_valid_r = '1' then
-                    tm_frame_buffer_r(tm_frame_octet_counter_r) <= data_i;
+                if s_axi_tvalid = '1' and rdy_en_s = '1' then
+                    tm_frame_buffer_r(tm_frame_octet_counter_r) <= s_axi_tdata;
                     tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                     if tm_frame_octet_counter_r = TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1 then
                         -- finished buffering full frame
@@ -195,7 +185,7 @@ begin
         end if;
     end process tm_frame_header_decode;
 
-    rdy_o <= rdy_en_s;
+    s_axi_tready <= rdy_en_s;
     rdy_en_s <=
         '0' when reset_i = '0' else
         '1' when master_channel_demux_rdy_i = '1' else
