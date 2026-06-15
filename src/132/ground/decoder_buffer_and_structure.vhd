@@ -95,6 +95,7 @@ architecture behavioral of decoder_buffer_and_structure is
     type output_state_t is (output_idle, output_packet_data);
     signal output_state_r: output_state_t := output_packet_data;
     signal input_data_valid_r: std_logic := '0';
+    signal rdy_en_s: std_logic := '0';
 
     -- header decoder
     signal header_data_r: std_logic_vector(47 downto 0);
@@ -152,7 +153,7 @@ begin
             input_data_valid_r <= '0';
         else
             if rising_edge(clk_i) then
-                input_data_valid_r <= not fifo_empty_i;
+                input_data_valid_r <= (not fifo_empty_i) and rdy_en_s;
             end if;
         end if;
     end process input_valid;
@@ -194,7 +195,8 @@ begin
         end if;
     end process tm_frame_header_decode;
 
-    rdy_o <=
+    rdy_o <= rdy_en_s;
+    rdy_en_s <=
         '0' when reset_i = '0' else
         '1' when master_channel_demux_rdy_i = '1' else
         '0';
