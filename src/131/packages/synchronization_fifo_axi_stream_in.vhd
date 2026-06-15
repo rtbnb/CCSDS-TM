@@ -43,6 +43,10 @@ architecture behavioral of synchronization_fifo_axi_stream_in is
     signal full_s  : std_logic;
 
     signal fifo_data_out_r : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+
+    -- test signals
+    signal wr_counter : integer := 0;
+    signal rd_counter : integer := 0;
 begin
 
     empty_s <= '1' when wr_ptr_r = rd_ptr_r else '0';
@@ -59,6 +63,7 @@ begin
             if s_axis_tvalid = '1' and full_s = '0' then
                 fifo_mem_r(wr_ptr_r) <= s_axis_tdata;
                 wr_ptr_r <= (wr_ptr_r + 1) mod DEPTH;
+                wr_counter <= wr_counter + 1;
             end if;
         end if;
     end process write_process;
@@ -69,6 +74,7 @@ begin
             if rd_en_i = '1' and empty_s = '0' then
                 fifo_data_out_r <= fifo_mem_r(rd_ptr_r);
                 rd_ptr_r <= (rd_ptr_r + 1) mod DEPTH;
+                rd_counter <= rd_counter + 1;
             end if;
         end if;
     end process read_process;
