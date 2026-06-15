@@ -162,7 +162,7 @@ begin
                 if tm_frame_data_finished_output_r then
                     tm_frame_data_valid_r <= false;
                 end if;
-                if s_axi_tvalid = '1' and rdy_en_s = '1' then
+                if s_axi_tvalid = '1' then
                     tm_frame_buffer_r(tm_frame_octet_counter_r) <= s_axi_tdata;
                     tm_frame_octet_counter_r <= tm_frame_octet_counter_r + 1;
                     if tm_frame_octet_counter_r = TM_FRAME_DATA_FIELD_SIZE_OCTET + TM_FRAME_HEADER_SIZE_OCTET + TM_FRAME_SECONDARY_HEADER_SIZE_OCTET - 1 then
