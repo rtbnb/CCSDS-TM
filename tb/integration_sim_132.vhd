@@ -118,13 +118,18 @@ begin
     end process fill_packet;
     -- max_size_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 5) <= (others => x"00");
 
-    max_size_idle_space_packet_s(0) <= "11110000";
-    max_size_idle_space_packet_s(1) <= x"FF";
-    max_size_idle_space_packet_s(2) <= x"00";
-    max_size_idle_space_packet_s(3) <= x"00";
-    max_size_idle_space_packet_s(4) <= x"f8"; -- 249 Data Octets
-    max_size_idle_space_packet_s(5) <= x"00";
-    max_size_idle_space_packet_s(MAX_SPACE_PACKET_SIZE_OCTET - 1 downto 6) <= (others => x"00");
+    fill_idle_packet: process begin
+        max_size_idle_space_packet_s(0) <= "11110000";
+        max_size_idle_space_packet_s(1) <= x"FF";
+        max_size_idle_space_packet_s(2) <= x"00";
+        max_size_idle_space_packet_s(3) <= x"00";
+        max_size_idle_space_packet_s(4) <= x"f8"; -- 249 Data Octets
+        max_size_idle_space_packet_s(5) <= x"00";
+        for i in 6 to MAX_SPACE_PACKET_SIZE_OCTET - 1 loop
+            max_size_idle_space_packet_s(i) <= std_logic_vector(to_unsigned(i, 8));
+        end loop;
+        wait;
+    end process fill_idle_packet;
 
     
     general_settings: process begin
