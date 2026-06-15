@@ -1,3 +1,12 @@
+----------------------------------------------------------------
+-- File         : axi_ccsds_131_ground.vhd
+-- Created      : 01.06.2026
+-- Author       : Hannah Lindner 
+-- Project Name : HW/SW Project TM
+-- Description  : top level entity for ccsds 131 ground
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
+----------------------------------------------------------------
+
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

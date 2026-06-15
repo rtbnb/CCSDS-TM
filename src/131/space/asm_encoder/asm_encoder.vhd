@@ -5,6 +5,7 @@
 -- Project Name : HW/SW Project TM
 -- Description  : component to add asm stream after pseudo randomization,
 -- ASM Pattern  : 0x1ACFFC1D
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 
@@ -103,6 +104,6 @@ begin
             end if; -- tlast check 
         end if;  -- data valid checks        
     end if; -- reset & rising edge logic
-end process; --asm_encoding 
+end process asm_encoding; --asm_encoding 
 
 end behavioral;

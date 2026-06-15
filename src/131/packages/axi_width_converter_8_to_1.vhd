@@ -4,6 +4,7 @@
 -- Author       : Hannah Lindner 
 -- Project Name : HW/SW Project TM
 -- Description  : axi stream width converter 8 bit to 1 bits 
+-- License : https://github.com/rtbnb/CCSDS-TM/blob/master/LICENSE
 ----------------------------------------------------------------
 
 library IEEE;
@@ -38,7 +39,7 @@ signal m_axi_datavalid_r  : std_logic := '0';
 -- additional signals 
 signal m_tvalid_r         : std_logic := '0';
 signal s_tready_r         : std_logic := '1';
-signal m_tlast            : std_logic := '0';
+signal m_tlast_r            : std_logic := '0';
 signal output_data_r      : std_logic := '0';
 
 begin 
@@ -58,7 +59,7 @@ if reset_i = '0' then
     data_register_r <= (others => 'U');
     m_tvalid_r      <= '0';
     counter_r       <= 0;
-    m_tlast         <= '0';
+    m_tlast_r         <= '0';
     output_data_r   <= '0';
     
 elsif rising_edge(clk_i) then 
@@ -83,7 +84,7 @@ elsif rising_edge(clk_i) then
         if counter_r = 7 then 
            output_data_r <= '0';
            counter_r <= 0;
-           m_axi_tlast <= m_tlast;
+           m_axi_tlast <= m_tlast_r;
            s_tready_r      <= m_axi_tready;
         end if; 
         
@@ -92,7 +93,7 @@ elsif rising_edge(clk_i) then
         data_register_r             <= s_axi_tdata; 
         s_tready_r                  <= '0';
         output_data_r               <= '1'; 
-        m_tlast                     <= s_axi_tlast;
+        m_tlast_r                     <= s_axi_tlast;
         m_axi_tdata                 <= s_axi_tdata (8-counter_r-1);
         m_tvalid_r                  <= '1';
         
