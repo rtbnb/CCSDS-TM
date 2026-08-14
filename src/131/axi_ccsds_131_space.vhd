@@ -24,7 +24,8 @@ entity axi_ccsds_131_space is
     -- m_axi signals 
     m_axi_tvalid    : out std_logic; 
     m_axi_tready    : in std_logic; 
-    m_axi_tdata     : out std_logic
+    m_axi_tdata     : out std_logic;
+    m_axi_tlast     : out std_logic
     );
 end axi_ccsds_131_space;
 
@@ -53,6 +54,8 @@ signal    asm_axi_tvalid    : std_logic;
 signal    asm_axi_tready    : std_logic; 
 signal    asm_axi_tdata     : std_logic; 
 signal    asm_axi_tlast     : std_logic;
+
+signal    m_tvalid          : std_logic; 
 
 begin
 
@@ -150,9 +153,13 @@ convolutional_encoder_inst : entity work.convolutional_encoder
         s_axis_tready       => asm_axi_tready,
 
         m_axis_tdata(0)     => m_axi_tdata,
-        m_axis_tvalid       => m_axi_tvalid,
+        m_axis_tvalid       => m_tvalid,
         m_axis_tready       => m_axi_tready
+        
     );
+    
+  m_axi_tlast <= m_tvalid;
+  m_axi_tvalid <= m_tvalid;
 
 
 end connectivity;

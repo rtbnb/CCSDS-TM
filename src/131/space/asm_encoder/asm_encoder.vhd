@@ -91,10 +91,11 @@ begin
         
         -- valid data on s_axi     
         elsif generate_asm_r = '1' then 
-            m_tvalid_r        <= '1';
-            s_tready_r        <= '0';
-            m_axi_tdata     <= ASM_PATTERN(32-counter_r); 
-            
+            if counter_r > 0 then 
+                m_tvalid_r        <= '1';
+                s_tready_r        <= '0';
+                m_axi_tdata     <= ASM_PATTERN(32-counter_r); 
+            end if;
         elsif s_axi_datavalid_r = '1' then 
             m_tvalid_r        <= '1';
             s_tready_r        <= '0';

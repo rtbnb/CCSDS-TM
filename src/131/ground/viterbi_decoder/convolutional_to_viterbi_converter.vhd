@@ -84,6 +84,7 @@ begin
             s_axis_tvalid => convolutional_data_tvalid,
             s_axis_tdata => convolutional_data_tdata,
             s_axis_tready => convolutional_data_tready,
+            --s_axis_tready => open,
 
             rd_clk_i => clk_i,
             empty_o => input_fifo_empty_s,

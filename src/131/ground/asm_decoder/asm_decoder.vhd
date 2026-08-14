@@ -78,7 +78,7 @@ begin
             counter_r       <= counter_r + 1;
                        
             -- switch to detect asm after frame length           
-            if counter_r = FRAME_LENGTH + 31 then 
+            if counter_r = FRAME_LENGTH+31  then 
                 detect_asm_r    <= '1'; 
                 counter_r       <= 0; 
             end if;      
