@@ -131,6 +131,8 @@ architecture rtl of ram_ctrl is
 	signal write_last_window_complete : std_logic;
 	signal last_of_block : std_logic;
 	signal read_last_addr_ptr : unsigned(BW_MAX_WINDOW_LENGTH - 1 downto 0);
+	
+	signal debug : unsigned(1 downto 0);
 begin
 
 	m_axis_output_tvalid       <= m_axis_output_tvalid_int;
@@ -139,6 +141,8 @@ begin
 	m_axis_output_last_tuser   <= m_axis_output_last_tuser_int;
 	m_axis_output_tdata(0)     <= q_reg(to_integer(read_ram_ptr_d(0))) when ram_buffer_full(0) = '0' else ram_buffer(0);
 	m_axis_output_tdata(1)     <= q_reg(to_integer(read_ram_ptr_d(1))) when ram_buffer_full(1) = '0' else ram_buffer(1);
+	
+	debug <= read_ram_ptr(0) - 1;
 
 
 	--
@@ -363,7 +367,7 @@ begin
 
 					if m_axis_output_tready(i) = '1' then
 						if read_addr_ptr(i) = 0 then
-							if read_ram_fsm(1 - i) = TRACEBACK and read_ram_ptr(1 - i) = read_ram_ptr(i) - 1 then
+							if read_ram_fsm(1 - i) = TRACEBACK and ((read_ram_ptr(1 - i) = read_ram_ptr(i) - 1) or (read_ram_ptr(i) - 1 = write_ram_ptr)) then
 								read_ram_fsm(i) <= WAIT_FOR_RAM;
 							else
 								read_addr_ptr(i) <= config.window_length - 1;
@@ -382,7 +386,7 @@ begin
 
 				when WAIT_FOR_RAM =>
 					m_axis_output_tvalid_int(i) <= '0';
-					if read_ram_fsm(1 - i) /= TRACEBACK or read_ram_ptr(1 - i) /= read_ram_ptr(i) - 1 then
+					if read_ram_fsm(1 - i) /= TRACEBACK or (read_ram_ptr(1 - i) /= read_ram_ptr(i) - 1 and read_ram_ptr(i) - 1 /= write_ram_ptr) then
 						read_addr_ptr(i) <= config.window_length - 1;
 						read_ram_ptr(i)  <= read_ram_ptr(i) - 1;
 						read_ram_fsm(i)  <= FINISH;
@@ -390,10 +394,14 @@ begin
 
 				-- Get the remaining values from the second RAM we need for traceback (no acquisition values in this RAM)
 				when FINISH =>
-					if m_axis_output_tvalid_int(i) <= '0' then
+					if m_axis_output_tvalid_int(i) <= '0' then --and std_logic_vector(read_ram_ptr(i)) /= std_logic_vector(write_ram_ptr) then
 						m_axis_output_tvalid_int(i) <= '1';
 						read_addr_ptr(i) <= read_addr_ptr(i) - 1;
 					end if;
+					
+					--if std_logic_vector(read_ram_ptr(i)) = std_logic_vector(write_ram_ptr) then
+					--   m_axis_output_tvalid_int(i) <= '0';
+					--end if;
 					if m_axis_output_tready(i) = '1' then
 
 						if read_addr_ptr(i) = config.window_length - config.acquisition_length then
