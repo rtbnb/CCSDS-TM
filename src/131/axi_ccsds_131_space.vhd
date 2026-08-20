@@ -131,32 +131,32 @@ asm_encoder_inst : entity work.asm_encoder
         s_axi_tlast     => pseudorand_axi_tlast,
 
         -- axi stream output
-        m_axi_tvalid    => asm_axi_tvalid,
-        m_axi_tready    => asm_axi_tready,
-        m_axi_tdata     => asm_axi_tdata,
-        m_axi_tlast     => asm_axi_tlast
+        m_axi_tvalid    => m_tvalid, -- asm_axi_tvalid,
+        m_axi_tready    => m_axi_tready, --asm_axi_tready,
+        m_axi_tdata     => m_axi_tdata, --asm_axi_tdata,
+        m_axi_tlast     => open --asm_axi_tlast
     );
 
-convolutional_encoder_inst : entity work.convolutional_encoder
-    generic map(
-        K           => 7,
-        G1          => 8#171#,
-        G2          => 8#133#,
-        INVERT_MASK => "10"
-    )
-    port map(
-        clk_i               => clk_i,
-        reset_i             => rst_i,
+ --convolutional_encoder_inst : entity work.convolutional_encoder
+ --   generic map(
+ --       K           => 7,
+ --       G1          => 8#171#,
+ --       G2          => 8#133#,
+ --       INVERT_MASK => "10"
+ --   )
+ --   port map(
+ --       clk_i               => open,-- clk_i,
+ --       reset_i             => open,--rst_i,
 
-        s_axis_tdata(0)     => asm_axi_tdata,
-        s_axis_tvalid       => asm_axi_tvalid,
-        s_axis_tready       => asm_axi_tready,
-
-        m_axis_tdata(0)     => m_axi_tdata,
-        m_axis_tvalid       => m_tvalid,
-        m_axis_tready       => m_axi_tready
+ --       s_axis_tdata(0)     => open,--asm_axi_tdata,
+ --       s_axis_tvalid       => open,--asm_axi_tvalid,
+ --       s_axis_tready       => open,--asm_axi_tready,
+--
+ --       m_axis_tdata(0)     => open,--m_axi_tdata,
+ --       m_axis_tvalid       => open,--m_tvalid,
+ --       m_axis_tready       => open --m_axi_tready
         
-    );
+ --   );
     
   m_axi_tlast <= m_tvalid;
   m_axi_tvalid <= m_tvalid;

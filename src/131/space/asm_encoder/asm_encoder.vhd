@@ -48,6 +48,8 @@ signal m_tvalid_r         : std_logic := '0';
 signal s_tready_r         : std_logic := '0';
 signal generate_asm_r     : std_logic := '0';
 
+--signal first_rec_r        : std_logic := '1';
+
 
 begin
 
@@ -67,16 +69,18 @@ begin
         counter_r       <= 0;
         -- reset axi signals 
         m_tvalid_r        <= '0';
-        s_tready_r        <= '0';
+        s_tready_r        <= '1';
         generate_asm_r    <= '0';
+       -- first_rec_r       <= '1';
     elsif rising_edge(clk_i) then
         -- reset data valid flags 
-        s_tready_r    <=  m_axi_tready;
+       -- s_tready_r    <=  m_axi_tready or first_rec_r;
         
         -- valid data on m_axi
         if m_axi_datavalid_r = '1' then
-            m_tvalid_r        <= '0';
-            m_axi_tlast      <= '0';
+            m_tvalid_r          <= '0';
+            m_axi_tlast         <= '0';
+            s_tready_r          <= '1';
             
             if generate_asm_r = '1' then 
                 counter_r <= counter_r + 1;
@@ -98,6 +102,7 @@ begin
             end if;
         elsif s_axi_datavalid_r = '1' then 
             m_tvalid_r        <= '1';
+          --  first_rec_r <= '0';
             s_tready_r        <= '0';
             m_axi_tdata     <= s_axi_tdata;
             if s_axi_tlast = '1' then
