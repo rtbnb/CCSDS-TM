@@ -14,7 +14,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity asm_decoder is
     generic (
         ASM_PATTERN   : std_logic_vector(31 downto 0) := x"1ACFFC1D"; 
-        FRAME_LENGTH  : integer := 255
+        FRAME_LENGTH  : integer := 10
     );
     port( 
         -- input ports 
@@ -40,7 +40,7 @@ architecture behavioral of asm_decoder is
 -- shift register to detect asm in 
 signal shift_register_r : std_logic_vector(32 downto 0) := (others => '0');     
 -- counter 
-signal counter_r        : integer range 0 to FRAME_LENGTH + 33 := 0;
+signal counter_r            : integer range 0 to FRAME_LENGTH + 33 := 0;
 -- flags for datavalid state 
 signal s_axi_datavalid_r    : std_logic := '0';
 signal m_axi_datavalid_r    : std_logic := '0';
@@ -60,7 +60,7 @@ m_axi_tvalid        <= m_tvalid_r;
 s_axi_tready        <= s_tready_r;
 
 check_for_asm: process(clk_i, reset_i)
-  
+    variable hamming_distance_s   : integer range 0 to 32 := 0;
 begin 
     if reset_i = '0' then 
         -- reset all variables and signals 
@@ -91,8 +91,17 @@ begin
             if register_full_r = '1' then 
                 if detect_asm_r = '1' then 
                     if asm_detected_r = '0' then 
+                        
+                        -- check hamming distance of register input and ASM pattern 
+                        hamming_distance_s := 0;
+                        for i in 0 to 31 loop
+                            if ASM_PATTERN(i) /= shift_register_r(i) then
+                                hamming_distance_s := hamming_distance_s + 1;  
+                            end if;
+                        end loop;
+
                         -- check for asm pattern in shift register 
-                        if (shift_register_r(31 downto 0) = ASM_PATTERN) then 
+                        if (hamming_distance_s < 3) then 
                             m_axi_tdata <= shift_register_r(32); 
                             asm_detected_r  <= '1'; 
                             m_axi_tlast     <= '1';
