@@ -56,6 +56,7 @@ architecture behavioral of reed_solomon_decoder_top is
     signal fifo_output_r            : finite_field_t;
     signal fifo_data_valid_r        : std_logic;
     signal error_locator_poly_len_r : integer range 0 to max_number_of_errors_g;
+    signal data_last_r              : std_logic;
     
 begin
     
@@ -90,6 +91,7 @@ begin
             reset_i => reset_i,
             input_byte_i => rs_input_byte_r,
             data_valid_i => rs_data_valid_in_r,
+            data_last_i => rs_asm_done_r,
     
             data_valid_o  => fifo_data_valid_r,
             output_byte_o => fifo_output_r

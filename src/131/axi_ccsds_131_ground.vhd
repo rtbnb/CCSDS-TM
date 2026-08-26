@@ -60,22 +60,22 @@ signal    m_tvalid                  : std_logic;
 
 begin
 
---viterbi_decoder_inst : entity work.viterbi_decoder 
---    port map(
---        clk_i   => clk_i,
---        reset_i => rst_i,
+viterbi_decoder_inst : entity work.viterbi_decoder 
+    port map(
+        clk_i   => clk_i,
+        reset_i => rst_i,
 
         -- Convolutional encoded data input
---        convolutional_data_tdata(0)    => s_axi_tdata,
---        convolutional_data_tvalid   => s_axi_tvalid,
---        convolutional_data_tready   => s_axi_tready,
+        convolutional_data_tdata(0)    => s_axi_tdata,
+        convolutional_data_tvalid   => s_axi_tvalid,
+        convolutional_data_tready   => s_axi_tready,
 
         -- Data output from Viterbi decoder
- --       decoded_data_tdata  => viterbi_axi_tdata,
---        decoded_data_tvalid => viterbi_axi_tvalid,
---        decoded_data_tready => viterbi_axi_tready,
---        decoded_data_tlast  => viterbi_axi_tlast
---    );
+        decoded_data_tdata  => viterbi_axi_tdata,
+        decoded_data_tvalid => viterbi_axi_tvalid,
+        decoded_data_tready => viterbi_axi_tready,
+        decoded_data_tlast  => viterbi_axi_tlast
+    );
 
 asm_decoder_inst : entity work.asm_decoder
     generic map(
@@ -88,10 +88,10 @@ asm_decoder_inst : entity work.asm_decoder
         reset_i     => rst_i, 
         
         -- axi stream input 
-        s_axi_tvalid    => s_axi_tvalid, --viterbi_axi_tvalid,
-        s_axi_tready    => s_axi_tready, --viterbi_axi_tready,
-        s_axi_tdata     => s_axi_tdata, --viterbi_axi_tdata,
-        s_axi_tlast     => '0',--viterbi_axi_tlast,
+        s_axi_tvalid    => viterbi_axi_tvalid,
+        s_axi_tready    => viterbi_axi_tready,
+        s_axi_tdata     => viterbi_axi_tdata,
+        s_axi_tlast     => viterbi_axi_tlast,
          
         -- axi stream output  
         m_axi_tvalid    => asm_axi_tvalid,

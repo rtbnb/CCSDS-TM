@@ -59,8 +59,7 @@ begin
     
     m_axi_tvalid        <= m_tvalid_s;
     s_axi_tready        <= s_tready_s;
-    
-    
+        
     axi_strem_apater: process(reset_i, clk_i)
     begin
         if reset_i ='0' then 
@@ -109,6 +108,7 @@ begin
                 -- input data into rs
                 rs_input_byte_o <= s_axi_tdata;
                 rs_data_valid_in_o <= '1';
+                
                 
                 
                 -- check for tlast thus checking if asm was found by ASM decoder

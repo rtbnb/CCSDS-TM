@@ -17,6 +17,7 @@ entity reed_solomon_decoder_fifo is
         reset_i : in std_logic;
         input_byte_i : in std_logic_vector (7 downto 0);
         data_valid_i : in std_logic := '0';
+        data_last_i : in std_logic := '0';
 
         data_valid_o : out std_logic;
         output_byte_o : out std_logic_vector (7 downto 0)
@@ -34,12 +35,14 @@ architecture behavioral of reed_solomon_decoder_fifo is
     CONSTANT MAX_ERROR_COUNT : INTEGER := 16; -- Number of Errors to be correcable
     
     
-    type reed_solomon_fifo_t is array (0 to FIFO_LENGHT) of std_logic_vector(8 downto 0);
+    type reed_solomon_fifo_t is array (0 to FIFO_LENGHT) of std_logic_vector(9 downto 0);
 
-    signal reed_solomon_fifo_r : reed_solomon_fifo_t := (others => "000000000");
-    signal fifo_out_r : std_logic_vector(8 downto 0);
+    signal reed_solomon_fifo_r : reed_solomon_fifo_t := (others => "0000000000");
+    signal fifo_out_r : std_logic_vector(9 downto 0);
     signal clock_divier_count_r : integer range 0 to 255;
     signal new_data_in_fifo_r : std_logic:='0';
+    signal data_last_rec_r    : std_logic:='0';
+    
     
 begin
 
@@ -49,11 +52,17 @@ begin
             clock_divier_count_r <= 0;
         elsif rising_edge(clk_i) then
             if fifo_out_r(8) = '1' and new_data_in_fifo_r = '1' then
+            
                  if clock_divier_count_r = MESSAGE_LENGHT-1 then
                     clock_divier_count_r <= 0;
                  else
                     clock_divier_count_r <= clock_divier_count_r + 1;
                  end if;
+                 
+                 if fifo_out_r(9) = '1' then
+                    clock_divier_count_r <= 1;
+                 end if;
+                 
             --else
                 --clock_divier_count_r <= 0;
             end if;
@@ -64,18 +73,21 @@ begin
     fifo_shift : process (clk_i)
     begin
         if reset_i = '0' then
-            reed_solomon_fifo_r <= (others => "000000000");
+            reed_solomon_fifo_r <= (others => "0000000000");
             new_data_in_fifo_r <= '0';
-            fifo_out_r <= "000000000";
+            fifo_out_r <= "0000000000";
+            data_last_rec_r <= '0';
         elsif rising_edge(clk_i) then
             -- Add clock division
+            data_last_rec_r <= data_last_i or data_last_rec_r;
             if data_valid_i = '1' then
                 
                 new_data_in_fifo_r <= '1';
+                data_last_rec_r <='0';
                 -- Shift fifo by one element, and append new one
                 l_fifo_shift : for k in 0 to FIFO_LENGHT+1 loop
                     if k = 0 then
-                        reed_solomon_fifo_r(k) <= data_valid_i & input_byte_i;
+                        reed_solomon_fifo_r(k) <= data_last_rec_r & data_valid_i & input_byte_i;
                     elsif k = FIFO_LENGHT+1 then
                         fifo_out_r <= reed_solomon_fifo_r(k-1);
                     else 
